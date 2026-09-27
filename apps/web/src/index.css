@@ -1,0 +1,35 @@
+@import "tailwindcss";
+@import "@fontsource-variable/inter";
+
+/* Design tokens from the PowerWatch Figma file */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-primary: #0663ea;
+  --color-ink: #1b3a4b;
+  --color-screen: #fbfeff;
+  --color-surface: #f9fafb;
+  --color-soft: #f2f5f4;
+  --color-line: #e5e7eb;
+  --color-line-light: #f3f4f6;
+  --color-body: #4b5563;
+  --color-muted: #737783;
+  --color-power-on: #07b447;
+  --color-power-off: #e20911;
+  --color-tint: #c8e0ff;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-screen);
+  color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
