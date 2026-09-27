@@ -1,0 +1,195 @@
+import { useEffect, useState } from "react";
+import { StyleSheet, Text, View } from "react-native";
+import LogoHeader from "../components/layout/LogoHeader";
+import Screen from "../components/layout/Screen";
+import Icon from "../components/icons/Icon";
+import type { GlyphName } from "../components/icons/glyphs";
+import Button from "../components/ui/Button";
+import Toggle from "../components/ui/Toggle";
+import { goToDashboard } from "../services/navigation";
+import { getNotificationPermission, requestNotificationPermission } from "../services/notifications";
+import type { NotificationPermission } from "../services/notifications";
+import { colors, fonts, type } from "../theme";
+
+interface OptionProps {
+  icon: GlyphName;
+  title: string;
+  description: string;
+  enabled: boolean;
+  onChange: (value: boolean) => void;
+}
+
+const Option = ({ icon, title, description, enabled, onChange }: OptionProps) => (
+  <View style={styles.option}>
+    <View style={styles.optionText}>
+      <View style={styles.optionTitle}>
+        <View style={styles.optionIcon}>
+          <Icon name={icon} />
+        </View>
+        <Text style={[type.boldText, { color: colors.black }]}>{title}</Text>
+      </View>
+      <Text style={styles.optionDescription}>{description}</Text>
+    </View>
+
+    <Toggle
+      enabled={enabled}
+      onChange={onChange}
+      offColor={colors.border}
+      offBorderColor={colors.borderInput}
+    />
+  </View>
+);
+
+// Figma "Onboarding - Notifications" (3:332)
+const NotificationSetup = () => {
+  const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>("default");
+
+  const [prefs, setPrefs] = useState({
+    outageAlerts: true,
+    restorationAlerts: true,
+    communityReports: false,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    getNotificationPermission().then((status) => {
+      if (isMounted) setPermissionStatus(status);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const updatePref = (key: keyof typeof prefs) => (value: boolean) =>
+    setPrefs((prev) => ({ ...prev, [key]: value }));
+
+  const handleFinishSetup = async () => {
+    if (permissionStatus === "default") {
+      setPermissionStatus(await requestNotificationPermission());
+    }
+
+    goToDashboard();
+  };
+
+  return (
+    <Screen top={40} bottom={24} contentStyle={styles.content}>
+      <LogoHeader />
+
+      {/* Title */}
+      <View style={styles.titleBlock}>
+        <Text accessibilityRole="header" style={[type.h1, { color: colors.bg }]}>
+          Stay updated
+        </Text>
+        <Text style={[type.boldText, styles.subtitle]}>
+          {"Get notified immediately when there is a\nchange in your neighborhood's power status."}
+        </Text>
+      </View>
+
+      {/* Preview */}
+      <View style={styles.preview}>
+        <Icon name="bell" />
+        <Text style={styles.previewLabel}>Notification Preview</Text>
+      </View>
+
+      {/* Options */}
+      <View style={styles.options}>
+        <Option
+          icon="boltSmall"
+          title="Outage Alerts"
+          description="Be the first to know when power goes out."
+          enabled={prefs.outageAlerts}
+          onChange={updatePref("outageAlerts")}
+        />
+        <Option
+          icon="bullhorn"
+          title="Restoration Alerts"
+          description="Get notified as soon as power is back on."
+          enabled={prefs.restorationAlerts}
+          onChange={updatePref("restorationAlerts")}
+        />
+        <Option
+          icon="mapLocation"
+          title="Community Reports"
+          description={"See real-time updates from your\nneighbors."}
+          enabled={prefs.communityReports}
+          onChange={updatePref("communityReports")}
+        />
+      </View>
+
+      <Button label="Finish Setup" onPress={handleFinishSetup} style={styles.finish} />
+    </Screen>
+  );
+};
+
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: 24,
+  },
+  titleBlock: {
+    marginTop: 28,
+    gap: 8,
+  },
+  subtitle: {
+    color: colors.gray600,
+    opacity: 0.7,
+  },
+  preview: {
+    marginTop: 28,
+    height: 160,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 13.5,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    backgroundColor: colors.borderLight,
+  },
+  previewLabel: {
+    fontFamily: fonts.segoe,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.gray400,
+  },
+  options: {
+    marginTop: 28,
+    gap: 16,
+  },
+  option: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    backgroundColor: colors.white,
+    // Figma draws the 1px border inside the 16px padding
+    padding: 15,
+  },
+  optionText: {
+    flexShrink: 1,
+    gap: 4,
+    paddingRight: 16,
+  },
+  optionTitle: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  optionIcon: {
+    width: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  optionDescription: {
+    fontFamily: fonts.segoe,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.gray500,
+  },
+  finish: {
+    marginTop: 85,
+  },
+});
+
+export default NotificationSetup;
