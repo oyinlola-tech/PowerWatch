@@ -3,7 +3,7 @@ import StoreButtons from "./StoreButtons";
 // Download panel after the cta.gallery "Download" references: centered pitch on a
 // gridded brand panel, with the Figma home screen rising out of the bottom edge
 const DownloadCta = () => (
-  <section id="download" className="scroll-mt-[72px] bg-white px-4 py-20 sm:px-6">
+  <section id="download" className="scroll-mt-[72px] bg-card px-4 py-20 sm:px-6">
     <div
       className="relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 pt-14 text-center md:pt-20"
       style={{

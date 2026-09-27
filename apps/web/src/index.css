@@ -1,6 +1,9 @@
 @import "tailwindcss";
 @import "@fontsource-variable/inter";
 
+/* `dark:` follows the data-theme attribute set in index.html before first paint */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
 /* Design tokens from the PowerWatch Figma file */
 @theme {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
@@ -17,6 +20,9 @@
   --color-power-on: #07b447;
   --color-power-off: #e20911;
   --color-tint: #c8e0ff;
+  --color-card: #ffffff;
+  /* Brand blue for text and small icons; lighter in dark mode for contrast */
+  --color-accent: #0663ea;
 
   --animate-fade-in: fade-in 300ms ease-out;
 
@@ -26,6 +32,22 @@
       transform: translateY(8px);
     }
   }
+}
+
+/* Dark theme: same brand blue, deep navy surfaces taken from the brand gradient */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #e8f0f8;
+  --color-screen: #07111f;
+  --color-surface: #0e1b2e;
+  --color-soft: #15243a;
+  --color-card: #0e1b2e;
+  --color-line: #24344c;
+  --color-line-light: #1a2a41;
+  --color-body: #a6b4c6;
+  --color-muted: #7e8ca0;
+  --color-tint: #12305e;
+  --color-accent: #6ba5ff;
 }
 
 html {

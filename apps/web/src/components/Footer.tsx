@@ -31,7 +31,7 @@ const Footer = () => (
         <ul className="flex flex-wrap justify-center gap-x-8 gap-y-3">
           {links.map(({ href, label }) => (
             <li key={href}>
-              <a href={href} className="text-sm font-medium text-body transition hover:text-primary">
+              <a href={href} className="text-sm font-medium text-body transition hover:text-accent">
                 {label}
               </a>
             </li>
@@ -41,7 +41,7 @@ const Footer = () => (
 
       <div className="mt-12 flex w-full flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row">
         <p>© {new Date().getFullYear()} PowerWatch. All rights reserved.</p>
-        <a href="#top" className="transition hover:text-primary">
+        <a href="#top" className="transition hover:text-accent">
           Back to top ↑
         </a>
       </div>

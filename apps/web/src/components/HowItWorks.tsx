@@ -107,13 +107,13 @@ const HowItWorks = () => {
                   onClick={() => setActive(index)}
                   className={`flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition ${
                     selected
-                      ? "border-primary/30 bg-white shadow-[0_8px_30px_rgba(6,99,234,0.10)]"
-                      : "border-transparent hover:bg-white/70"
+                      ? "border-primary/30 bg-card shadow-[0_8px_30px_rgba(6,99,234,0.10)]"
+                      : "border-transparent hover:bg-card/70"
                   }`}
                 >
                   <span
                     className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-base font-semibold transition ${
-                      selected ? "bg-primary text-white" : "bg-tint text-primary"
+                      selected ? "bg-primary text-white" : "bg-tint text-accent"
                     }`}
                   >
                     {index + 1}
@@ -142,7 +142,7 @@ const HowItWorks = () => {
             <div className="relative w-[240px] rounded-[48px] bg-[#1B1C1C] p-[10px] shadow-[0_30px_60px_rgba(0,49,120,0.25)] sm:w-[300px] lg:w-[320px]">
               <div className="relative aspect-[375/812] overflow-hidden rounded-[38px] bg-screen">
                 <div className="absolute left-1/2 top-2 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-[#1B1C1C]" />
-                <div className="h-9 bg-white" />
+                <div className="h-9 bg-card" />
                 <img
                   key={step.src}
                   src={step.src}

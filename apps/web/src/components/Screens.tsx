@@ -32,7 +32,7 @@ const screens = [
 ];
 
 const Screens = () => (
-  <section id="screens" className="scroll-mt-[72px] bg-white py-20">
+  <section id="screens" className="scroll-mt-[72px] bg-card py-20">
     <div className="mx-auto max-w-6xl">
       <div className="px-6">
         <SectionHeading

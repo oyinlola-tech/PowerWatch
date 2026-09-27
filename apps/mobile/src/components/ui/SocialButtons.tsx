@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import Icon from "../icons/Icon";
+import { comingSoon } from "../../services/navigation";
 import { colors, fonts, type } from "../../theme";
 
 interface SocialButtonsProps {
@@ -26,6 +27,8 @@ const SocialButtons = ({
     <View style={styles.row}>
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel="Continue with Google"
+        onPress={() => comingSoon("Sign in with Google")}
         style={({ pressed }) => [styles.button, styles.google, pressed && styles.pressed]}
       >
         <Icon name="google" />
@@ -34,6 +37,8 @@ const SocialButtons = ({
 
       <Pressable
         accessibilityRole="button"
+        accessibilityLabel="Continue with Apple"
+        onPress={() => comingSoon("Sign in with Apple")}
         style={({ pressed }) => [styles.button, styles.apple, pressed && styles.pressed]}
       >
         <Icon name="apple" />

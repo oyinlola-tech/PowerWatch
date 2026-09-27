@@ -28,7 +28,8 @@ export const goToDashboard = () => {
 
 export const goBack = () => {
   if (router.canGoBack()) router.back();
-  else router.replace("/dashboard");
+  // The splash route sends signed-in users Home and everyone else to onboarding
+  else router.replace("/");
 };
 
 export const changeNeighborhood = () =>

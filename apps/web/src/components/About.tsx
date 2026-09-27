@@ -20,7 +20,7 @@ const more: { icon: GlyphName; title: string; description: string }[] = [
   },
 ];
 
-const card = "relative overflow-hidden rounded-3xl border border-line-light bg-white";
+const card = "relative overflow-hidden rounded-3xl border border-line-light bg-card";
 
 interface CardTextProps {
   icon: GlyphName;
@@ -43,7 +43,7 @@ const CardText = ({ icon, title, description }: CardTextProps) => (
 // Bento of the platform, built from the Figma images: the onboarding photo,
 // the status and report screens, and the city heatmap from the home screen
 const About = () => (
-  <section id="about" className="scroll-mt-[72px] bg-white px-4 py-20 sm:px-6">
+  <section id="about" className="scroll-mt-[72px] bg-card px-4 py-20 sm:px-6">
     <div className="mx-auto max-w-6xl">
       <SectionHeading
         label="About PowerWatch"
@@ -140,8 +140,8 @@ const About = () => (
       <ul className="mt-4 grid gap-4 sm:grid-cols-3">
         {more.map(({ icon, title, description }) => (
           <li key={title} className="flex items-start gap-3 rounded-2xl border border-line-light p-4">
-            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-tint">
-              <Icon name={icon} color="#0663EA" width={18} />
+            <span className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-tint text-accent">
+              <Icon name={icon} color="currentColor" width={18} />
             </span>
             <div>
               <h3 className="text-sm font-semibold text-ink">{title}</h3>

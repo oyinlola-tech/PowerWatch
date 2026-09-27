@@ -7,18 +7,61 @@ import Icon from "../components/icons/Icon";
 import Button from "../components/ui/Button";
 import SocialButtons from "../components/ui/SocialButtons";
 import TextField from "../components/ui/TextField";
+import { FormError } from "../components/ui/StateViews";
+import { useAuth } from "../context/AuthContext";
+import { ApiError } from "../services/api";
 import mixpanel from "../services/mixpanel";
-import { notAvailableYet } from "../services/navigation";
 import { colors, fonts, type } from "../theme";
 
 // Figma "Signup Screen Wireframe" (3:467)
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// Mirrors the backend password policy so most mistakes are caught before submitting
+const PASSWORD_RULES: [RegExp, string][] = [
+  [/.{8,}/, "at least 8 characters"],
+  [/[A-Z]/, "an uppercase letter"],
+  [/[a-z]/, "a lowercase letter"],
+  [/[0-9]/, "a number"],
+  [/[^A-Za-z0-9]/, "a symbol"],
+];
+
+type Field = "fullName" | "email" | "password" | "terms" | "form";
+
 const Register = () => {
+  const { signUp } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSignUp = () => {
-    mixpanel.track("sign_up_completed");
-    router.push("/verify");
+  const handleSignUp = async () => {
+    const next: Partial<Record<Field, string>> = {};
+    if (!fullName.trim()) next.fullName = "Enter your full name.";
+    if (!EMAIL_PATTERN.test(email.trim())) next.email = "Enter a valid email address.";
+    const missing = PASSWORD_RULES.filter(([rule]) => !rule.test(password)).map(([, label]) => label);
+    if (missing.length) next.password = `Password needs ${missing.join(", ")}.`;
+    if (!agreed) next.terms = "Please agree to the Terms & Conditions and Privacy Policy.";
+    setErrors(next);
+    if (Object.keys(next).length) return;
+
+    setSubmitting(true);
+    try {
+      // On success the auth guard leaves this screen; the splash sends the user to verify
+      await signUp(fullName.trim(), email.trim(), password);
+      mixpanel.track("sign_up_completed");
+    } catch (error) {
+      const apiError = error instanceof ApiError ? error : null;
+      setErrors({
+        fullName: apiError?.fieldErrors.fullName,
+        email: apiError?.fieldErrors.email,
+        password: apiError?.fieldErrors.password,
+        form: apiError?.message ?? "Couldn't create your account. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -44,6 +87,9 @@ const Register = () => {
             autoCapitalize="words"
             autoComplete="name"
             textContentType="name"
+            value={fullName}
+            onChangeText={setFullName}
+            error={errors.fullName}
           />
 
           <TextField
@@ -54,6 +100,9 @@ const Register = () => {
             keyboardType="email-address"
             autoComplete="email"
             textContentType="emailAddress"
+            value={email}
+            onChangeText={setEmail}
+            error={errors.email}
           />
 
           <TextField
@@ -64,7 +113,10 @@ const Register = () => {
             secureTextEntry={!showPassword}
             autoComplete="new-password"
             textContentType="newPassword"
-            hint="Must be at least 8 characters with one number."
+            hint="At least 8 characters with upper & lower case letters, a number and a symbol."
+            value={password}
+            onChangeText={setPassword}
+            error={errors.password}
             right={
               <Pressable
                 accessibilityRole="button"
@@ -92,7 +144,7 @@ const Register = () => {
               I agree to the{" "}
               <Text
                 accessibilityRole="link"
-                onPress={() => notAvailableYet("Terms & Conditions")}
+                onPress={() => router.push("/terms")}
                 style={styles.termsLink}
               >
                 {"Terms & Conditions"}
@@ -100,7 +152,7 @@ const Register = () => {
               and{" "}
               <Text
                 accessibilityRole="link"
-                onPress={() => notAvailableYet("Privacy Policy")}
+                onPress={() => router.push("/privacy")}
                 style={styles.termsLink}
               >
                 Privacy Policy
@@ -108,7 +160,10 @@ const Register = () => {
             </Text>
           </Pressable>
 
-          <Button label="Sign Up" shadow onPress={handleSignUp} style={styles.submit} />
+          {errors.terms && <Text style={styles.termsError}>{errors.terms}</Text>}
+          <FormError message={errors.form} />
+
+          <Button label="Sign Up" shadow onPress={handleSignUp} loading={submitting} style={styles.submit} />
         </View>
 
         <View style={styles.social}>
@@ -201,6 +256,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 19,
     color: colors.gray500,
+  },
+  termsError: {
+    marginTop: -8,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.danger,
   },
   termsLink: {
     color: colors.black,

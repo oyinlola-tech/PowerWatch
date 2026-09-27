@@ -1,47 +1,66 @@
+import { useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackHeader from "../components/layout/BackHeader";
 import NavBar from "../components/layout/NavBar";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
+import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
+import { useUser } from "../context/AuthContext";
+import { useApi } from "../hooks/useApi";
+import { historyApi } from "../services/api";
+import type { HistorySummary } from "../services/api";
 import { startReport } from "../services/navigation";
+import { dayFraction, dayLabel, formatDuration, weekdayName } from "../utils/format";
 import { colors, shadows, type } from "../theme";
 
-interface DayRecord {
-  id: string;
-  label: string;
-  offLabel: string;
-  /** Outage as a share of the day: where it starts and how long it lasts (0-1) */
-  outage?: { start: number; length: number };
-  opacity?: number;
-}
+// Older days fade out, as in the design (cards 4 and 5)
+const dayOpacity = (index: number) => (index === 3 ? 0.8 : index >= 4 ? 0.7 : 1);
 
-const BAR_WIDTH = 285;
+const DayCard = ({ day, index }: { day: HistorySummary["days"][number]; index: number }) => {
+  const hadOutage = day.offMinutes > 0;
+  return (
+    <View style={[styles.day_, { opacity: dayOpacity(index) }]}>
+      <View style={styles.dayHeader}>
+        <Text style={[type.boldText, { color: colors.ink }]}>{dayLabel(day.date, index)}</Text>
+        <Text style={[type.boldText, { color: hadOutage ? colors.danger : colors.navy }]}>
+          {formatDuration(day.offMinutes)} Off
+        </Text>
+      </View>
 
-// Replace with data fetched from your backend
-const history: DayRecord[] = [
-  {
-    id: "1",
-    label: "Today, June 14",
-    offLabel: "0h 45m Off",
-    outage: { start: 213.75 / BAR_WIDTH, length: 11.88 / BAR_WIDTH },
-  },
-  { id: "2", label: "Yesterday, June 13", offLabel: "0h 00m Off" },
-  {
-    id: "3",
-    label: "Tuesday, June 12",
-    offLabel: "5h 20m Off",
-    outage: { start: 47.5 / BAR_WIDTH, length: 59.38 / BAR_WIDTH },
-  },
-  {
-    id: "4",
-    label: "Monday, June 11",
-    offLabel: "1h 10m Off",
-    outage: { start: 237.5 / BAR_WIDTH, length: 23.75 / BAR_WIDTH },
-    opacity: 0.8,
-  },
-  { id: "5", label: "Sunday, June 10", offLabel: "0h 00m Off", opacity: 0.7 },
-];
+      <View style={styles.dayBody}>
+        <View
+          style={styles.bar}
+          accessibilityLabel={
+            hadOutage
+              ? `Power off ${day.outages.map((o) => `${o.startTime} to ${o.endTime}`).join(", ")}`
+              : "Power on all day"
+          }
+        >
+          {day.outages.map((outage) => {
+            const start = dayFraction(outage.startTime);
+            const end = outage.endTime === "23:59" ? 1 : dayFraction(outage.endTime);
+            return (
+              <View
+                key={outage.start}
+                style={[
+                  styles.outage,
+                  // Keep very short outages visible
+                  { left: `${start * 100}%`, width: `${Math.max(end - start, 0.006) * 100}%` },
+                ]}
+              />
+            );
+          })}
+        </View>
+        <View style={styles.scale}>
+          <Text style={[type.boldText, { color: colors.muted }]}>00:00</Text>
+          <Text style={[type.boldText, { color: colors.muted }]}>12:00</Text>
+          <Text style={[type.boldText, { color: colors.muted }]}>23:59</Text>
+        </View>
+      </View>
+    </View>
+  );
+};
 
 const FloatingReportButton = () => {
   const insets = useSafeAreaInsets();
@@ -58,112 +77,129 @@ const FloatingReportButton = () => {
   );
 };
 
-// Figma "History" (60:1419)
-const WeeklyHistory = () => (
-  <Screen
-    top={23}
-    bottom={80 + 42}
-    overlay={
-      <>
-        <FloatingReportButton />
-        <NavBar active="history" />
-      </>
-    }
-  >
-    <BackHeader height={63} />
+// Figma "History" (60:1419); "History, empty variant" (270:229) when there's no data
+const WeeklyHistory = () => {
+  const user = useUser();
+  const [days, setDays] = useState<7 | 30>(7);
+  const summary = useApi(() => historyApi.summary(days), `${days}-${user.neighborhoodId ?? 0}`);
+  const data = summary.data;
 
-    <View style={styles.content}>
-      {/* Weekly summary */}
-      <View style={styles.titleRow}>
-        <Text accessibilityRole="header" style={[type.h1, { color: colors.ink }]}>
-          Weekly History
-        </Text>
-        <Text style={[type.boldText, { color: colors.muted }]}>Last 7 Days</Text>
-      </View>
+  return (
+    <Screen
+      top={23}
+      bottom={80 + 42}
+      onRefresh={summary.refresh}
+      refreshing={summary.refreshing}
+      overlay={
+        <>
+          <FloatingReportButton />
+          <NavBar active="history" />
+        </>
+      }
+    >
+      <BackHeader height={63} />
 
-      <View style={styles.bento}>
-        <View style={styles.bentoRow}>
-          <View style={[styles.card, { height: 73 }]}>
-            <Text style={[type.lightText, { color: colors.slate }]}>Total Outage Time</Text>
-            <Text style={[type.buttonText, styles.value, { color: colors.danger }]}>12h 45m</Text>
-          </View>
-          <View style={[styles.card, { height: 75 }]}>
-            <Text style={[type.lightText, { color: colors.slate }]}>Uptime Percentage</Text>
-            <Text style={[type.buttonText, styles.value, { color: colors.primary }]}>92.4%</Text>
-          </View>
+      <View style={styles.content}>
+        {/* Weekly summary */}
+        <View style={styles.titleRow}>
+          <Text accessibilityRole="header" style={[type.h1, { color: colors.ink }]}>
+            {days === 7 ? "Weekly History" : "Monthly History"}
+          </Text>
+          <Text style={[type.boldText, { color: colors.muted }]}>Last {days} Days</Text>
         </View>
 
-        <View style={styles.longest}>
-          <View>
-            <Text style={[type.boldText, { color: colors.slateMuted }]}>Longest Single Outage</Text>
-            <View style={styles.longestValue}>
-              <Text style={[type.buttonText, styles.duration]}>5h 20m</Text>
-              <Text style={[type.boldText, styles.day]}>(Tuesday)</Text>
+        {!user.neighborhoodId ? (
+          <EmptyView
+            icon="mapOutline"
+            title="No neighborhood selected"
+            message="Set your monitoring area to see its outage history."
+          />
+        ) : summary.loading ? (
+          <LoadingView label="Loading history…" />
+        ) : summary.error && !data ? (
+          <ErrorView message={summary.error.message} onRetry={summary.refresh} />
+        ) : data && !data.hasData ? (
+          <EmptyView
+            icon="timer"
+            title="No history yet"
+            message={`Nobody has reported power in ${data.neighborhood.name} in the last ${days} days. Your reports build this timeline.`}
+          />
+        ) : data ? (
+          <>
+            <View style={styles.bento}>
+              <View style={styles.bentoRow}>
+                <View style={[styles.card, { height: 73 }]}>
+                  <Text style={[type.lightText, { color: colors.slate }]}>Total Outage Time</Text>
+                  <Text style={[type.buttonText, styles.value, { color: colors.danger }]}>
+                    {formatDuration(data.totalOutageMinutes)}
+                  </Text>
+                </View>
+                <View style={[styles.card, { height: 75 }]}>
+                  <Text style={[type.lightText, { color: colors.slate }]}>Uptime Percentage</Text>
+                  <Text style={[type.buttonText, styles.value, { color: colors.primary }]}>
+                    {data.uptimePercent}%
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.longest}>
+                <View>
+                  <Text style={[type.boldText, { color: colors.slateMuted }]}>Longest Single Outage</Text>
+                  <View style={styles.longestValue}>
+                    <Text style={[type.buttonText, styles.duration]}>
+                      {data.longestOutage ? formatDuration(data.longestOutage.minutes) : "None"}
+                    </Text>
+                    {data.longestOutage && (
+                      <Text style={[type.boldText, styles.day]}>
+                        ({data.longestOutage.ongoing ? "ongoing" : weekdayName(data.longestOutage.date)})
+                      </Text>
+                    )}
+                  </View>
+                </View>
+                <View style={styles.timer}>
+                  <Icon name="timer" />
+                </View>
+              </View>
             </View>
-          </View>
-          <View style={styles.timer}>
-            <Icon name="timer" />
-          </View>
-        </View>
-      </View>
 
-      {/* Daily timelines */}
-      <View style={styles.timelineHeader}>
-        <Text accessibilityRole="header" style={[type.buttonText, { color: colors.slate }]}>
-          Daily Timeline
-        </Text>
-        <View style={styles.legend}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.timelineOn }]} />
-            <Text style={[type.boldText, { color: colors.muted }]}>ON</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: colors.danger }]} />
-            <Text style={[type.boldText, { color: colors.muted }]}>OFF</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.days}>
-        {history.map((day) => (
-          <View key={day.id} style={[styles.day_, { opacity: day.opacity ?? 1 }]}>
-            <View style={styles.dayHeader}>
-              <Text style={[type.boldText, { color: colors.ink }]}>{day.label}</Text>
-              <Text style={[type.boldText, { color: day.outage ? colors.danger : colors.navy }]}>
-                {day.offLabel}
+            {/* Daily timelines */}
+            <View style={styles.timelineHeader}>
+              <Text accessibilityRole="header" style={[type.buttonText, { color: colors.slate }]}>
+                Daily Timeline
               </Text>
-            </View>
-
-            <View style={styles.dayBody}>
-              <View style={styles.bar}>
-                {day.outage && (
-                  <View
-                    style={[
-                      styles.outage,
-                      {
-                        left: `${day.outage.start * 100}%`,
-                        width: `${day.outage.length * 100}%`,
-                      },
-                    ]}
-                  />
-                )}
-              </View>
-              <View style={styles.scale}>
-                <Text style={[type.boldText, { color: colors.muted }]}>00:00</Text>
-                <Text style={[type.boldText, { color: colors.muted }]}>12:00</Text>
-                <Text style={[type.boldText, { color: colors.muted }]}>23:59</Text>
+              <View style={styles.legend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.timelineOn }]} />
+                  <Text style={[type.boldText, { color: colors.muted }]}>ON</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: colors.danger }]} />
+                  <Text style={[type.boldText, { color: colors.muted }]}>OFF</Text>
+                </View>
               </View>
             </View>
-          </View>
-        ))}
 
-        <Pressable accessibilityRole="button" style={styles.loadMore}>
-          <Text style={[type.boldText, styles.loadMoreLabel]}>Load 30 Day History</Text>
-        </Pressable>
+            <View style={styles.days}>
+              {data.days.map((day, index) => (
+                <DayCard key={day.date} day={day} index={index} />
+              ))}
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setDays(days === 7 ? 30 : 7)}
+                style={styles.loadMore}
+              >
+                <Text style={[type.boldText, styles.loadMoreLabel]}>
+                  {days === 7 ? "Load 30 Day History" : "Show Last 7 Days"}
+                </Text>
+              </Pressable>
+            </View>
+          </>
+        ) : null}
       </View>
-    </View>
-  </Screen>
-);
+    </Screen>
+  );
+};
 
 const styles = StyleSheet.create({
   content: {

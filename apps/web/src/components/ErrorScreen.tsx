@@ -62,6 +62,6 @@ export const errorButton =
   "inline-flex h-14 items-center justify-center rounded-3xl bg-primary px-8 text-base font-semibold text-white transition hover:opacity-85";
 
 export const errorButtonSecondary =
-  "inline-flex h-14 items-center justify-center rounded-3xl border border-[#E3E8EE] bg-soft px-8 text-base font-semibold text-primary transition hover:opacity-85";
+  "inline-flex h-14 items-center justify-center rounded-3xl border border-line bg-soft px-8 text-base font-semibold text-accent transition hover:opacity-85";
 
 export default ErrorScreen;

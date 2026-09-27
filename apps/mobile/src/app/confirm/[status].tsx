@@ -1,8 +1,13 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useState } from "react";
+import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import BackHeader from "../../components/layout/BackHeader";
 import Screen from "../../components/layout/Screen";
 import Icon from "../../components/icons/Icon";
+import { FormError } from "../../components/ui/StateViews";
+import { useUser } from "../../context/AuthContext";
+import { ApiError, reportsApi } from "../../services/api";
+import mixpanel from "../../services/mixpanel";
 import { goBack } from "../../services/navigation";
 import type { PowerStatus } from "../../types/power";
 import { alpha, colors, fonts, shadows, type } from "../../theme";
@@ -40,25 +45,45 @@ const copy: Record<
   },
 };
 
-const neighborhood = "Adewole Estate";
+const deviceType = Platform.OS === "ios" ? "IOS" : Platform.OS === "android" ? "ANDROID" : "WEB";
 
 // Figma "Reporting power off" (57:1036) and "Reporting power on" (60:1221)
 const ConfirmPowerStatus = () => {
   const { status } = useLocalSearchParams<{ status: PowerStatus }>();
 
+  const user = useUser();
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const reportType: PowerStatus = status === "on" ? "on" : "off";
   const config = copy[reportType];
+  const neighborhood = user.neighborhood?.name ?? "your neighborhood";
+  const area = [user.town?.name, user.lga?.name].filter(Boolean).join(", ");
 
-  const handleConfirm = () => {
-    // TODO: submit report to backend with reportType + neighborhood
-    router.push({
-      pathname: "/report-submitted/[status]",
-      params: {
-        status: reportType,
-        streetAddress: "15 Olamide St", // pull from actual user address once you have it
-        area: `${neighborhood}, Ilorin`,
-      },
-    });
+  const handleConfirm = async () => {
+    if (!user.neighborhoodId) {
+      setError("Set your monitoring area first (Home > Change).");
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const result = await reportsApi.report(reportType === "on" ? "ON" : "OFF", user.neighborhoodId, deviceType);
+      mixpanel.track("power_reported", { status: reportType, statusChanged: result.statusChanged });
+      router.replace({
+        pathname: "/report-submitted/[status]",
+        params: {
+          status: reportType,
+          streetAddress: neighborhood,
+          area,
+          statusChanged: result.statusChanged ? "1" : "0",
+        },
+      });
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Couldn't send your report. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -83,16 +108,23 @@ const ConfirmPowerStatus = () => {
         </Text>
 
         <View style={styles.actions}>
+          <FormError message={error} />
           <Pressable
             accessibilityRole="button"
+            accessibilityState={{ busy: submitting, disabled: submitting }}
             onPress={handleConfirm}
+            disabled={submitting}
             style={({ pressed }) => [
               styles.button,
               { backgroundColor: config.confirmColor, boxShadow: shadows.raised("#1E3A8A") },
               pressed && styles.pressed,
             ]}
           >
-            <Text style={[styles.buttonLabel, { color: colors.white }]}>{config.confirmLabel}</Text>
+            {submitting ? (
+              <ActivityIndicator color={colors.white} />
+            ) : (
+              <Text style={[styles.buttonLabel, { color: colors.white }]}>{config.confirmLabel}</Text>
+            )}
           </Pressable>
 
           <Pressable

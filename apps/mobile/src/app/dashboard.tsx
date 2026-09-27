@@ -1,4 +1,4 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -6,34 +6,71 @@ import LogoHeader from "../components/layout/LogoHeader";
 import NavBar from "../components/layout/NavBar";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
-import { changeNeighborhood, notAvailableYet, reportPower } from "../services/navigation";
-import type { PowerStatus } from "../types/power";
+import { ErrorView, LoadingView } from "../components/ui/StateViews";
+import { useUser } from "../context/AuthContext";
+import { useApi } from "../hooks/useApi";
+import { reportsApi } from "../services/api";
+import type { ApiPowerStatus } from "../services/api";
+import { changeNeighborhood, reportPower } from "../services/navigation";
+import { timeAgo } from "../utils/format";
 import { alpha, colors, fonts, shadows, type } from "../theme";
 
-interface ActivityReport {
-  id: string;
-  status: PowerStatus;
-  area: string;
-  time: string;
-}
+const heroCopy: Record<ApiPowerStatus, { badge: string; title: string; color: string }> = {
+  ON: { badge: "On", title: "Power is Live", color: colors.powerOn },
+  OFF: { badge: "Off", title: "Power is Out", color: colors.powerOff },
+  UNKNOWN: { badge: "Unknown", title: "No reports yet", color: colors.gray400 },
+};
 
-// Replace with data fetched from your backend
-const status = { status: "on" as PowerStatus, confirmedBy: 124, confidence: 98, lastUpdate: "2m ago" };
-
-const activity: ActivityReport[] = [
-  { id: "1", status: "on", area: "Henry Gorge Area", time: "Just now" },
-  { id: "2", status: "off", area: "Adeta Area", time: "5m ago" },
-];
+const confirmedLabel = (count: number, status: ApiPowerStatus) => {
+  if (status === "UNKNOWN") return "Be the first to report in your area";
+  if (count === 0) return "No recent confirmations";
+  return `Confirmed by ${count} ${count === 1 ? "neighbor" : "neighbors"}`;
+};
 
 // Figma "Home Screen (Status Hub)" (33:910)
 const Dashboard = () => {
-  const isOn = status.status === "on";
+  const user = useUser();
+  const neighborhoodKey = user.neighborhoodId ?? 0;
+  const status = useApi(() => reportsApi.status(), neighborhoodKey);
+  const activity = useApi(() => reportsApi.activity(5), neighborhoodKey);
+
+  const live = status.data;
+  const hero = heroCopy[live?.status ?? "UNKNOWN"];
+  const neighborhoodName = live?.neighborhood.name ?? user.neighborhood?.name ?? "Your neighborhood";
+
+  const refresh = () => {
+    void status.refresh();
+    void activity.refresh();
+  };
+
+  const report = (next: "on" | "off") => {
+    if (!user.neighborhoodId) {
+      Alert.alert("Choose your neighborhood", "Set your monitoring area before reporting.", [
+        { text: "Not now", style: "cancel" },
+        { text: "Choose", onPress: changeNeighborhood },
+      ]);
+      return;
+    }
+    reportPower(next);
+  };
 
   return (
-    <Screen top={41} bottom={112} contentStyle={styles.main} overlay={<NavBar active="dashboard" />}>
+    <Screen
+      top={41}
+      bottom={112}
+      contentStyle={styles.main}
+      overlay={<NavBar active="dashboard" />}
+      onRefresh={refresh}
+      refreshing={status.refreshing || activity.refreshing}
+    >
       <LogoHeader
         right={
-          <Pressable accessibilityRole="button" accessibilityLabel="Location" hitSlop={8}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Open map"
+            hitSlop={8}
+            onPress={() => router.navigate("/map")}
+          >
             <Icon name="locationPin" />
           </Pressable>
         }
@@ -55,34 +92,44 @@ const Dashboard = () => {
         </View>
 
         <Text accessibilityRole="header" style={styles.neighborhood}>
-          Adewole Estate
+          {neighborhoodName}
         </Text>
 
         <View style={styles.hero}>
-          <View style={styles.badge}>
-            <View style={styles.badgeDot} />
-            <Text style={styles.badgeLabel}>Electricity Status: {isOn ? "On" : "Off"}</Text>
-          </View>
+          {status.loading ? (
+            <LoadingView label="Checking the latest reports…" />
+          ) : status.error && !live ? (
+            <ErrorView message={status.error.message} onRetry={refresh} />
+          ) : (
+            <>
+              <View style={styles.badge}>
+                <View style={styles.badgeDot} />
+                <Text style={styles.badgeLabel}>Electricity Status: {hero.badge}</Text>
+              </View>
 
-          <View style={styles.bulb}>
-            <Icon name="bulb" color={isOn ? colors.powerOn : colors.powerOff} />
-          </View>
+              <View style={styles.bulb}>
+                <Icon name="bulb" color={hero.color} />
+              </View>
 
-          <Text style={styles.heroTitle}>{isOn ? "Power is Live" : "Power is Out"}</Text>
-          <Text style={[type.lightText, styles.heroSubtitle]}>
-            Confirmed by {status.confirmedBy} neighbors
-          </Text>
+              <Text style={styles.heroTitle}>{hero.title}</Text>
+              <Text style={[type.lightText, styles.heroSubtitle]}>
+                {confirmedLabel(live?.confirmedBy ?? 0, live?.status ?? "UNKNOWN")}
+              </Text>
 
-          <View style={styles.stats}>
-            <View style={styles.stat}>
-              <Text style={[type.lightText, styles.statLabel]}>CONFIDENCE</Text>
-              <Text style={[type.buttonText, styles.statValue]}>{status.confidence}%</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={[type.lightText, styles.statLabel]}>LAST UPDATE</Text>
-              <Text style={[type.buttonText, styles.statValue]}>{status.lastUpdate}</Text>
-            </View>
-          </View>
+              <View style={styles.stats}>
+                <View style={styles.stat}>
+                  <Text style={[type.lightText, styles.statLabel]}>CONFIDENCE</Text>
+                  <Text style={[type.buttonText, styles.statValue]}>
+                    {live && live.recentReporters > 0 ? `${live.confidence}%` : "—"}
+                  </Text>
+                </View>
+                <View style={styles.stat}>
+                  <Text style={[type.lightText, styles.statLabel]}>LAST UPDATE</Text>
+                  <Text style={[type.buttonText, styles.statValue]}>{timeAgo(live?.lastReportAt)}</Text>
+                </View>
+              </View>
+            </>
+          )}
         </View>
       </View>
 
@@ -94,7 +141,7 @@ const Dashboard = () => {
 
         <Pressable
           accessibilityRole="button"
-          onPress={() => reportPower("on")}
+          onPress={() => report("on")}
           style={({ pressed }) => [
             styles.report,
             { backgroundColor: colors.powerOn },
@@ -107,7 +154,7 @@ const Dashboard = () => {
 
         <Pressable
           accessibilityRole="button"
-          onPress={() => reportPower("off")}
+          onPress={() => report("off")}
           style={({ pressed }) => [
             styles.report,
             { backgroundColor: colors.powerOff },
@@ -131,22 +178,40 @@ const Dashboard = () => {
         </View>
 
         <View style={styles.list}>
-          {activity.map((report) => (
-            <View key={report.id} style={styles.listRow}>
-              <View style={styles.listLeft}>
-                <View style={styles.avatar}>
-                  <Icon name="user" />
-                </View>
-                <View>
-                  <Text style={[type.boldText, styles.listTitle]}>
-                    Neighbor reported {report.status === "on" ? "ON" : "OFF"}
-                  </Text>
-                  <Text style={[type.lightText, { color: colors.muted }]}>{report.area}</Text>
-                </View>
-              </View>
-              <Text style={[type.lightText, { color: colors.muted }]}>{report.time}</Text>
+          {activity.loading ? (
+            <View style={styles.listRow}>
+              <LoadingView style={styles.listState} />
             </View>
-          ))}
+          ) : activity.error && !activity.data ? (
+            <View style={styles.listRow}>
+              <ErrorView message={activity.error.message} onRetry={refresh} style={styles.listState} />
+            </View>
+          ) : !activity.data?.length ? (
+            <View style={styles.listRow}>
+              <Text style={[type.lightText, styles.listEmpty]}>
+                No power changes in your area in the last 24 hours.
+              </Text>
+            </View>
+          ) : (
+            activity.data.map((item) => (
+              <View key={`${item.neighborhoodId}-${item.status}-${item.at}`} style={styles.listRow}>
+                <View style={styles.listLeft}>
+                  <View style={[styles.avatar, { backgroundColor: item.status === "ON" ? colors.powerOn : colors.powerOff }]}>
+                    <Icon name="user" />
+                  </View>
+                  <View style={styles.listText}>
+                    <Text style={[type.boldText, styles.listTitle]}>
+                      {item.status === "ON" ? "Power restored" : "Power went out"}
+                    </Text>
+                    <Text style={[type.lightText, { color: colors.muted }]} numberOfLines={1}>
+                      {item.isCurrentNeighborhood ? `${item.neighborhood} (your area)` : `${item.neighborhood}, ${item.town}`}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={[type.lightText, { color: colors.muted }]}>{timeAgo(item.at)}</Text>
+              </View>
+            ))
+          )}
         </View>
       </View>
 
@@ -154,7 +219,7 @@ const Dashboard = () => {
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="View Heatmap"
-        onPress={() => notAvailableYet("Heatmap")}
+        onPress={() => router.navigate({ pathname: "/map", params: { view: "heatmap" } })}
         style={styles.map}
       >
         <Image
@@ -317,6 +382,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   listLeft: {
+    flexShrink: 1,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -328,6 +394,18 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 12,
     backgroundColor: colors.primary,
+  },
+  listText: {
+    flexShrink: 1,
+  },
+  listState: {
+    flex: 1,
+    paddingVertical: 8,
+  },
+  listEmpty: {
+    flex: 1,
+    textAlign: "center",
+    color: colors.muted,
   },
   listTitle: {
     color: colors.bg,

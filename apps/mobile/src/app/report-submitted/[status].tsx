@@ -10,10 +10,11 @@ const goHome = () => router.dismissTo("/dashboard");
 
 // Figma "Report submitted off" (103:1509) and "Report submitted on" (103:1623)
 const ReportSubmitted = () => {
-  const { status, streetAddress, area } = useLocalSearchParams<{
+  const { status, streetAddress, area, statusChanged } = useLocalSearchParams<{
     status: PowerStatus;
     streetAddress?: string;
     area?: string;
+    statusChanged?: string;
   }>();
 
   const isOn = status === "on";
@@ -44,9 +45,9 @@ const ReportSubmitted = () => {
           <View>
             <Text style={styles.detailLabel}>Reported Location</Text>
             <Text style={[styles.detailValue, { color: colors.ink }]}>
-              {streetAddress ?? "15 Olamide St"}
+              {streetAddress ?? "Your neighborhood"}
             </Text>
-            <Text style={styles.detailSub}>{area ?? "Adewole Estate, Ilorin"}</Text>
+            {area ? <Text style={styles.detailSub}>{area}</Text> : null}
           </View>
         </View>
 
@@ -73,9 +74,9 @@ const ReportSubmitted = () => {
             <Icon name="pencilSmall" />
           </View>
           <Text style={styles.nextText}>
-            {
-              "Your report has been shared. Community\nmembers in your area will verify this report\nshortly to ensure live accuracy."
-            }
+            {statusChanged === "1"
+              ? `Your report updated your neighborhood's status to Power ${isOn ? "ON" : "OFF"}. Neighbors who follow this area are being notified.`
+              : "Your report has been shared. Community\nmembers in your area will verify this report\nshortly to ensure live accuracy."}
           </Text>
         </View>
       </View>
@@ -94,7 +95,7 @@ const ReportSubmitted = () => {
           accessibilityRole="button"
           onPress={() => {
             goHome();
-            router.push("/history");
+            router.push("/my-reports");
           }}
           style={({ pressed }) => [styles.button, styles.secondary, pressed && styles.pressed]}
         >
