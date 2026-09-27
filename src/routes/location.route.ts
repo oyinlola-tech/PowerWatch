@@ -1,9 +1,20 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { locationController } from '../controllers/location.controller.js';
+import { authMiddleware } from '../middlewares/auth.middleware.js';
+
+const ok = (data: object) => ({
+  200: { type: 'object', properties: { success: { type: 'boolean' }, message: { type: 'string' }, data } },
+});
+
+const statusField = { type: 'string', enum: ['ON', 'OFF', 'UNKNOWN'] } as const;
 
 export const locationRoutes: FastifyPluginAsync = async (app) => {
   app.post('/reverse-geocode', {
+    preHandler: [authMiddleware],
+    // Each call may hit OpenStreetMap Nominatim, whose policy is ~1 request/second.
+    config: { rateLimit: { max: 10, timeWindow: 60_000 } },
     schema: {
+      security: [{ bearerAuth: [] }],
       description: 'Resolve GPS coordinates to the nearest country, state, LGA, city, town, and neighborhood. Uses OSM Nominatim with nigeria-lga-data fallback.',
       tags: ['Locations'],
       summary: 'Reverse geocode coordinates',
@@ -98,4 +109,133 @@ export const locationRoutes: FastifyPluginAsync = async (app) => {
       },
     },
   }, locationController.search);
+
+  app.get('/status-map', {
+    preHandler: [authMiddleware],
+    schema: {
+      description:
+        'Power status for a map. With lgaId: one point per neighborhood. With stateId: one point per LGA with ' +
+        'outage counts (heatmap). Neither: the user\'s LGA. Points without their own coordinates fall back to the ' +
+        'town/city/LGA location; `precision` says which was used.',
+      tags: ['Locations'],
+      summary: 'Status map / heatmap data',
+      security: [{ bearerAuth: [] }],
+      querystring: {
+        type: 'object',
+        properties: { lgaId: { type: 'integer' }, stateId: { type: 'integer' } },
+      },
+      response: ok({
+        type: 'object',
+        properties: {
+          lga: { type: 'object', properties: { id: { type: 'integer' }, name: { type: 'string' } } },
+          state: { type: 'object', properties: { id: { type: 'integer' }, name: { type: 'string' } } },
+          neighborhoods: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                name: { type: 'string' },
+                town: { type: 'string' },
+                status: statusField,
+                outageSince: { type: 'string', format: 'date-time', nullable: true },
+                latitude: { type: 'number', nullable: true },
+                longitude: { type: 'number', nullable: true },
+                precision: { type: 'string', enum: ['neighborhood', 'town', 'city', 'lga', 'none'] },
+              },
+            },
+          },
+          lgas: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                id: { type: 'integer' },
+                name: { type: 'string' },
+                latitude: { type: 'number', nullable: true },
+                longitude: { type: 'number', nullable: true },
+                neighborhoods: { type: 'integer' },
+                neighborhoodsOff: { type: 'integer' },
+                neighborhoodsOn: { type: 'integer' },
+                outagePercent: { type: 'integer', nullable: true },
+              },
+            },
+          },
+        },
+      }),
+    },
+  }, locationController.statusMap);
+
+  app.get('/saved', {
+    preHandler: [authMiddleware],
+    schema: {
+      description: 'List the user\'s saved neighborhoods with their current power status.',
+      tags: ['Locations'],
+      summary: 'List saved neighborhoods',
+      security: [{ bearerAuth: [] }],
+      response: ok({
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            neighborhoodId: { type: 'integer' },
+            name: { type: 'string' },
+            town: { type: 'string' },
+            label: { type: 'string', nullable: true },
+            status: statusField,
+            outageSince: { type: 'string', format: 'date-time', nullable: true },
+            savedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+      }),
+    },
+  }, locationController.listSaved);
+
+  app.post('/saved', {
+    preHandler: [authMiddleware],
+    schema: {
+      description:
+        'Save a neighborhood to follow (up to 10). Saved neighborhoods also get outage/restoration alerts.',
+      tags: ['Locations'],
+      summary: 'Save neighborhood',
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['neighborhoodId'],
+        properties: {
+          neighborhoodId: { type: 'integer', example: 9012 },
+          label: { type: 'string', maxLength: 50, example: 'Office' },
+        },
+      },
+      response: {
+        201: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                neighborhoodId: { type: 'integer' },
+                label: { type: 'string', nullable: true },
+                savedAt: { type: 'string', format: 'date-time' },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, locationController.saveNeighborhood);
+
+  app.delete('/saved/:neighborhoodId', {
+    preHandler: [authMiddleware],
+    schema: {
+      description: 'Remove a saved neighborhood.',
+      tags: ['Locations'],
+      summary: 'Remove saved neighborhood',
+      security: [{ bearerAuth: [] }],
+      params: { type: 'object', required: ['neighborhoodId'], properties: { neighborhoodId: { type: 'integer' } } },
+      response: ok({ type: 'object', additionalProperties: true }),
+    },
+  }, locationController.removeSaved);
 };

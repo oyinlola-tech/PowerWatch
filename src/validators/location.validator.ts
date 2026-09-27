@@ -12,3 +12,17 @@ export const reverseGeocodeSchema = z.object({
 });
 
 export type ReverseGeocodeInput = z.infer<typeof reverseGeocodeSchema>;
+
+export const statusMapQuerySchema = z.object({
+  lgaId: z.coerce.number().int().positive().optional(),
+  stateId: z.coerce.number().int().positive().optional(),
+});
+
+export const saveNeighborhoodSchema = z.object({
+  neighborhoodId: z.number({ message: 'neighborhoodId is required.' }).int().positive(),
+  label: z.string().trim().min(1).max(50).optional(),
+});
+
+export const savedNeighborhoodParamsSchema = z.object({
+  neighborhoodId: z.coerce.number().int().positive(),
+});
