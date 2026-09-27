@@ -413,13 +413,16 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   app.patch('/profile', {
     preHandler: [authMiddleware],
     schema: {
-      description: 'Update the authenticated user profile information.',
+      description:
+        'Update the authenticated user profile. Setting neighborhoodId sets the primary location ' +
+        '(state, LGA, city and town are filled in automatically); null clears it.',
       tags: ['Auth'],
       summary: 'Update profile',
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
         properties: {
+          fullName: { type: 'string', example: 'Oluwayemi Oyinlola' },
           firstName: { type: 'string', example: 'Oluwayemi' },
           lastName: { type: 'string', example: 'Oyinlola' },
           notificationEnabled: { type: 'boolean' },
@@ -441,6 +444,119 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
       },
     },
   }, authController.updateProfile);
+
+  app.get('/notification-preferences', {
+    preHandler: [authMiddleware],
+    schema: {
+      description: 'Get the notification preferences of the authenticated user.',
+      tags: ['Auth'],
+      summary: 'Get notification preferences',
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: { type: 'object', properties: {
+          notificationEnabled: { type: 'boolean', description: 'Master switch for all push notifications' },
+          outageAlerts: { type: 'boolean', description: 'Power went out in my area' },
+          restorationAlerts: { type: 'boolean', description: 'Power is back in my area' },
+          communityUpdates: { type: 'boolean', description: 'Community reports and neighborhood news' },
+        } },
+          },
+        },
+      },
+    },
+  }, authController.getNotificationPreferences);
+
+  app.patch('/notification-preferences', {
+    preHandler: [authMiddleware],
+    schema: {
+      description: 'Update any of the notification preferences. Send only the ones that change.',
+      tags: ['Auth'],
+      summary: 'Update notification preferences',
+      security: [{ bearerAuth: [] }],
+      body: { type: 'object', properties: {
+          notificationEnabled: { type: 'boolean', description: 'Master switch for all push notifications' },
+          outageAlerts: { type: 'boolean', description: 'Power went out in my area' },
+          restorationAlerts: { type: 'boolean', description: 'Power is back in my area' },
+          communityUpdates: { type: 'boolean', description: 'Community reports and neighborhood news' },
+        } },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: { type: 'object', properties: {
+          notificationEnabled: { type: 'boolean', description: 'Master switch for all push notifications' },
+          outageAlerts: { type: 'boolean', description: 'Power went out in my area' },
+          restorationAlerts: { type: 'boolean', description: 'Power is back in my area' },
+          communityUpdates: { type: 'boolean', description: 'Community reports and neighborhood news' },
+        } },
+          },
+        },
+      },
+    },
+  }, authController.updateNotificationPreferences);
+
+  app.put('/push-token', {
+    preHandler: [authMiddleware],
+    schema: {
+      description:
+        'Register this device\'s Expo push token (from expo-notifications getExpoPushTokenAsync). ' +
+        'Call after sign-in and whenever the token changes.',
+      tags: ['Auth'],
+      summary: 'Register push token',
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['expoPushToken'],
+        properties: {
+          expoPushToken: { type: 'string', example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]' },
+          deviceName: { type: 'string', example: 'Pixel 8' },
+          deviceType: { type: 'string', enum: ['ANDROID', 'IOS', 'WEB'] },
+          platform: { type: 'string', example: 'android 15' },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: { type: 'object', properties: { deviceId: { type: 'string' }, registered: { type: 'boolean' } } },
+          },
+        },
+      },
+    },
+  }, authController.registerPushToken);
+
+  app.delete('/push-token', {
+    preHandler: [authMiddleware],
+    schema: {
+      description: 'Stop push notifications to this device (call before signing out).',
+      tags: ['Auth'],
+      summary: 'Remove push token',
+      security: [{ bearerAuth: [] }],
+      body: {
+        type: 'object',
+        required: ['expoPushToken'],
+        properties: { expoPushToken: { type: 'string' } },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: { type: 'object', properties: { removed: { type: 'boolean' } } },
+          },
+        },
+      },
+    },
+  }, authController.unregisterPushToken);
 
   app.patch('/change-password', {
     preHandler: [authMiddleware],

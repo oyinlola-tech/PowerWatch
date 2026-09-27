@@ -12,6 +12,7 @@ import { prisma } from '../../../configs/database.config.js';
 import { signAccessToken, signRefreshToken, getRefreshTokenExpiryDate } from '../../../configs/jwt.config.js';
 import { env } from '../../../configs/env.config.js';
 import { ReverseGeocodeQuery } from '../../locations/queries/reverseGeocode.query.js';
+import { SendOtpCommand } from './sendOtp.command.js';
 
 export class RegisterCommand {
   constructor(
@@ -20,6 +21,7 @@ export class RegisterCommand {
     private readonly authRepository: AuthRepository = new AuthRepository(),
     private readonly auditRepository: AuditRepository = new AuditRepository(),
     private readonly reverseGeocodeQuery: ReverseGeocodeQuery = new ReverseGeocodeQuery(),
+    private readonly sendOtpCommand: SendOtpCommand = new SendOtpCommand(),
   ) {}
 
   async execute(
@@ -107,13 +109,7 @@ export class RegisterCommand {
           },
         ]);
       }
-    } else {
-      if (dto.latitude === undefined || dto.longitude === undefined) {
-        throw new AppError(422, 'GPS coordinates are required when not using location hierarchy.', [
-          { field: 'latitude', message: 'Latitude is required.' },
-          { field: 'longitude', message: 'Longitude is required.' },
-        ]);
-      }
+    } else if (dto.latitude !== undefined && dto.longitude !== undefined) {
       const geo = await this.reverseGeocodeQuery.execute(dto.latitude, dto.longitude);
       countryId = geo.countryId;
       stateId = geo.stateId;
@@ -143,12 +139,12 @@ export class RegisterCommand {
           role: 'USER',
           emailVerified: false,
           notificationEnabled: dto.notificationEnabled ?? true,
-          countryId: countryId!,
-          stateId: stateId!,
-          lgaId: lgaId!,
-          cityId: cityId!,
-          townId: townId!,
-          neighborhoodId: neighborhoodId!,
+          countryId: countryId ?? null,
+          stateId: stateId ?? null,
+          lgaId: lgaId ?? null,
+          cityId: cityId ?? null,
+          townId: townId ?? null,
+          neighborhoodId: neighborhoodId ?? null,
           latitude: latitude ?? null,
           longitude: longitude ?? null,
         },
@@ -207,6 +203,16 @@ export class RegisterCommand {
       userAgent: userAgent ?? null,
     });
 
+    // Send the verification code right away; a mail failure must not fail the sign-up
+    // (the app can call resend-otp).
+    let verificationEmailSent = true;
+    try {
+      await this.sendOtpCommand.execute(normalizedEmail, 'EMAIL_VERIFICATION');
+    } catch (error) {
+      verificationEmailSent = false;
+      console.error('Sending the verification code after registration failed:', error);
+    }
+
     const accessToken = signAccessToken({
       userId: user.id,
       role: user.role,
@@ -228,6 +234,7 @@ export class RegisterCommand {
       },
       accessToken,
       refreshToken: refreshTokenJwt,
+      verificationEmailSent,
     };
   }
 }

@@ -17,6 +17,11 @@ import { ListSessionsQuery, RevokeSessionCommand } from '../services/auth/comman
 import { ListDevicesQuery, RemoveDeviceCommand } from '../services/auth/commands/device.commands.js';
 import { GetProfileQuery } from '../services/auth/queries/getProfile.query.js';
 import {
+  GetNotificationPreferencesQuery,
+  UpdateNotificationPreferencesCommand,
+} from '../services/auth/commands/notificationPreferences.commands.js';
+import { RegisterPushTokenCommand, UnregisterPushTokenCommand } from '../services/auth/commands/pushToken.commands.js';
+import {
   loginSchema,
   registerSchema,
   refreshTokenSchema,
@@ -29,6 +34,9 @@ import {
   updateFcmTokenSchema,
   deleteAccountSchema,
   verifyResetOtpSchema,
+  notificationPreferencesSchema,
+  registerPushTokenSchema,
+  unregisterPushTokenSchema,
 } from '../validators/auth.validator.js';
 import { successResponse } from '../utils/response.js';
 import { MESSAGES } from '../constants/message.constant.js';
@@ -51,6 +59,10 @@ const revokeSessionCommand = new RevokeSessionCommand();
 const listDevicesQuery = new ListDevicesQuery();
 const removeDeviceCommand = new RemoveDeviceCommand();
 const getProfileQuery = new GetProfileQuery();
+const getNotificationPreferencesQuery = new GetNotificationPreferencesQuery();
+const updateNotificationPreferencesCommand = new UpdateNotificationPreferencesCommand();
+const registerPushTokenCommand = new RegisterPushTokenCommand();
+const unregisterPushTokenCommand = new UnregisterPushTokenCommand();
 
 function compact<T extends Record<string, unknown>>(obj: T): Partial<T> {
   const result: Partial<T> = {};
@@ -228,5 +240,34 @@ export const authController = {
       request.ip, request.headers['user-agent'],
     );
     return reply.status(200).send(successResponse(result, 'Account deleted successfully.'));
+  },
+
+  async getNotificationPreferences(request: FastifyRequest, reply: FastifyReply) {
+    const authReq = request as AuthenticatedRequest;
+    const result = await getNotificationPreferencesQuery.execute(authReq.userId);
+    return reply.status(200).send(successResponse(result, 'Notification preferences fetched.'));
+  },
+
+  async updateNotificationPreferences(request: FastifyRequest, reply: FastifyReply) {
+    const authReq = request as AuthenticatedRequest;
+    const updates = compact(notificationPreferencesSchema.parse(request.body)) as Record<string, boolean>;
+    const result = await updateNotificationPreferencesCommand.execute(authReq.userId, updates);
+    return reply.status(200).send(successResponse(result, 'Notification preferences updated.'));
+  },
+
+  async registerPushToken(request: FastifyRequest, reply: FastifyReply) {
+    const authReq = request as AuthenticatedRequest;
+    const dto = compact(registerPushTokenSchema.parse(request.body)) as Parameters<
+      typeof registerPushTokenCommand.execute
+    >[1];
+    const result = await registerPushTokenCommand.execute(authReq.userId, dto);
+    return reply.status(200).send(successResponse(result, 'Push token registered.'));
+  },
+
+  async unregisterPushToken(request: FastifyRequest, reply: FastifyReply) {
+    const authReq = request as AuthenticatedRequest;
+    const { expoPushToken } = unregisterPushTokenSchema.parse(request.body);
+    const result = await unregisterPushTokenCommand.execute(authReq.userId, expoPushToken);
+    return reply.status(200).send(successResponse(result, 'Push token removed.'));
   },
 };

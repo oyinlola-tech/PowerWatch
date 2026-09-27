@@ -21,6 +21,8 @@ interface NominatimAddress {
 const STATE_SUFFIXES = [' State', ' state', 'Staat'];
 const FIND_OR_CREATE_MAX_ATTEMPTS = 3;
 
+type GeoPoint = { latitude: number; longitude: number };
+
 type LocationTable = 'state' | 'lGA' | 'city' | 'town' | 'neighborhood';
 type MaxIdDelegate = {
   aggregate: (args: { _max: { id: true } }) => Promise<{ _max: { id: number | null } }>;
@@ -112,11 +114,15 @@ export class ReverseGeocodeQuery {
     );
   }
 
-  private async findOrCreateNeighborhood(name: string, townId: number) {
+  private async findOrCreateNeighborhood(name: string, townId: number, point?: GeoPoint) {
     return this.findOrCreate(
       'neighborhood',
       (tx) => tx.neighborhood.findFirst({ where: { name, townId } }),
-      (tx, id) => tx.neighborhood.create({ data: { id, name, townId } }),
+      // A neighborhood first seen via GPS keeps that point, so the status map can place it.
+      (tx, id) =>
+        tx.neighborhood.create({
+          data: { id, name, townId, latitude: point?.latitude ?? null, longitude: point?.longitude ?? null },
+        }),
     );
   }
 
@@ -175,6 +181,7 @@ export class ReverseGeocodeQuery {
     return this.resolveHierarchy(
       countryId, state.name, state.id, lgaName, lga.id, cityName, townName, neighborhoodName, 0,
       { suburb: address.suburb ?? null, village: address.village ?? null, road: address.road ?? null },
+      { latitude, longitude },
     );
   }
 
@@ -215,11 +222,12 @@ export class ReverseGeocodeQuery {
     neighborhoodName: string,
     distanceKm: number = 0,
     osmAddress: { suburb: string | null; village: string | null; road: string | null } = { suburb: null, village: null, road: null },
+    point?: GeoPoint,
   ): Promise<ReverseGeocodeResult> {
     const country = await prisma.country.findUnique({ where: { id: countryId } });
     const city = await this.findOrCreateCity(cityName, lgaId);
     const town = await this.findOrCreateTown(townName, city.id);
-    const neighborhood = await this.findOrCreateNeighborhood(neighborhoodName, town.id);
+    const neighborhood = await this.findOrCreateNeighborhood(neighborhoodName, town.id, point);
 
     return {
       countryId,

@@ -13,6 +13,8 @@ export interface RegisterResult {
   };
   accessToken: string;
   refreshToken: string;
+  /** False if the verification email could not be sent; the app should offer "resend". */
+  verificationEmailSent: boolean;
 }
 
 export interface UserResponse {

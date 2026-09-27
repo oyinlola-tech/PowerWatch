@@ -1,0 +1,47 @@
+{
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": ".",
+
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "target": "esnext",
+    "lib": ["esnext"],
+    "types": ["node"],
+
+    "sourceMap": true,
+    "declaration": true,
+    "declarationMap": true,
+
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+
+    "strict": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "moduleDetection": "force",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "app.ts",
+    "server.ts",
+    "configs",
+    "constants",
+    "controllers",
+    "dtos",
+    "errors",
+    "interfaces",
+    "loaders",
+    "middlewares",
+    "repositories",
+    "routes",
+    "services",
+    "utils",
+    "validators"
+  ],
+  "exclude": ["node_modules", "dist", "prisma"]
+}
