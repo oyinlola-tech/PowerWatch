@@ -11,7 +11,8 @@ export class GetOutageQuery {
         outageReports: {
           include: {
             report: {
-              select: { id: true, reportType: true, timestamp: true, userId: true },
+              // No reporter identity: reports are anonymous to other users
+              select: { id: true, reportType: true, timestamp: true },
             },
           },
           orderBy: { report: { timestamp: 'desc' } },

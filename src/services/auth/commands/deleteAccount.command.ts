@@ -1,8 +1,5 @@
 import bcrypt from 'bcryptjs';
 import { UserRepository } from '../../../repositories/user.repository.js';
-import { AuthRepository } from '../../../repositories/auth.repository.js';
-import { SessionRepository } from '../../../repositories/session.repository.js';
-import { DeviceRepository } from '../../../repositories/device.repository.js';
 import { AuditRepository } from '../../../repositories/audit.repository.js';
 import { AppError } from '../../../errors/index.js';
 import { MESSAGES } from '../../../constants/message.constant.js';
@@ -10,9 +7,6 @@ import { MESSAGES } from '../../../constants/message.constant.js';
 export class DeleteAccountCommand {
   constructor(
     private readonly userRepository: UserRepository = new UserRepository(),
-    private readonly authRepository: AuthRepository = new AuthRepository(),
-    private readonly sessionRepository: SessionRepository = new SessionRepository(),
-    private readonly deviceRepository: DeviceRepository = new DeviceRepository(),
     private readonly auditRepository: AuditRepository = new AuditRepository(),
   ) {}
 
@@ -32,10 +26,7 @@ export class DeleteAccountCommand {
       throw new AppError(400, 'Password is incorrect.');
     }
 
-    await this.authRepository.revokeAllUserRefreshTokens(userId);
-    await this.sessionRepository.revokeAllByUserId(userId);
-    await this.deviceRepository.deleteByUserId(userId);
-    await this.userRepository.softDelete(userId);
+    await this.userRepository.anonymizeAndDelete(userId);
 
     await this.auditRepository.create({
       userId,

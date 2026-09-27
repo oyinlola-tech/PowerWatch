@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import { prisma } from '../configs/database.config.js';
 import type { Prisma } from '@prisma/client';
 import type { UserResponse } from '../interfaces/index.js';
@@ -171,6 +172,52 @@ export class UserRepository {
       where: { id },
       data: { suspendedAt: suspended ? new Date() : null },
     });
+  }
+
+  /**
+   * Deletes an account for privacy: removes everything that identifies the person
+   * (name, email, password, home location, devices, sessions, saved places,
+   * notifications, codes) and strips the GPS point from their reports. Their
+   * ON/OFF reports stay, anonymously, so neighborhood history remains accurate.
+   * The row itself is kept (soft-deleted) so the audit trail stays linked.
+   */
+  async anonymizeAndDelete(id: string) {
+    const user = await prisma.user.findUnique({ where: { id }, select: { email: true } });
+    if (!user) return;
+
+    await prisma.$transaction([
+      prisma.report.updateMany({
+        where: { userId: id },
+        data: { latitude: null, longitude: null, locationAccuracy: null },
+      }),
+      prisma.savedNeighborhood.deleteMany({ where: { userId: id } }),
+      prisma.notificationLog.deleteMany({ where: { userId: id } }),
+      prisma.session.deleteMany({ where: { userId: id } }),
+      prisma.refreshToken.deleteMany({ where: { userId: id } }),
+      prisma.device.deleteMany({ where: { userId: id } }),
+      prisma.otp.deleteMany({ where: { email: user.email } }),
+      prisma.user.update({
+        where: { id },
+        data: {
+          firstName: 'Deleted',
+          lastName: 'User',
+          // Frees the address so the person can sign up again later
+          email: `deleted-${id}@deleted.invalid`,
+          passwordHash: `deleted:${crypto.randomBytes(32).toString('hex')}`,
+          emailVerified: false,
+          notificationEnabled: false,
+          latitude: null,
+          longitude: null,
+          countryId: null,
+          stateId: null,
+          lgaId: null,
+          cityId: null,
+          townId: null,
+          neighborhoodId: null,
+          deletedAt: new Date(),
+        },
+      }),
+    ]);
   }
 
   async softDelete(id: string) {

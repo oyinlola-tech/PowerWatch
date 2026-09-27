@@ -71,8 +71,9 @@ export const reportController = {
   },
 
   async getReport(request: FastifyRequest, reply: FastifyReply) {
+    const authRequest = request as AuthenticatedRequest;
     const { id } = reportIdSchema.parse(request.params);
-    const result = await getReportQuery.execute(id);
+    const result = await getReportQuery.execute(id, { userId: authRequest.userId, role: authRequest.userRole });
     return reply.status(200).send(successResponse(result, POWER_MESSAGES.REPORT_FETCHED));
   },
 

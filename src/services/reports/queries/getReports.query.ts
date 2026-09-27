@@ -30,8 +30,8 @@ export class GetReportsQuery {
 
     const skip = (params.page - 1) * params.limit;
     const [reports, total] = await Promise.all([
-      this.reportRepository.findMany({ where, skip, take: params.limit }),
-      this.reportRepository.count(where),
+      this.reportRepository.findManyPublic({ where, skip, take: params.limit }),
+      this.reportRepository.count({ ...where, deletedAt: null }),
     ]);
 
     return {
