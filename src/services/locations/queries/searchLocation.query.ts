@@ -20,8 +20,11 @@ export interface LocationSearchItem {
 }
 
 type Coords = { latitude: number | null; longitude: number | null };
-const pick = (...points: Coords[]): Coords =>
-  points.find((p) => p.latitude !== null && p.longitude !== null) ?? { latitude: null, longitude: null };
+/** Only the coordinates of the first place that has them (never spread the whole record). */
+const pick = (...points: Coords[]): Coords => {
+  const found = points.find((p) => p.latitude !== null && p.longitude !== null);
+  return found ? { latitude: found.latitude, longitude: found.longitude } : { latitude: null, longitude: null };
+};
 
 export class SearchLocationQuery {
   async execute(query: string, limit: number = 20): Promise<LocationSearchItem[]> {

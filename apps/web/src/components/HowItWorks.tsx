@@ -77,72 +77,87 @@ const HowItWorks = () => {
           description="From download to knowing exactly what is happening with the power on your street."
         />
 
-        <div className="mt-12 grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-16">
-          <div
-            role="tablist"
-            aria-label="Steps"
-            aria-orientation="vertical"
-            className="space-y-2"
-            onKeyDown={(event) => {
-              if (event.key === "ArrowDown" || event.key === "ArrowRight") {
-                event.preventDefault();
-                select(active + 1);
-              } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
-                event.preventDefault();
-                select(active - 1);
-              }
-            }}
-          >
-            {steps.map(({ title, description }, index) => {
-              const selected = index === active;
-              return (
-                <button
-                  key={title}
-                  id={`${id}-tab-${index}`}
-                  type="button"
-                  role="tab"
-                  aria-selected={selected}
-                  aria-controls={`${id}-panel`}
-                  tabIndex={selected ? 0 : -1}
-                  onClick={() => setActive(index)}
-                  className={`flex w-full items-start gap-4 rounded-2xl border p-4 text-left transition ${
-                    selected
-                      ? "border-primary/30 bg-card shadow-[0_8px_30px_rgba(6,99,234,0.10)]"
-                      : "border-transparent hover:bg-card/70"
-                  }`}
-                >
-                  <span
-                    className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-base font-semibold transition ${
-                      selected ? "bg-primary text-white" : "bg-tint text-accent"
+        <div className="mt-12 grid items-center gap-8 lg:grid-cols-[1fr_auto] lg:gap-16">
+          {/* Phones: a swipeable row of step chips above the phone. Desktop: a vertical list beside it */}
+          <div className="min-w-0">
+            <div
+              role="tablist"
+              aria-label="Steps"
+              className="-mx-4 flex snap-x gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:-mx-6 sm:px-6 lg:mx-0 lg:block lg:space-y-2 lg:overflow-visible lg:px-0 lg:pb-0"
+              onKeyDown={(event) => {
+                if (event.key === "ArrowDown" || event.key === "ArrowRight") {
+                  event.preventDefault();
+                  select(active + 1);
+                } else if (event.key === "ArrowUp" || event.key === "ArrowLeft") {
+                  event.preventDefault();
+                  select(active - 1);
+                }
+              }}
+            >
+              {steps.map(({ title, description }, index) => {
+                const selected = index === active;
+                return (
+                  <button
+                    key={title}
+                    id={`${id}-tab-${index}`}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    aria-controls={`${id}-panel`}
+                    tabIndex={selected ? 0 : -1}
+                    onClick={(event) => {
+                      setActive(index);
+                      event.currentTarget.scrollIntoView({
+                        behavior: "smooth",
+                        block: "nearest",
+                        inline: "center",
+                      });
+                    }}
+                    className={`flex flex-shrink-0 snap-center items-center gap-3 rounded-2xl border p-2 pr-4 text-left transition lg:w-full lg:items-start lg:gap-4 lg:p-4 ${
+                      selected
+                        ? "border-primary/30 bg-card shadow-[0_8px_30px_rgba(6,99,234,0.10)]"
+                        : "border-line-light bg-card/60 hover:bg-card lg:border-transparent lg:bg-transparent"
                     }`}
                   >
-                    {index + 1}
-                  </span>
-                  <span>
-                    <span className="block text-base font-semibold text-ink">{title}</span>
                     <span
-                      className={`block overflow-hidden text-sm leading-6 text-body transition-all duration-300 ${
-                        selected ? "mt-1 max-h-24 opacity-100" : "max-h-0 opacity-0"
+                      className={`flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl text-sm font-semibold transition lg:h-10 lg:w-10 lg:text-base ${
+                        selected ? "bg-primary text-white" : "bg-tint text-accent"
                       }`}
                     >
-                      {description}
+                      {index + 1}
                     </span>
-                  </span>
-                </button>
-              );
-            })}
+                    <span>
+                      <span className="block whitespace-nowrap text-sm font-semibold text-ink lg:whitespace-normal lg:text-base">
+                        {title}
+                      </span>
+                      <span
+                        className={`hidden overflow-hidden text-sm leading-6 text-body transition-all duration-300 lg:block ${
+                          selected ? "mt-1 max-h-24 opacity-100" : "max-h-0 opacity-0"
+                        }`}
+                      >
+                        {description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="mx-auto mt-4 max-w-md text-center text-sm leading-6 text-body lg:hidden">
+              {step.description}
+            </p>
           </div>
 
           <div
             id={`${id}-panel`}
             role="tabpanel"
             aria-labelledby={`${id}-tab-${active}`}
-            className="order-first flex justify-center lg:order-none"
+            className="flex justify-center"
           >
             <div className="relative w-[240px] rounded-[48px] bg-[#1B1C1C] p-[10px] shadow-[0_30px_60px_rgba(0,49,120,0.25)] sm:w-[300px] lg:w-[320px]">
               <div className="relative aspect-[375/812] overflow-hidden rounded-[38px] bg-screen">
                 <div className="absolute left-1/2 top-2 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-[#1B1C1C]" />
-                <div className="h-9 bg-card" />
+                <div className="h-9 bg-white" />
                 <img
                   key={step.src}
                   src={step.src}
