@@ -77,9 +77,9 @@ const Hero = () => (
           className="absolute inset-0 [background-image:linear-gradient(to_right,rgba(255,255,255,0.08)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.08)_1px,transparent_1px)] [background-size:48px_48px]"
         />
         <img
-          src="/mockups/phone-b.webp"
+          src="/mockups/phone-a.webp"
           alt="Choosing the neighborhood to monitor in PowerWatch"
-          width={697}
+          width={702}
           height={1400}
           className="absolute left-1/2 top-24 hidden h-auto w-[230px] -translate-x-[155%] -rotate-[6deg] drop-shadow-2xl sm:block md:w-[280px]"
         />
@@ -91,9 +91,9 @@ const Hero = () => (
           className="absolute left-1/2 top-24 hidden h-auto w-[230px] translate-x-[55%] rotate-[6deg] drop-shadow-2xl sm:block md:w-[280px]"
         />
         <img
-          src="/mockups/phone-a.webp"
+          src="/mockups/phone-b.webp"
           alt="PowerWatch home screen showing that power is live"
-          width={702}
+          width={697}
           height={1400}
           className="absolute left-1/2 top-10 h-auto w-[250px] -translate-x-1/2 drop-shadow-2xl sm:w-[280px] md:w-[330px]"
         />

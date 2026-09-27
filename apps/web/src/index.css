@@ -17,6 +17,15 @@
   --color-power-on: #07b447;
   --color-power-off: #e20911;
   --color-tint: #c8e0ff;
+
+  --animate-fade-in: fade-in 300ms ease-out;
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+  }
 }
 
 html {
@@ -31,5 +40,12 @@ body {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
   }
 }

@@ -13,21 +13,14 @@ export const createNotificationSchema = z.object({
     .max(1000, 'Body must not exceed 1000 characters.'),
 });
 
+// Fastify has already coerced query params declared as integers/booleans, so accept either form.
 export const getNotificationsQuerySchema = z.object({
-  page: z
-    .string()
-    .optional()
-    .default('1')
-    .transform((v) => Math.max(1, Number(v) || 1)),
-  limit: z
-    .string()
-    .optional()
-    .default('20')
-    .transform((v) => Math.min(100, Math.max(1, Number(v) || 20))),
+  page: z.coerce.number().int().min(1).catch(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).catch(20).default(20),
   unreadOnly: z
-    .string()
+    .union([z.boolean(), z.string()])
     .optional()
-    .transform((v) => v === 'true'),
+    .transform((v) => v === true || v === 'true'),
 });
 
 export const notificationIdSchema = z.object({

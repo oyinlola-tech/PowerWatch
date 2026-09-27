@@ -1,14 +1,14 @@
 import Logo from "./Logo";
 
 const links = [
-  { href: "#features", label: "Features" },
+  { href: "#about", label: "About" },
   { href: "#how-it-works", label: "How it works" },
   { href: "#screens", label: "Screens" },
   { href: "#faq", label: "FAQ" },
 ];
 
 const Navbar = () => (
-  <header className="sticky top-0 z-50 border-b border-line-light bg-white">
+  <header className="sticky top-0 z-50 border-b border-line-light bg-white/85 backdrop-blur-md">
     <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-6">
       <a href="#top" aria-label="PowerWatch home">
         <Logo />

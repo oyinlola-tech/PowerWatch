@@ -1,87 +1,59 @@
-import { APP_STORE_URL, PLAY_STORE_URL } from "../config/links";
+import StoreButtons from "./StoreButtons";
 
-const explore = [
-  { href: "#features", label: "Features" },
+const links = [
+  { href: "#about", label: "About" },
   { href: "#how-it-works", label: "How it works" },
   { href: "#screens", label: "Screens" },
   { href: "#faq", label: "FAQ" },
+  { href: "#download", label: "Download" },
 ];
 
-const stores = [
-  { href: APP_STORE_URL, label: "App Store" },
-  { href: PLAY_STORE_URL, label: "Google Play" },
-];
-
-const columnTitle = "text-xs font-medium uppercase tracking-[0.6px] text-muted";
-const link = "text-sm font-medium text-ink transition hover:text-primary";
-
-// Link columns on top, the logo set very large underneath, legal line at the bottom
+// Centered app footer after the footer.design references: one line of pitch,
+// store buttons, a row of links, and the wordmark set huge and cut off at the bottom
 const Footer = () => (
-  <footer
-    className="overflow-hidden border-t border-line-light bg-white px-6 pt-14"
-    style={{
-      backgroundImage:
-        "radial-gradient(60% 45% at 50% 100%, rgba(6, 99, 234, 0.16) 0%, rgba(252, 186, 0, 0.10) 45%, rgba(255, 255, 255, 0) 100%)",
-    }}
-  >
-    <div className="mx-auto max-w-6xl">
-      <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4">
-        <div>
-          <h3 className={columnTitle}>Explore</h3>
-          <ul className="mt-4 space-y-3">
-            {explore.map(({ href, label }) => (
-              <li key={href}>
-                <a href={href} className={link}>
-                  {label}
-                </a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <h3 className={columnTitle}>Get the app</h3>
-          <ul className="mt-4 space-y-3">
-            {stores.map(({ href, label }) => (
-              <li key={label}>
-                {href ? (
-                  <a href={href} target="_blank" rel="noopener noreferrer" className={link}>
-                    {label}
-                  </a>
-                ) : (
-                  <span className="text-sm font-medium text-ink">
-                    {label} <span className="font-normal text-muted">(coming soon)</span>
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        <div className="md:col-span-2">
-          <h3 className={columnTitle}>PowerWatch</h3>
-          <p className="mt-4 max-w-sm text-sm leading-6 text-body">
-            Join your community in tracking real-time power status and reporting outages in your
-            neighborhood.
-          </p>
-        </div>
-      </div>
-
-      {/* Wordmark */}
+  <footer className="relative overflow-hidden border-t border-line-light bg-screen px-4 pt-20 sm:px-6">
+    <div className="relative mx-auto flex max-w-6xl flex-col items-center text-center">
       <img
-        src="/brand/logo-horizontal.png"
-        alt="PowerWatch"
-        width={1526}
-        height={334}
+        src="/brand/favicon.png"
+        alt=""
+        width={64}
+        height={64}
         loading="lazy"
-        className="mt-16 h-auto w-full"
+        className="h-12 w-12 rounded-2xl"
       />
+      <p className="mt-6 max-w-xl text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink sm:text-[36px]">
+        Monitoring your energy in real-time
+      </p>
 
-      <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-line-light py-6 text-xs text-muted sm:flex-row">
+      <StoreButtons className="mt-8 justify-center" />
+
+      <nav aria-label="Footer" className="mt-10">
+        <ul className="flex flex-wrap justify-center gap-x-8 gap-y-3">
+          {links.map(({ href, label }) => (
+            <li key={href}>
+              <a href={href} className="text-sm font-medium text-body transition hover:text-primary">
+                {label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="mt-12 flex w-full flex-col items-center justify-between gap-3 border-t border-line pt-6 text-xs text-muted sm:flex-row">
         <p>© {new Date().getFullYear()} PowerWatch. All rights reserved.</p>
-        <p>Monitoring your energy in real-time</p>
+        <a href="#top" className="transition hover:text-primary">
+          Back to top ↑
+        </a>
       </div>
     </div>
+
+    {/* Wordmark, faded and cropped by the page edge */}
+    <p
+      aria-hidden="true"
+      className="pointer-events-none mt-4 select-none whitespace-nowrap bg-gradient-to-b from-primary/25 to-primary/0 bg-clip-text text-center text-[21vw] font-bold leading-[0.8] tracking-[-0.04em] text-transparent xl:text-[260px]"
+    >
+      Power<span className="font-medium">Watch</span>
+    </p>
   </footer>
 );
 

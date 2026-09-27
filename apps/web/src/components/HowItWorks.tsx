@@ -150,7 +150,7 @@ const HowItWorks = () => {
                   width={step.width}
                   height={step.height}
                   loading="lazy"
-                  className="block h-auto w-full animate-[fade-in_300ms_ease-out]"
+                  className="block h-auto w-full animate-fade-in"
                 />
               </div>
             </div>

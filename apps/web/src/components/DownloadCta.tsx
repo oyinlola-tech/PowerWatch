@@ -1,48 +1,48 @@
-import Icon from "./Icon";
 import StoreButtons from "./StoreButtons";
 
-// Download panel: brand blue, lightning bolts behind a phone rising from the bottom edge
+// Download panel after the cta.gallery "Download" references: centered pitch on a
+// gridded brand panel, with the Figma home screen rising out of the bottom edge
 const DownloadCta = () => (
-  <section id="download" className="scroll-mt-[72px] bg-screen px-6 py-20">
-    <div className="relative mx-auto max-w-6xl overflow-hidden rounded-[32px] bg-primary">
-      {/* Bolts */}
-      <div className="pointer-events-none absolute -right-10 -top-24 rotate-[14deg] opacity-95 md:right-40">
-        <Icon name="boltLarge" color="#FCBA00" width={300} />
-      </div>
-      <div className="pointer-events-none absolute -bottom-40 right-[-120px] rotate-[14deg] opacity-95 md:right-[-40px]">
-        <Icon name="boltLarge" color="#FCBA00" width={340} />
-      </div>
+  <section id="download" className="scroll-mt-[72px] bg-white px-4 py-20 sm:px-6">
+    <div
+      className="relative mx-auto max-w-6xl overflow-hidden rounded-[32px] px-6 pt-14 text-center md:pt-20"
+      style={{
+        backgroundImage:
+          "radial-gradient(90% 80% at 50% 100%, #3B8BFF 0%, #0663EA 45%, #0450C4 100%)",
+      }}
+    >
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 [background-image:linear-gradient(to_right,rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.09)_1px,transparent_1px)] [background-size:44px_44px] [mask-image:linear-gradient(to_bottom,black,transparent_85%)]"
+      />
 
-      <div className="relative grid items-end gap-10 px-8 pt-12 md:grid-cols-2 md:px-16 md:pt-16">
-        <div className="pb-4 md:pb-16">
+      <div className="relative">
+        <img
+          src="/brand/emblem.png"
+          alt=""
+          width={773}
+          height={512}
+          loading="lazy"
+          className="mx-auto h-10 w-auto"
+        />
+        <h2 className="mx-auto mt-6 max-w-2xl text-[34px] font-bold leading-[1.1] tracking-[-0.02em] text-white sm:text-[48px]">
+          Know the moment your power comes back
+        </h2>
+        <p className="mx-auto mt-4 max-w-md text-base leading-7 text-[#FCFEFF]/85">
+          Download PowerWatch and get instant alerts when power goes out or is restored in your
+          grid.
+        </p>
+
+        <StoreButtons className="mt-8 justify-center" />
+
+        <div className="mx-auto mt-12 h-[260px] w-[260px] overflow-hidden sm:h-[320px] sm:w-[320px]">
           <img
-            src="/brand/emblem.png"
-            alt=""
-            width={773}
-            height={512}
-            loading="lazy"
-            className="h-12 w-auto"
-          />
-
-          <h2 className="mt-6 text-[36px] font-bold leading-[1.1] text-white sm:text-[44px]">
-            Download PowerWatch
-          </h2>
-          <p className="mt-4 max-w-md text-base leading-7 text-[#FCFEFF]/85">
-            Monitoring your energy in real-time. Get instant alerts when power goes out or is
-            restored in your grid.
-          </p>
-
-          <StoreButtons className="mt-8" />
-        </div>
-
-        <div className="flex justify-center md:justify-end">
-          <img
-            src="/mockups/phone-report.webp"
-            alt="Confirming a power report in PowerWatch"
-            width={702}
+            src="/mockups/phone-b.webp"
+            alt="PowerWatch home screen showing that power is live"
+            width={697}
             height={1400}
             loading="lazy"
-            className="-mb-[260px] h-auto w-[260px] drop-shadow-2xl md:-mb-[240px] md:w-[300px]"
+            className="h-auto w-full drop-shadow-2xl"
           />
         </div>
       </div>
