@@ -29,6 +29,12 @@ npm run preview
 
 ## Notes
 
+- Light and dark themes: colors are tokens in `src/index.css`. The theme follows the
+  system setting until the visitor uses the navbar toggle (saved in `localStorage`).
+- `public/brand/logo-horizontal-dark.png` is the Figma logo with the wordmark text
+  recolored to `#FCFEFF` for dark backgrounds.
+- `public/images/figma/` holds photos and maps exported from the Figma screens.
+
 - `public/brand/`, `public/mockups/` and `public/screens/` hold the logo, phone mockups and
   screens exported from the PowerWatch Figma file.
 - `archive/pwa-app-src/` is the original PWA version of the app, kept for

@@ -58,16 +58,13 @@ const SetMonitoringArea = () => {
 
   // Debounced search; only neighborhoods can be chosen as a monitoring area
   const searchId = useRef(0);
+  const term = search.trim();
+  const searchActive = term.length >= 2 && term !== selection?.name;
   useEffect(() => {
-    const term = search.trim();
-    if (term.length < 2 || term === selection?.name) {
-      setResults([]);
-      setIsSearching(false);
-      return;
-    }
+    if (!searchActive) return;
     const id = ++searchId.current;
-    setIsSearching(true);
     const timer = setTimeout(async () => {
+      setIsSearching(true);
       try {
         const found = await locationsApi.search(term, 20);
         if (id === searchId.current) setResults(found.filter((r) => r.type === "neighborhood" && r.neighborhoodId));
@@ -78,7 +75,9 @@ const SetMonitoringArea = () => {
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [search, selection?.name]);
+  }, [term, searchActive]);
+  const visibleResults = searchActive ? results : [];
+  const searching = searchActive && isSearching;
 
   const choose = (item: LocationSearchItem) => {
     setSelection({
@@ -232,13 +231,13 @@ const SetMonitoringArea = () => {
             returnKeyType="search"
             style={styles.searchInput}
           />
-          {isSearching && <ActivityIndicator size="small" color={colors.gray400} />}
+          {searching && <ActivityIndicator size="small" color={colors.gray400} />}
         </View>
 
         {/* Search results */}
-        {results.length > 0 && (
+        {visibleResults.length > 0 && (
           <View style={styles.results}>
-            {results.slice(0, 5).map((item) => (
+            {visibleResults.slice(0, 5).map((item) => (
               <Pressable
                 key={item.neighborhoodId}
                 accessibilityRole="button"
@@ -253,10 +252,10 @@ const SetMonitoringArea = () => {
             ))}
           </View>
         )}
-        {!isSearching && results.length === 0 && search.trim().length >= 2 && search !== selection?.name && (
+        {searchActive && !isSearching && results.length === 0 && (
           <View style={styles.results}>
             <Text style={[styles.resultArea, styles.noResults]}>
-              No neighborhoods match "{search.trim()}". Try your town or LGA name.
+              {`No neighborhoods match "${term}". Try your town or LGA name.`}
             </Text>
           </View>
         )}

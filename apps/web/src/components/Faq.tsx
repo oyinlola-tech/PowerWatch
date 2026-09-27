@@ -29,7 +29,7 @@ const questions = [
 ];
 
 const Faq = () => (
-  <section id="faq" className="scroll-mt-[72px] bg-screen px-6 py-20">
+  <section id="faq" className="scroll-mt-[72px] bg-screen px-4 py-20 sm:px-6">
     <div className="mx-auto max-w-3xl">
       <SectionHeading
         label="FAQ"

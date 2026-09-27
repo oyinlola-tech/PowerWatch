@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
-import { buildMapHtml, MAP_BASE_URL } from "./mapHtml";
+import { buildMapHtml, MAP_BASE_URL, markersScript } from "./mapHtml";
 import type { MapOptions } from "./mapHtml";
 
 export type MapViewProps = MapOptions;
 
 // MapLibre GL rendered in a WebView: no native map SDK or API key to configure
 const MapView = (props: MapViewProps) => {
-  const { latitude, longitude, zoom, onLoad } = props;
+  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress } = props;
   const webView = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -21,6 +21,11 @@ const MapView = (props: MapViewProps) => {
       `window.powerwatchMap && window.powerwatchMap.setView(${JSON.stringify({ latitude, longitude, zoom })}); true;`,
     );
   }, [isReady, latitude, longitude, zoom]);
+
+  useEffect(() => {
+    if (!isReady || !markers) return;
+    webView.current?.injectJavaScript(markersScript(markers, fitToMarkers));
+  }, [isReady, markers, fitToMarkers]);
 
   return (
     <WebView
@@ -38,6 +43,13 @@ const MapView = (props: MapViewProps) => {
         const { data } = event.nativeEvent;
         if (data.includes('"ready"')) setIsReady(true);
         if (data.includes('"loaded"')) onLoad?.();
+        if (data.includes('"marker"')) {
+          try {
+            onMarkerPress?.(String((JSON.parse(data) as { id: string }).id));
+          } catch {
+            // ignore malformed messages
+          }
+        }
       }}
       // Keep taps on links (map attribution) from navigating the map away
       onShouldStartLoadWithRequest={(request) =>

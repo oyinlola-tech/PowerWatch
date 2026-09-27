@@ -1,118 +1,97 @@
-import { useState } from "react";
-import type { ReactNode } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
-import { Image } from "expo-image";
+import { useEffect, useState } from "react";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Constants from "expo-constants";
 import { router } from "expo-router";
 import BackHeader from "../components/layout/BackHeader";
 import NavBar from "../components/layout/NavBar";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
-import type { GlyphName } from "../components/icons/glyphs";
+import { Chevron, Divider, Row, Section } from "../components/ui/ListSection";
 import Toggle from "../components/ui/Toggle";
-import { changeNeighborhood, notAvailableYet } from "../services/navigation";
+import { useAuth, useUser } from "../context/AuthContext";
+import { useApi } from "../hooks/useApi";
+import { ApiError, authApi, locationsApi } from "../services/api";
+import type { NotificationPreferences } from "../services/api";
+import { changeNeighborhood } from "../services/navigation";
+import { fullName, initials } from "../utils/format";
 import { alpha, colors, fonts, type } from "../theme";
 
-interface RowProps {
-  icon: GlyphName;
-  /** Width of the icon's slot in the design (icons differ in size) */
-  iconWidth: number;
-  title: string;
-  subtitle?: string;
-  subtitleStyle?: "default" | "link";
-  right: ReactNode;
-  onPress?: () => void;
-}
+const APP_SETTINGS_KEY = "pw.appSettings";
 
-const Row = ({
-  icon,
-  iconWidth,
-  title,
-  subtitle,
-  subtitleStyle = "default",
-  right,
-  onPress,
-}: RowProps) => {
-  const content = (
-    <>
-      <View style={styles.rowLeft}>
-        <View style={{ width: iconWidth, alignItems: "center" }}>
-          <Icon name={icon} />
-        </View>
-        <View>
-          <Text style={[type.boldText, { color: colors.ink }]}>{title}</Text>
-          {subtitle && (
-            <Text style={subtitleStyle === "link" ? styles.subtitleLink : styles.subtitle}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
-      </View>
-      {right}
-    </>
-  );
-
-  if (!onPress) return <View style={styles.row}>{content}</View>;
-
-  return (
-    <Pressable accessibilityRole="button" onPress={onPress} style={styles.row}>
-      {content}
-    </Pressable>
-  );
-};
-
-const Divider = () => <View style={styles.divider} />;
-
-interface SectionProps {
-  title: string;
-  titleColor?: string;
-  children: ReactNode;
-}
-
-const Section = ({ title, titleColor = colors.navy, children }: SectionProps) => (
-  <View style={styles.section}>
-    <Text accessibilityRole="header" style={[type.boldText, { color: titleColor }]}>
-      {title}
-    </Text>
-    <View style={styles.sectionCard}>{children}</View>
-  </View>
-);
-
-const chevron = <Icon name="chevronRight" />;
+const chevron = <Chevron />;
 
 // Figma "Profile" (143:217)
 const Profile = () => {
-  const [prefs, setPrefs] = useState({
-    powerStatusAlerts: true,
-    communityUpdates: false,
-    darkMode: false,
-    dataSaverMode: true,
-  });
+  const user = useUser();
+  const { setUser, signOut } = useAuth();
+  const saved = useApi(locationsApi.saved);
 
-  const toggle = (key: keyof typeof prefs) => (value: boolean) =>
-    setPrefs((prev) => ({ ...prev, [key]: value }));
+  // Device-only display settings
+  const [appSettings, setAppSettings] = useState({ darkMode: false, dataSaverMode: true });
+  useEffect(() => {
+    AsyncStorage.getItem(APP_SETTINGS_KEY)
+      .then((raw) => raw && setAppSettings((s) => ({ ...s, ...JSON.parse(raw) })))
+      .catch(() => {});
+  }, []);
+  const toggleApp = (key: keyof typeof appSettings) => (value: boolean) =>
+    setAppSettings((prev) => {
+      const next = { ...prev, [key]: value };
+      void AsyncStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(next));
+      return next;
+    });
 
-  const handleSignOut = () => {
-    // TODO: clear auth session
-    if (router.canDismiss()) router.dismissAll();
-    router.replace("/login");
+  // Notification preferences live on the server; update optimistically
+  const updatePrefs = async (changes: Partial<NotificationPreferences>) => {
+    const previous = user;
+    setUser({ ...user, ...changes });
+    try {
+      const prefs = await authApi.updateNotificationPreferences(changes);
+      setUser({ ...user, ...prefs });
+    } catch (error) {
+      setUser(previous);
+      Alert.alert(
+        "Couldn't update notifications",
+        error instanceof ApiError ? error.message : "Please try again.",
+      );
+    }
   };
+  const powerAlertsOn = user.notificationEnabled && (user.outageAlerts || user.restorationAlerts);
+
+  const handleSignOut = () =>
+    Alert.alert("Sign out?", "You'll stop getting power alerts on this phone until you log in again.", [
+      { text: "Cancel", style: "cancel" },
+      // The auth guard returns the app to the start once signed out
+      { text: "Sign Out", style: "destructive", onPress: () => void signOut() },
+    ]);
+
+  const savedCount = saved.data?.length;
+  const primaryName = user.neighborhood?.name ?? "Not set";
+  const version = Constants.expoConfig?.version ?? "1.0.1";
 
   return (
-    <Screen top={23} bottom={80} overlay={<NavBar active="settings" />}>
+    <Screen
+      top={23}
+      bottom={80}
+      overlay={<NavBar active="settings" />}
+      onRefresh={saved.refresh}
+      refreshing={saved.refreshing}
+    >
       <BackHeader height={63} />
 
       <View style={styles.main}>
         {/* Summary */}
         <View style={styles.summary}>
-          <Image
-            source={require("../../assets/images/avatar.jpg")}
-            style={styles.avatar}
-            contentFit="cover"
-            accessibilityLabel="Monday Ephraim"
-          />
-          <View>
-            <Text style={styles.name}>Monday Ephraim</Text>
-            <Text style={[type.boldText, { color: colors.slate }]}>Primary: Adewole Estate</Text>
+          <View style={styles.avatar} accessibilityLabel={fullName(user)}>
+            <Text style={styles.avatarText}>{initials(user)}</Text>
+          </View>
+          <View style={{ flexShrink: 1 }}>
+            <Text style={styles.name} numberOfLines={1}>
+              {fullName(user)}
+            </Text>
+            <Text style={[type.boldText, { color: colors.slate }]} numberOfLines={1}>
+              Primary: {primaryName}
+            </Text>
           </View>
         </View>
 
@@ -123,7 +102,16 @@ const Profile = () => {
             title="Power Status Alerts"
             subtitle="Alerts when power returns or goes out"
             right={
-              <Toggle enabled={prefs.powerStatusAlerts} onChange={toggle("powerStatusAlerts")} />
+              <Toggle
+                enabled={powerAlertsOn}
+                onChange={(on) =>
+                  void updatePrefs(
+                    on
+                      ? { notificationEnabled: true, outageAlerts: true, restorationAlerts: true }
+                      : { outageAlerts: false, restorationAlerts: false },
+                  )
+                }
+              />
             }
           />
           <Divider />
@@ -132,7 +120,14 @@ const Profile = () => {
             iconWidth={24}
             title="Community Updates"
             subtitle="Local reports and neighborhood news"
-            right={<Toggle enabled={prefs.communityUpdates} onChange={toggle("communityUpdates")} />}
+            right={
+              <Toggle
+                enabled={user.notificationEnabled && user.communityUpdates}
+                onChange={(on) =>
+                  void updatePrefs(on ? { notificationEnabled: true, communityUpdates: true } : { communityUpdates: false })
+                }
+              />
+            }
           />
         </Section>
 
@@ -141,8 +136,12 @@ const Profile = () => {
             icon="mapOutline"
             iconWidth={18}
             title="Manage Saved Neighborhoods"
-            subtitle="3 locations monitored"
-            onPress={() => notAvailableYet("Saved Neighborhoods")}
+            subtitle={
+              savedCount === undefined
+                ? "Follow more places"
+                : `${savedCount} ${savedCount === 1 ? "location" : "locations"} monitored`
+            }
+            onPress={() => router.push("/saved-neighborhoods")}
             right={chevron}
           />
           <Divider />
@@ -150,7 +149,7 @@ const Profile = () => {
             icon="homePin"
             iconWidth={16}
             title="Primary Location"
-            subtitle="Adewole Estate"
+            subtitle={primaryName}
             subtitleStyle="link"
             onPress={changeNeighborhood}
             right={<Icon name="pencil" width={18} color={colors.muted} />}
@@ -162,7 +161,7 @@ const Profile = () => {
             icon="moon"
             iconWidth={18}
             title="Dark Mode"
-            right={<Toggle enabled={prefs.darkMode} onChange={toggle("darkMode")} />}
+            right={<Toggle enabled={appSettings.darkMode} onChange={toggleApp("darkMode")} />}
           />
           <Divider />
           <Row
@@ -170,7 +169,7 @@ const Profile = () => {
             iconWidth={20}
             title="Data Saver Mode"
             subtitle="Minimize usage on weak networks"
-            right={<Toggle enabled={prefs.dataSaverMode} onChange={toggle("dataSaverMode")} />}
+            right={<Toggle enabled={appSettings.dataSaverMode} onChange={toggleApp("dataSaverMode")} />}
           />
           <Divider />
           <Row
@@ -178,7 +177,7 @@ const Profile = () => {
             iconWidth={20}
             title="Language"
             subtitle="English (US)"
-            onPress={() => notAvailableYet("Language")}
+            onPress={() => router.push("/language")}
             right={<Icon name="translate" />}
           />
         </Section>
@@ -188,7 +187,16 @@ const Profile = () => {
             icon="person"
             iconWidth={16}
             title="Profile Settings"
-            onPress={() => notAvailableYet("Profile Settings")}
+            onPress={() => router.push("/profile-settings")}
+            right={chevron}
+          />
+          <Divider />
+          <Row
+            icon="navReports"
+            iconWidth={18}
+            iconColor={colors.slateIcon}
+            title="My Reports"
+            onPress={() => router.push("/my-reports")}
             right={chevron}
           />
           <Divider />
@@ -196,15 +204,15 @@ const Profile = () => {
             icon="helpBox"
             iconWidth={18}
             title={"Help & FAQ"}
-            onPress={() => notAvailableYet("Help & FAQ")}
-            right={<Icon name="openInNew" />}
+            onPress={() => router.push("/help")}
+            right={chevron}
           />
           <Divider />
           <Row
             icon="info"
             iconWidth={20}
             title="About PowerWatch"
-            onPress={() => notAvailableYet("About PowerWatch")}
+            onPress={() => router.push("/about")}
             right={chevron}
           />
         </Section>
@@ -215,7 +223,7 @@ const Profile = () => {
             <Icon name="logout" />
             <Text style={[type.buttonText, { color: colors.danger }]}>Sign Out</Text>
           </Pressable>
-          <Text style={styles.version}>PowerWatch Version 1.0.1</Text>
+          <Text style={styles.version}>PowerWatch Version {version}</Text>
         </View>
       </View>
     </Screen>
@@ -242,53 +250,22 @@ const styles = StyleSheet.create({
   avatar: {
     width: 56,
     height: 56,
+    alignItems: "center",
+    justifyContent: "center",
     borderRadius: 12,
     backgroundColor: colors.avatarBg,
+  },
+  avatarText: {
+    fontFamily: fonts.hankenSemibold,
+    fontSize: 20,
+    lineHeight: 28,
+    color: colors.navy,
   },
   name: {
     fontFamily: fonts.hankenSemibold,
     fontSize: 20,
     lineHeight: 28,
     color: colors.ink,
-  },
-  section: {
-    gap: 8,
-  },
-  sectionCard: {
-    borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.6),
-    borderRadius: 8,
-    backgroundColor: colors.white,
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: 16,
-  },
-  rowLeft: {
-    flexShrink: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 16,
-  },
-  subtitle: {
-    fontFamily: fonts.hankenMedium,
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.48,
-    color: colors.slate,
-  },
-  subtitleLink: {
-    fontFamily: fonts.semibold,
-    fontSize: 12,
-    lineHeight: 15,
-    color: colors.navy,
-  },
-  divider: {
-    height: 1,
-    marginHorizontal: 8.5,
-    backgroundColor: colors.stroke,
   },
   danger: {
     gap: 24,

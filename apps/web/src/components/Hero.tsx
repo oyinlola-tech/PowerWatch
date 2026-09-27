@@ -27,7 +27,7 @@ const Hero = () => (
         <span className="rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white">
           New
         </span>
-        Set up in minutes on Android and iPhone
+        Set up in minutes<span className="hidden min-[400px]:inline"> on Android and iPhone</span>
         <span className="text-accent">
           <Icon name="arrowRight" color="currentColor" width={12} />
         </span>

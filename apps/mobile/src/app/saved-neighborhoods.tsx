@@ -7,16 +7,15 @@ import { Divider, Section } from "../components/ui/ListSection";
 import Button from "../components/ui/Button";
 import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
 import { useApi } from "../hooks/useApi";
-import { ApiError, locationsApi } from "../services/api";
+import { locationsApi } from "../services/api";
 import type { SavedNeighborhood } from "../services/api";
 import { addSavedNeighborhood } from "../services/navigation";
 import { timeAgo } from "../utils/format";
 import { alpha, colors, fonts, type } from "../theme";
+import { errorMessage } from "../utils/validation";
 
 const MAX_SAVED = 10;
 
-const messageOf = (error: unknown) =>
-  error instanceof ApiError ? error.message : "Something went wrong. Please try again.";
 
 const StatusPill = ({ place }: { place: SavedNeighborhood }) => {
   let label: string;
@@ -85,7 +84,7 @@ const SavedNeighborhoods = () => {
       await locationsApi.unsave(place.neighborhoodId);
       mutate((current) => current?.filter((p) => p.neighborhoodId !== place.neighborhoodId));
     } catch (err) {
-      Alert.alert("Couldn't remove neighborhood", messageOf(err));
+      Alert.alert("Couldn't remove neighborhood", errorMessage(err));
     } finally {
       setRemovingId(null);
     }

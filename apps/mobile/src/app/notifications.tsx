@@ -6,8 +6,15 @@ import Icon from "../components/icons/Icon";
 import type { GlyphName } from "../components/icons/glyphs";
 import Button from "../components/ui/Button";
 import Toggle from "../components/ui/Toggle";
+import { FormError } from "../components/ui/StateViews";
+import { useAuth } from "../context/AuthContext";
+import { ApiError, authApi } from "../services/api";
 import { goToDashboard } from "../services/navigation";
-import { getNotificationPermission, requestNotificationPermission } from "../services/notifications";
+import {
+  getNotificationPermission,
+  registerForPushNotifications,
+  requestNotificationPermission,
+} from "../services/notifications";
 import type { NotificationPermission } from "../services/notifications";
 import { colors, fonts, type } from "../theme";
 
@@ -42,7 +49,10 @@ const Option = ({ icon, title, description, enabled, onChange }: OptionProps) =>
 
 // Figma "Onboarding - Notifications" (3:332)
 const NotificationSetup = () => {
+  const { user, setUser } = useAuth();
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>("default");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const [prefs, setPrefs] = useState({
     outageAlerts: true,
@@ -64,11 +74,32 @@ const NotificationSetup = () => {
     setPrefs((prev) => ({ ...prev, [key]: value }));
 
   const handleFinishSetup = async () => {
-    if (permissionStatus === "default") {
-      setPermissionStatus(await requestNotificationPermission());
-    }
+    setSaving(true);
+    setError(null);
+    try {
+      const saved = await authApi.updateNotificationPreferences({
+        notificationEnabled: true,
+        outageAlerts: prefs.outageAlerts,
+        restorationAlerts: prefs.restorationAlerts,
+        communityUpdates: prefs.communityReports,
+      });
+      if (user) setUser({ ...user, ...saved });
 
-    goToDashboard();
+      const wantsAlerts = prefs.outageAlerts || prefs.restorationAlerts || prefs.communityReports;
+      let permission = permissionStatus;
+      if (wantsAlerts && permission === "default") {
+        permission = await requestNotificationPermission();
+        setPermissionStatus(permission);
+      }
+      // Best effort: builds without push credentials still finish setup
+      if (permission === "granted") await registerForPushNotifications();
+
+      goToDashboard();
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Couldn't save your preferences. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -116,12 +147,17 @@ const NotificationSetup = () => {
         />
       </View>
 
-      <Button label="Finish Setup" onPress={handleFinishSetup} style={styles.finish} />
+      <FormError message={error} style={styles.error} />
+
+      <Button label="Finish Setup" onPress={handleFinishSetup} loading={saving} style={styles.finish} />
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
+  error: {
+    marginTop: 16,
+  },
   content: {
     paddingHorizontal: 24,
   },

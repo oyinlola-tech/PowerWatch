@@ -50,7 +50,7 @@ const Footer = () => (
     {/* Wordmark, faded and cropped by the page edge */}
     <p
       aria-hidden="true"
-      className="pointer-events-none -mb-[0.2em] mt-6 select-none whitespace-nowrap bg-gradient-to-b from-primary/25 to-primary/0 bg-clip-text text-center text-[16vw] font-bold leading-none tracking-[-0.04em] text-transparent 2xl:text-[240px]"
+      className="pointer-events-none -mb-[0.2em] mt-6 select-none whitespace-nowrap bg-gradient-to-b from-primary/25 to-primary/0 dark:from-accent/25 dark:to-accent/0 bg-clip-text text-center text-[16vw] font-bold leading-none tracking-[-0.04em] text-transparent 2xl:text-[240px]"
     >
       Power<span className="font-medium">Watch</span>
     </p>

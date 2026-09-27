@@ -55,7 +55,7 @@ const ThemeToggle = () => {
       onClick={toggle}
       aria-label={label}
       title={label}
-      className="flex h-12 w-12 items-center justify-center rounded-full border border-line text-ink transition hover:border-accent hover:text-accent"
+      className="flex h-11 w-11 flex-shrink-0 items-center sm:h-12 sm:w-12 justify-center rounded-full border border-line text-ink transition hover:border-accent hover:text-accent"
     >
       {theme === "dark" ? (
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">

@@ -7,16 +7,15 @@ import { Divider } from "../components/ui/ListSection";
 import Button from "../components/ui/Button";
 import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
 import { useApi } from "../hooks/useApi";
-import { ApiError, reportsApi } from "../services/api";
+import { reportsApi } from "../services/api";
 import type { MyReport } from "../services/api";
 import { goToDashboard } from "../services/navigation";
 import { formatDateTime } from "../utils/format";
 import { alpha, colors, fonts, type } from "../theme";
+import { errorMessage } from "../utils/validation";
 
 const PAGE_SIZE = 50;
 
-const messageOf = (error: unknown) =>
-  error instanceof ApiError ? error.message : "Something went wrong. Please try again.";
 
 interface ReportRowProps {
   report: MyReport;
@@ -75,7 +74,7 @@ const MyReports = () => {
         return { data: [...current.data, ...next.data.filter((r) => !seen.has(r.id))], pagination: next.pagination };
       });
     } catch (err) {
-      Alert.alert("Couldn't load more reports", messageOf(err));
+      Alert.alert("Couldn't load more reports", errorMessage(err));
     } finally {
       setLoadingMore(false);
     }
@@ -92,7 +91,7 @@ const MyReports = () => {
         },
       );
     } catch (err) {
-      Alert.alert("Couldn't delete report", messageOf(err));
+      Alert.alert("Couldn't delete report", errorMessage(err));
     } finally {
       setDeletingId(null);
     }

@@ -28,7 +28,7 @@ interface StoreButtonProps {
 
 const StoreButton = ({ platform, url, icon, caption, store }: StoreButtonProps) => {
   const className =
-    "inline-flex h-14 min-w-[180px] items-center gap-3 rounded-3xl bg-[#1B1C1C] px-6 text-left text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition";
+    "inline-flex h-14 min-w-[160px] items-center gap-3 rounded-3xl bg-[#1B1C1C] px-5 sm:min-w-[180px] sm:px-6 text-left text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition";
 
   const content = (
     <>

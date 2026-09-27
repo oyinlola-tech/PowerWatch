@@ -11,9 +11,9 @@ import Button from "../components/ui/Button";
 import SocialButtons from "../components/ui/SocialButtons";
 import TextField from "../components/ui/TextField";
 import { colors, fonts, type } from "../theme";
+import { isValidEmail } from "../utils/validation";
 
 // Figma "Login Screen Wireframe" (3:398)
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const Login = () => {
   const { signIn } = useAuth();
@@ -25,7 +25,7 @@ const Login = () => {
 
   const handleLogin = async () => {
     const next: typeof errors = {};
-    if (!EMAIL_PATTERN.test(email.trim())) next.email = "Enter a valid email address.";
+    if (!isValidEmail(email)) next.email = "Enter a valid email address.";
     if (!password) next.password = "Enter your password.";
     setErrors(next);
     if (next.email || next.password) return;

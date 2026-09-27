@@ -7,6 +7,16 @@ export const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 // MapLibre loads its worker from the page origin, so the document needs a real one
 export const MAP_BASE_URL = "https://localhost/";
 
+export interface MapMarker {
+  id: string;
+  latitude: number;
+  longitude: number;
+  /** Fill colour, e.g. the power ON/OFF colour */
+  color: string;
+  /** Circle radius in px (default 8) */
+  radius?: number;
+}
+
 export interface MapOptions {
   latitude: number;
   longitude: number;
@@ -14,7 +24,16 @@ export interface MapOptions {
   interactive: boolean;
   /** Called once the map has drawn its first complete frame */
   onLoad?: () => void;
+  /** Coloured circles drawn over the map (status map, heatmap) */
+  markers?: MapMarker[];
+  /** Zoom to fit the markers whenever they change */
+  fitToMarkers?: boolean;
+  onMarkerPress?: (id: string) => void;
 }
+
+/** JS that pushes markers into the live map document */
+export const markersScript = (markers: MapMarker[], fit: boolean) =>
+  `window.powerwatchMap && window.powerwatchMap.setMarkers(${JSON.stringify(markers)}, ${fit}); true;`;
 
 export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOptions) => `<!doctype html>
 <html>
@@ -58,8 +77,59 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOpti
       map.once("load", collapseAttribution);
       map.once("idle", collapseAttribution);
 
+      // Status markers: one GeoJSON circle layer, so hundreds of points stay fast
+      let pendingMarkers = null;
+      const toGeoJson = (markers) => ({
+        type: "FeatureCollection",
+        features: markers.map((m) => ({
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [m.longitude, m.latitude] },
+          properties: { id: m.id, color: m.color, radius: m.radius || 8 },
+        })),
+      });
+      const applyMarkers = (markers, fit) => {
+        const data = toGeoJson(markers);
+        const source = map.getSource("markers");
+        if (source) {
+          source.setData(data);
+        } else {
+          map.addSource("markers", { type: "geojson", data });
+          map.addLayer({
+            id: "markers",
+            type: "circle",
+            source: "markers",
+            paint: {
+              "circle-color": ["get", "color"],
+              "circle-radius": ["get", "radius"],
+              "circle-opacity": 0.85,
+              "circle-stroke-width": 2,
+              "circle-stroke-color": "#FFFFFF",
+            },
+          });
+          map.on("click", "markers", (event) => {
+            const feature = event.features && event.features[0];
+            if (feature) post({ type: "marker", id: feature.properties.id });
+          });
+          map.on("mouseenter", "markers", () => (map.getCanvas().style.cursor = "pointer"));
+          map.on("mouseleave", "markers", () => (map.getCanvas().style.cursor = ""));
+        }
+        if (fit && markers.length > 0) {
+          const bounds = new maplibre.LngLatBounds();
+          markers.forEach((m) => bounds.extend([m.longitude, m.latitude]));
+          map.fitBounds(bounds, { padding: 48, maxZoom: 13, duration: 0 });
+        }
+      };
+      map.once("load", () => {
+        if (pendingMarkers) applyMarkers(pendingMarkers.markers, pendingMarkers.fit);
+        pendingMarkers = null;
+      });
+
       window.powerwatchMap = {
         setView: (view) => map.easeTo({ center: [view.longitude, view.latitude], zoom: view.zoom }),
+        setMarkers: (markers, fit) => {
+          if (map.loaded() || map.getSource("markers")) applyMarkers(markers, fit);
+          else pendingMarkers = { markers, fit };
+        },
       };
       post({ type: "ready" });
 

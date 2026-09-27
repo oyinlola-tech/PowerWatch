@@ -16,7 +16,7 @@ import {
 } from "@expo-google-fonts/hanken-grotesk";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import mixpanel from "../services/mixpanel";
-import { configureNotifications } from "../services/notifications";
+import { configureNotifications, registerForPushNotifications } from "../services/notifications";
 import { colors } from "../theme";
 
 // Keep the native splash up until the design's fonts are ready
@@ -61,7 +61,8 @@ const useNotificationTaps = (enabled: boolean) => {
     if (!enabled) return;
     let subscription: { remove: () => void } | undefined;
     let cancelled = false;
-    void configureNotifications();
+    // Refresh this phone's push token each launch (no prompt; only if already allowed)
+    void configureNotifications().then(() => registerForPushNotifications());
     import("expo-notifications")
       .then((Notifications) => {
         if (cancelled) return;

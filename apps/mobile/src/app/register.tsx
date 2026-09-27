@@ -12,17 +12,9 @@ import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../services/api";
 import mixpanel from "../services/mixpanel";
 import { colors, fonts, type } from "../theme";
+import { PASSWORD_HINT, isValidEmail, passwordProblem } from "../utils/validation";
 
 // Figma "Signup Screen Wireframe" (3:467)
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-// Mirrors the backend password policy so most mistakes are caught before submitting
-const PASSWORD_RULES: [RegExp, string][] = [
-  [/.{8,}/, "at least 8 characters"],
-  [/[A-Z]/, "an uppercase letter"],
-  [/[a-z]/, "a lowercase letter"],
-  [/[0-9]/, "a number"],
-  [/[^A-Za-z0-9]/, "a symbol"],
-];
 
 type Field = "fullName" | "email" | "password" | "terms" | "form";
 
@@ -39,9 +31,9 @@ const Register = () => {
   const handleSignUp = async () => {
     const next: Partial<Record<Field, string>> = {};
     if (!fullName.trim()) next.fullName = "Enter your full name.";
-    if (!EMAIL_PATTERN.test(email.trim())) next.email = "Enter a valid email address.";
-    const missing = PASSWORD_RULES.filter(([rule]) => !rule.test(password)).map(([, label]) => label);
-    if (missing.length) next.password = `Password needs ${missing.join(", ")}.`;
+    if (!isValidEmail(email)) next.email = "Enter a valid email address.";
+    const passwordIssue = passwordProblem(password);
+    if (passwordIssue) next.password = passwordIssue;
     if (!agreed) next.terms = "Please agree to the Terms & Conditions and Privacy Policy.";
     setErrors(next);
     if (Object.keys(next).length) return;
@@ -113,7 +105,7 @@ const Register = () => {
             secureTextEntry={!showPassword}
             autoComplete="new-password"
             textContentType="newPassword"
-            hint="At least 8 characters with upper & lower case letters, a number and a symbol."
+            hint={PASSWORD_HINT}
             value={password}
             onChangeText={setPassword}
             error={errors.password}

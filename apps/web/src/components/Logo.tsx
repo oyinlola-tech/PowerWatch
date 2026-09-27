@@ -12,7 +12,7 @@ const Logo = ({ height = 31 }: LogoProps) => (
       width={1526}
       height={334}
       style={{ height, width: "auto" }}
-      className="dark:hidden"
+      className="max-w-none dark:hidden"
     />
     <img
       src="/brand/logo-horizontal-dark.png"
@@ -20,7 +20,7 @@ const Logo = ({ height = 31 }: LogoProps) => (
       width={1526}
       height={334}
       style={{ height, width: "auto" }}
-      className="hidden dark:block"
+      className="hidden max-w-none dark:block"
     />
   </>
 );

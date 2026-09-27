@@ -10,24 +10,10 @@ import TextField from "../components/ui/TextField";
 import { ApiError, authApi } from "../services/api";
 import { goBack } from "../services/navigation";
 import { colors, fonts, type } from "../theme";
+import { PASSWORD_HINT, passwordProblem } from "../utils/validation";
 
-const PASSWORD_HINT = "At least 8 characters with upper & lower case letters, a number and a symbol.";
 const RESEND_COOLDOWN = 30;
 
-const passwordProblem = (password: string) => {
-  if (!password) return "Enter a new password.";
-  if (
-    password.length < 8 ||
-    password.length > 128 ||
-    !/[A-Z]/.test(password) ||
-    !/[a-z]/.test(password) ||
-    !/\d/.test(password) ||
-    !/[^A-Za-z0-9]/.test(password)
-  ) {
-    return PASSWORD_HINT;
-  }
-  return undefined;
-};
 
 type Field = "code" | "password" | "confirmPassword";
 type FieldErrors = Partial<Record<Field, string>>;

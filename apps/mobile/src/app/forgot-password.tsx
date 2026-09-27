@@ -9,8 +9,8 @@ import TextField from "../components/ui/TextField";
 import { ApiError, authApi } from "../services/api";
 import { goBack } from "../services/navigation";
 import { colors, fonts, type } from "../theme";
+import { EMAIL_PATTERN } from "../utils/validation";
 
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Forgot Password (no Figma frame; styled like the Login screen)
 const ForgotPassword = () => {

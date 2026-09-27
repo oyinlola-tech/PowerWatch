@@ -28,7 +28,6 @@ export async function buildApp() {
     trustProxy: env.trustProxy,
     genReqId,
     requestIdHeader: REQUEST_ID_HEADER,
-    requestIdLogLabel: 'reqId',
     bodyLimit: env.bodyLimit,
     ajv: {
       customOptions: {

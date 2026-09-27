@@ -11,26 +11,10 @@ import { useAuth, useUser } from "../context/AuthContext";
 import { ApiError, authApi } from "../services/api";
 import { fullName, initials } from "../utils/format";
 import { alpha, colors, fonts, type } from "../theme";
+import { PASSWORD_HINT, errorMessage, passwordProblem } from "../utils/validation";
 
-const PASSWORD_HINT = "At least 8 characters with upper & lower case letters, a number and a symbol.";
 
-const passwordProblem = (password: string) => {
-  if (!password) return "Enter a new password.";
-  if (
-    password.length < 8 ||
-    password.length > 128 ||
-    !/[A-Z]/.test(password) ||
-    !/[a-z]/.test(password) ||
-    !/\d/.test(password) ||
-    !/[^A-Za-z0-9]/.test(password)
-  ) {
-    return PASSWORD_HINT;
-  }
-  return undefined;
-};
 
-const messageOf = (error: unknown) =>
-  error instanceof ApiError ? error.message : "Something went wrong. Please try again.";
 
 const EyeToggle = ({ visible, onToggle }: { visible: boolean; onToggle: () => void }) => (
   <Pressable
@@ -70,7 +54,7 @@ const PersonalInfo = () => {
       Alert.alert("Profile updated", "Your name has been saved.");
     } catch (error) {
       if (error instanceof ApiError && error.fieldErrors.fullName) setNameError(error.fieldErrors.fullName);
-      else setFormError(messageOf(error));
+      else setFormError(errorMessage(error));
     } finally {
       setSaving(false);
     }
@@ -173,7 +157,7 @@ const ChangePassword = () => {
       await signOut();
     } catch (error) {
       if (!(error instanceof ApiError)) {
-        setFormError(messageOf(error));
+        setFormError(errorMessage(error));
       } else {
         const { currentPassword: current, newPassword: nextError, confirmNewPassword: confirm } = error.fieldErrors;
         if (current || nextError || confirm) {
@@ -257,7 +241,7 @@ const DeleteAccount = () => {
       } else if (error instanceof ApiError && error.status === 400 && /password/i.test(error.message)) {
         setPasswordError(error.message);
       } else {
-        setFormError(messageOf(error));
+        setFormError(errorMessage(error));
       }
       setDeleting(false);
     }
