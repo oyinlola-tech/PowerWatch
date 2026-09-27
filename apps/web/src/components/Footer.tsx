@@ -1,11 +1,14 @@
 import StoreButtons from "./StoreButtons";
 
+// Absolute so they also work from the Privacy and Terms pages
 const links = [
-  { href: "#about", label: "About" },
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#screens", label: "Screens" },
-  { href: "#faq", label: "FAQ" },
-  { href: "#download", label: "Download" },
+  { href: "/#about", label: "About" },
+  { href: "/#how-it-works", label: "How it works" },
+  { href: "/#screens", label: "Screens" },
+  { href: "/#faq", label: "FAQ" },
+  { href: "/#download", label: "Download" },
+  { href: "/privacy/", label: "Privacy Policy" },
+  { href: "/terms/", label: "Terms & Conditions" },
 ];
 
 // Centered app footer after the footer.design references: one line of pitch,
