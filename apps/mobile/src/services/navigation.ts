@@ -2,19 +2,17 @@ import { Alert } from "react-native";
 import { router } from "expo-router";
 import type { PowerStatus } from "../types/power";
 
-export type NavItem = "dashboard" | "history" | "settings" | "maps";
+export type NavItem = "dashboard" | "history" | "settings" | "map";
 
-/** For destinations the design links to but that have no screen yet */
-export const notAvailableYet = (feature: string) =>
-  Alert.alert(feature, `${feature} is not available yet.`);
+/** For features that need setup outside the app first (e.g. social sign-in) */
+export const comingSoon = (feature: string) =>
+  Alert.alert(feature, `${feature} is coming soon.`);
 
 // The dashboard is the root of the signed-in stack; other tabs sit on top of it
 export const goToTab = (item: NavItem, active: NavItem) => {
   if (item === active) return;
 
-  if (item === "maps") {
-    notAvailableYet("Maps");
-  } else if (item === "dashboard") {
+  if (item === "dashboard") {
     router.dismissTo("/dashboard");
   } else if (active === "dashboard") {
     router.push(`/${item}`);
@@ -35,6 +33,10 @@ export const goBack = () => {
 
 export const changeNeighborhood = () =>
   router.push({ pathname: "/location", params: { returnTo: "back" } });
+
+/** Pick a neighborhood to follow (saved neighborhoods) with the location screen */
+export const addSavedNeighborhood = () =>
+  router.push({ pathname: "/location", params: { returnTo: "back", mode: "save" } });
 
 export const reportPower = (status: PowerStatus) =>
   router.push({ pathname: "/confirm/[status]", params: { status } });

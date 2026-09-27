@@ -12,7 +12,7 @@ interface NavBarProps {
 
 const items: { id: NavItem; label: string; icon: GlyphName }[] = [
   { id: "dashboard", label: "Home", icon: "navHome" },
-  { id: "maps", label: "Map", icon: "navMap" },
+  { id: "map", label: "Map", icon: "navMap" },
   { id: "history", label: "Reports", icon: "navReports" },
   { id: "settings", label: "Profile", icon: "navProfile" },
 ];

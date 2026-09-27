@@ -137,9 +137,9 @@ const HowItWorks = () => {
             id={`${id}-panel`}
             role="tabpanel"
             aria-labelledby={`${id}-tab-${active}`}
-            className="flex justify-center"
+            className="order-first flex justify-center lg:order-none"
           >
-            <div className="relative w-[280px] rounded-[48px] bg-[#1B1C1C] p-[10px] shadow-[0_30px_60px_rgba(0,49,120,0.25)] sm:w-[320px]">
+            <div className="relative w-[240px] rounded-[48px] bg-[#1B1C1C] p-[10px] shadow-[0_30px_60px_rgba(0,49,120,0.25)] sm:w-[300px] lg:w-[320px]">
               <div className="relative aspect-[375/812] overflow-hidden rounded-[38px] bg-screen">
                 <div className="absolute left-1/2 top-2 z-10 h-6 w-24 -translate-x-1/2 rounded-full bg-[#1B1C1C]" />
                 <div className="h-9 bg-white" />

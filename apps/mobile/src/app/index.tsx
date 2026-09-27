@@ -1,17 +1,35 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
+import { useAuth } from "../context/AuthContext";
+import type { User } from "../services/api";
 import { colors, type } from "../theme";
+
+/** Where a signed-in user resumes: finish verification and setup before Home. */
+export const homeRouteFor = (user: User) => {
+  if (!user.emailVerified) return "/verify" as const;
+  if (!user.neighborhoodId) return "/how-it-works" as const;
+  return "/dashboard" as const;
+};
 
 // Figma "Splash Screen" (3:394)
 const SplashScreen = () => {
+  const { status, user } = useAuth();
+  // Prototype: show the splash for at least 800ms
+  const [minTimeElapsed, setMinTimeElapsed] = useState(false);
+
   useEffect(() => {
-    // Prototype: after an 800ms delay, navigate to Onboarding - Welcome
-    const timer = setTimeout(() => router.replace("/onboarding"), 800);
+    const timer = setTimeout(() => setMinTimeElapsed(true), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!minTimeElapsed || status === "loading") return;
+    if (status === "signedIn" && user) router.replace(homeRouteFor(user));
+    else router.replace("/onboarding");
+  }, [minTimeElapsed, status, user]);
 
   return (
     <View style={styles.screen}>

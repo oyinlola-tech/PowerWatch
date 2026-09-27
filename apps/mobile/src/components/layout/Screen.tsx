@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, MAX_CONTENT_WIDTH } from "../../theme";
@@ -12,9 +12,12 @@ interface ScreenProps {
   contentStyle?: StyleProp<ViewStyle>;
   /** Fixed elements drawn over the scroll area (nav bar, floating button) */
   overlay?: ReactNode;
+  /** Enables pull-to-refresh */
+  onRefresh?: () => void;
+  refreshing?: boolean;
 }
 
-const Screen = ({ children, top, bottom = 0, contentStyle, overlay }: ScreenProps) => {
+const Screen = ({ children, top, bottom = 0, contentStyle, overlay, onRefresh, refreshing = false }: ScreenProps) => {
   const insets = useSafeAreaInsets();
 
   return (
@@ -31,6 +34,11 @@ const Screen = ({ children, top, bottom = 0, contentStyle, overlay }: ScreenProp
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          onRefresh ? (
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />
+          ) : undefined
+        }
       >
         <View style={[styles.content, contentStyle]}>{children}</View>
       </ScrollView>

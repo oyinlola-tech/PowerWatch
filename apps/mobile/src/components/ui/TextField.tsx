@@ -15,6 +15,8 @@ interface TextFieldProps extends Omit<TextInputProps, "style"> {
   labelRight?: ReactNode;
   right?: ReactNode;
   hint?: string;
+  /** Validation message; also turns the outline red */
+  error?: string | undefined;
   containerStyle?: StyleProp<ViewStyle>;
 }
 
@@ -26,6 +28,7 @@ const TextField = ({
   labelRight,
   right,
   hint,
+  error,
   containerStyle,
   ...input
 }: TextFieldProps) => (
@@ -35,7 +38,7 @@ const TextField = ({
       {labelRight}
     </View>
 
-    <View style={[styles.field, { borderColor }]}>
+    <View style={[styles.field, { borderColor: error ? colors.danger : borderColor }]}>
       <View style={styles.icon}>
         <Icon name={icon} />
       </View>
@@ -52,7 +55,13 @@ const TextField = ({
       {right}
     </View>
 
-    {hint && <Text style={styles.hint}>{hint}</Text>}
+    {error ? (
+      <Text accessibilityLiveRegion="polite" style={styles.error}>
+        {error}
+      </Text>
+    ) : (
+      hint && <Text style={styles.hint}>{hint}</Text>
+    )}
   </View>
 );
 
@@ -85,6 +94,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.black,
+  },
+  error: {
+    marginTop: 6,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.danger,
   },
   hint: {
     marginTop: 10,

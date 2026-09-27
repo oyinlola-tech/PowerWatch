@@ -21,8 +21,8 @@ const Footer = () => (
         loading="lazy"
         className="h-12 w-12 rounded-2xl"
       />
-      <p className="mt-6 max-w-xl text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink sm:text-[36px]">
-        Monitoring your energy in real-time
+      <p className="mt-6 max-w-2xl text-balance text-[28px] font-bold leading-tight tracking-[-0.02em] text-ink sm:text-[36px]">
+        Monitoring your energy in real‑time
       </p>
 
       <StoreButtons className="mt-8 justify-center" />
@@ -50,7 +50,7 @@ const Footer = () => (
     {/* Wordmark, faded and cropped by the page edge */}
     <p
       aria-hidden="true"
-      className="pointer-events-none mt-4 select-none whitespace-nowrap bg-gradient-to-b from-primary/25 to-primary/0 bg-clip-text text-center text-[21vw] font-bold leading-[0.8] tracking-[-0.04em] text-transparent xl:text-[260px]"
+      className="pointer-events-none -mb-[0.2em] mt-6 select-none whitespace-nowrap bg-gradient-to-b from-primary/25 to-primary/0 bg-clip-text text-center text-[16vw] font-bold leading-none tracking-[-0.04em] text-transparent 2xl:text-[240px]"
     >
       Power<span className="font-medium">Watch</span>
     </p>
