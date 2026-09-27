@@ -68,7 +68,10 @@ const Login = () => {
           autoComplete="email"
           textContentType="emailAddress"
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(text) => {
+            setEmail(text);
+            setErrors((e) => ({ ...e, email: undefined, form: undefined }));
+          }}
           error={errors.email}
           returnKeyType="next"
           containerStyle={styles.email}
@@ -83,7 +86,10 @@ const Login = () => {
           autoComplete="current-password"
           textContentType="password"
           value={password}
-          onChangeText={setPassword}
+          onChangeText={(text) => {
+            setPassword(text);
+            setErrors((e) => ({ ...e, password: undefined, form: undefined }));
+          }}
           error={errors.password}
           returnKeyType="go"
           onSubmitEditing={handleLogin}

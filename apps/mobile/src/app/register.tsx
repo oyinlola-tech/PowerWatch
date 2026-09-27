@@ -28,6 +28,12 @@ const Register = () => {
   const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Editing a field clears its error
+  const edit = (field: Field, setter: (value: string) => void) => (value: string) => {
+    setter(value);
+    setErrors((e) => ({ ...e, [field]: undefined, form: undefined }));
+  };
+
   const handleSignUp = async () => {
     const next: Partial<Record<Field, string>> = {};
     if (!fullName.trim()) next.fullName = "Enter your full name.";
@@ -80,7 +86,7 @@ const Register = () => {
             autoComplete="name"
             textContentType="name"
             value={fullName}
-            onChangeText={setFullName}
+            onChangeText={edit("fullName", setFullName)}
             error={errors.fullName}
           />
 
@@ -93,7 +99,7 @@ const Register = () => {
             autoComplete="email"
             textContentType="emailAddress"
             value={email}
-            onChangeText={setEmail}
+            onChangeText={edit("email", setEmail)}
             error={errors.email}
           />
 
@@ -107,7 +113,7 @@ const Register = () => {
             textContentType="newPassword"
             hint={PASSWORD_HINT}
             value={password}
-            onChangeText={setPassword}
+            onChangeText={edit("password", setPassword)}
             error={errors.password}
             right={
               <Pressable
@@ -126,7 +132,10 @@ const Register = () => {
           <Pressable
             accessibilityRole="checkbox"
             accessibilityState={{ checked: agreed }}
-            onPress={() => setAgreed((v) => !v)}
+            onPress={() => {
+              setAgreed((v) => !v);
+              setErrors((e) => ({ ...e, terms: undefined }));
+            }}
             style={styles.terms}
           >
             <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>

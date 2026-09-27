@@ -480,6 +480,8 @@ const styles = StyleSheet.create({
   },
   results: {
     position: "absolute",
+    zIndex: 10,
+    elevation: 4,
     top: 68,
     left: 16,
     right: 16,

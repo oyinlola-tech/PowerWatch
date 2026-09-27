@@ -41,6 +41,16 @@ const MapView = (props: MapViewProps) => {
     return () => window.removeEventListener("message", onMessage);
   }, [onLoad, onMarkerPress]);
 
+  // The "ready" message can fire before the listener above is attached, so also
+  // poll for the map API until it appears.
+  useEffect(() => {
+    if (isReady) return;
+    const timer = setInterval(() => {
+      if ((frame.current?.contentWindow as MapWindow | null)?.powerwatchMap) setIsReady(true);
+    }, 250);
+    return () => clearInterval(timer);
+  }, [isReady]);
+
   useEffect(() => {
     if (!isReady) return;
     const map = (frame.current?.contentWindow as MapWindow | null)?.powerwatchMap;
