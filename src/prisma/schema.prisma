@@ -1,0 +1,432 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum DeviceType {
+  ANDROID
+  IOS
+  WEB
+}
+
+enum ReportType {
+  ON
+  OFF
+}
+
+enum AuditAction {
+  LOGIN
+  REGISTER
+  LOGOUT
+  PASSWORD_RESET
+  PASSWORD_CHANGE
+  PROFILE_UPDATE
+  EMAIL_VERIFY
+  REPORT_CREATE
+  REPORT_DELETE
+  ADMIN_ACTION
+  ACCOUNT_DELETE
+  DEVICE_REGISTER
+  DEVICE_REMOVE
+  SESSION_REVOKE
+  LOGOUT_ALL
+}
+
+enum NotificationType {
+  PUSH
+  INAPP
+  EMAIL
+  BROADCAST
+}
+
+enum OtpType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+model User {
+  id                  String         @id @default(uuid())
+  firstName           String
+  lastName            String
+  email               String         @unique
+  passwordHash        String
+  role                Role           @default(USER)
+  emailVerified       Boolean        @default(false)
+  notificationEnabled Boolean        @default(true)
+  outageAlerts        Boolean        @default(true) @map("outage_alerts")
+  restorationAlerts   Boolean        @default(true) @map("restoration_alerts")
+  communityUpdates    Boolean        @default(true) @map("community_updates")
+  latitude            Float?
+  longitude           Float?
+  countryId           Int?
+  stateId             Int?
+  lgaId               Int?
+  cityId              Int?
+  townId              Int?
+  neighborhoodId      Int?
+  lastLoginAt         DateTime?      @map("last_login_at")
+  passwordChangedAt   DateTime?      @map("password_changed_at")
+  suspendedAt         DateTime?      @map("suspended_at")
+  createdBy           String?        @map("created_by")
+  createdByUser       User?          @relation("UserCreatedBy", fields: [createdBy], references: [id])
+  updatedBy           String?        @map("updated_by")
+  updatedByUser       User?          @relation("UserUpdatedBy", fields: [updatedBy], references: [id])
+  usersCreated        User[]         @relation("UserCreatedBy")
+  usersUpdated        User[]         @relation("UserUpdatedBy")
+  deletedAt           DateTime?      @map("deleted_at")
+  country             Country?       @relation(fields: [countryId], references: [id])
+  state               State?         @relation(fields: [stateId], references: [id])
+  lga                 LGA?           @relation(fields: [lgaId], references: [id])
+  city                City?          @relation(fields: [cityId], references: [id])
+  town                Town?          @relation(fields: [townId], references: [id])
+  neighborhood        Neighborhood?  @relation(fields: [neighborhoodId], references: [id])
+  refreshTokens       RefreshToken[]
+  devices             Device[]
+  sessions            Session[]
+  reports             Report[]
+  notificationLogs    NotificationLog[]
+  auditLogs           AuditLog[]
+  savedNeighborhoods  SavedNeighborhood[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String    @map("user_id")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+  session   Session?
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  @@index([token])
+
+  @@index([userId, expiresAt])
+  @@map("refresh_tokens")
+}
+
+model Device {
+  id         String      @id @default(uuid())
+  userId     String      @map("user_id")
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deviceName String?     @map("device_name") @db.VarChar(100)
+  deviceType DeviceType? @map("device_type")
+  fcmToken   String?     @map("fcm_token") @db.Text
+  expoPushToken String?  @map("expo_push_token") @db.VarChar(255)
+  browser    String?     @db.VarChar(100)
+  platform   String?     @db.VarChar(50)
+  lastActive DateTime?   @map("last_active")
+  sessions   Session[]
+  createdAt  DateTime    @default(now()) @map("created_at")
+  updatedAt  DateTime    @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([expoPushToken])
+  @@map("devices")
+}
+
+model Session {
+  id             String        @id @default(uuid())
+  userId         String        @map("user_id")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  refreshTokenId String?       @unique @map("refresh_token_id")
+  refreshToken   RefreshToken? @relation(fields: [refreshTokenId], references: [id])
+  deviceId       String?       @map("device_id")
+  device         Device?       @relation(fields: [deviceId], references: [id])
+  ipAddress      String?  @map("ip_address") @db.VarChar(45)
+  userAgent      String?  @map("user_agent") @db.Text
+  isActive       Boolean  @default(true) @map("is_active")
+  lastActivityAt DateTime @default(now()) @map("last_activity_at")
+  expiresAt      DateTime @map("expires_at")
+  createdAt      DateTime @default(now()) @map("created_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  @@index([userId, isActive])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model Otp {
+  id          String   @id @default(uuid())
+  email       String
+  code        String   @db.VarChar(255)
+  type        OtpType  @default(EMAIL_VERIFICATION)
+  attempts    Int      @default(0)
+  maxAttempts Int      @default(5) @map("max_attempts")
+  expiresAt   DateTime @map("expires_at")
+  usedAt      DateTime? @map("used_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@index([email, type, expiresAt])
+  @@index([email, type, usedAt])
+  @@map("otps")
+}
+
+model Country {
+  id        Int     @id
+  name      String  @db.VarChar(100)
+  latitude  Float?
+  longitude Float?
+  states    State[]
+  users     User[]
+
+  @@map("countries")
+}
+
+model State {
+  id        Int     @id
+  name      String  @db.VarChar(100)
+  countryId Int     @map("country_id")
+  country   Country @relation(fields: [countryId], references: [id])
+  latitude  Float?
+  longitude Float?
+  lgAs         LGA[]
+  users        User[]
+  monthlyStats MonthlyStatistic[]
+
+  @@map("states")
+}
+
+model LGA {
+  id        Int    @id
+  stateId   Int    @map("state_id")
+  name      String @db.VarChar(100)
+  latitude  Float?
+  longitude Float?
+  state     State  @relation(fields: [stateId], references: [id])
+  cities    City[]
+  users     User[]
+
+  @@map("lgas")
+}
+
+model City {
+  id        Int    @id
+  lgaId     Int    @map("lga_id")
+  name      String @db.VarChar(100)
+  latitude  Float?
+  longitude Float?
+  lga       LGA    @relation(fields: [lgaId], references: [id])
+  towns     Town[]
+  users     User[]
+
+  @@map("cities")
+}
+
+model Town {
+  id             Int             @id
+  cityId         Int             @map("city_id")
+  name           String          @db.VarChar(100)
+  latitude       Float?
+  longitude      Float?
+  city           City            @relation(fields: [cityId], references: [id])
+  neighborhoods  Neighborhood[]
+  users          User[]
+
+  @@map("towns")
+}
+
+model Neighborhood {
+  id        Int       @id
+  townId    Int       @map("town_id")
+  name      String    @db.VarChar(100)
+  latitude  Float?
+  longitude Float?
+  town            Town                  @relation(fields: [townId], references: [id])
+  users           User[]
+  reports         Report[]
+  outages         Outage[]
+  dailySummaries  DailyReportSummary[]
+  weeklySummaries WeeklyOutageSummary[]
+  monthlyStats    MonthlyStatistic[]
+  savedBy         SavedNeighborhood[]
+
+  @@map("neighborhoods")
+}
+
+model SavedNeighborhood {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  neighborhoodId Int          @map("neighborhood_id")
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id], onDelete: Cascade)
+  label          String?      @db.VarChar(50)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@unique([userId, neighborhoodId])
+  @@map("saved_neighborhoods")
+}
+
+model Report {
+  id             String        @id @default(uuid())
+  userId         String        @map("user_id")
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  neighborhoodId Int           @map("neighborhood_id")
+  neighborhood   Neighborhood  @relation(fields: [neighborhoodId], references: [id])
+  reportType     ReportType    @map("report_type")
+  timestamp      DateTime      @default(now())
+  latitude       Float?
+  longitude      Float?
+  deviceType     DeviceType?   @map("device_type")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  deletedAt      DateTime?     @map("deleted_at")
+  outageReports  OutageReport[]
+
+  @@index([neighborhoodId, timestamp])
+  @@index([userId, timestamp])
+  @@index([timestamp])
+  @@index([reportType, timestamp])
+  @@index([deletedAt])
+  @@map("reports")
+}
+
+model Outage {
+  id             String         @id @default(uuid())
+  neighborhoodId Int            @map("neighborhood_id")
+  neighborhood   Neighborhood   @relation(fields: [neighborhoodId], references: [id])
+  startTime      DateTime       @map("start_time")
+  endTime        DateTime?      @map("end_time")
+  duration       Int?
+  reportCount    Int            @default(0) @map("report_count")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  outageReports  OutageReport[]
+
+  @@index([neighborhoodId, startTime])
+  @@index([neighborhoodId, endTime])
+  @@index([endTime])
+  @@map("outages")
+}
+
+model OutageReport {
+  id        String @id @default(uuid())
+  outageId  String @map("outage_id")
+  outage    Outage @relation(fields: [outageId], references: [id], onDelete: Cascade)
+  reportId  String @map("report_id")
+  report    Report @relation(fields: [reportId], references: [id], onDelete: Cascade)
+
+  @@unique([outageId, reportId])
+  @@map("outage_reports")
+}
+
+model NotificationLog {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String    @db.VarChar(255)
+  body        String    @db.Text
+  type        String?   @db.VarChar(50)
+  sent        Boolean   @default(false)
+  delivered   Boolean   @default(false)
+  opened      Boolean   @default(false)
+  clicked     Boolean   @default(false)
+  sentAt      DateTime? @map("sent_at")
+  deliveredAt DateTime? @map("delivered_at")
+  openedAt    DateTime? @map("opened_at")
+  clickedAt   DateTime? @map("clicked_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  @@index([userId, createdAt])
+  @@map("notification_logs")
+}
+
+model AuditLog {
+  id         String        @id @default(uuid())
+  userId     String?       @map("user_id")
+  user       User?         @relation(fields: [userId], references: [id])
+  action     AuditAction
+  entityType String?       @map("entity_type") @db.VarChar(50)
+  entityId   String?       @map("entity_id") @db.VarChar(36)
+  metadata   Json?         @db.Json
+  ipAddress  String?       @map("ip_address") @db.VarChar(45)
+  userAgent  String?       @map("user_agent") @db.Text
+  timestamp  DateTime      @default(now())
+
+  @@index([action, timestamp])
+  @@index([entityType, entityId])
+  @@index([userId, timestamp])
+  @@map("audit_logs")
+}
+
+model DailyReportSummary {
+  id             String        @id @default(uuid())
+  date           DateTime      @db.Date
+  neighborhoodId Int           @map("neighborhood_id")
+  neighborhood   Neighborhood  @relation(fields: [neighborhoodId], references: [id])
+  totalReports   Int           @default(0) @map("total_reports")
+  onReports      Int           @default(0) @map("on_reports")
+  offReports     Int           @default(0) @map("off_reports")
+  uniqueUsers    Int           @default(0) @map("unique_users")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+
+  @@unique([date, neighborhoodId])
+  @@index([date])
+  @@map("daily_report_summaries")
+}
+
+model WeeklyOutageSummary {
+  id                String       @id @default(uuid())
+  weekStart         DateTime     @map("week_start") @db.Date
+  neighborhoodId    Int          @map("neighborhood_id")
+  neighborhood      Neighborhood @relation(fields: [neighborhoodId], references: [id])
+  totalOutages      Int          @default(0) @map("total_outages")
+  totalDurationMin  Int          @default(0) @map("total_duration_minutes")
+  avgDurationMin    Float        @default(0) @map("avg_duration_minutes")
+  maxDurationMin    Int          @default(0) @map("max_duration_minutes")
+  totalReports      Int          @default(0) @map("total_reports")
+  uniqueUsers       Int          @default(0) @map("unique_users")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+
+  @@unique([weekStart, neighborhoodId])
+  @@map("weekly_outage_summaries")
+}
+
+model MonthlyStatistic {
+  id              String           @id @default(uuid())
+  monthStart      DateTime         @map("month_start") @db.Date
+  neighborhoodId  Int?             @map("neighborhood_id")
+  neighborhood    Neighborhood?    @relation(fields: [neighborhoodId], references: [id])
+  stateId         Int?             @map("state_id")
+  state           State?           @relation(fields: [stateId], references: [id])
+  totalReports    Int              @default(0) @map("total_reports")
+  onReports       Int              @default(0) @map("on_reports")
+  offReports      Int              @default(0) @map("off_reports")
+  totalOutages    Int              @default(0) @map("total_outages")
+  totalOutageMin  Int              @default(0) @map("total_outage_minutes")
+  avgOutageMin    Float            @default(0) @map("avg_outage_minutes")
+  uniqueReporters Int              @default(0) @map("unique_reporters")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @updatedAt @map("updated_at")
+
+  @@unique([monthStart, neighborhoodId, stateId])
+  @@map("monthly_statistics")
+}
+
+model RateLimit {
+  id           String   @id @default(uuid())
+  key          String   @db.VarChar(255)
+  endpoint     String?  @db.VarChar(100)
+  windowStart  DateTime @map("window_start")
+  requestCount Int      @default(0) @map("request_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([key, endpoint, windowStart])
+  @@index([key, endpoint, windowStart])
+  @@map("rate_limits")
+}
