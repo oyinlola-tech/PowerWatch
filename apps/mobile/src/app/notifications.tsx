@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Platform, StyleSheet, Text, View } from "react-native";
 import LogoHeader from "../components/layout/LogoHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -87,7 +87,8 @@ const NotificationSetup = () => {
 
       const wantsAlerts = prefs.outageAlerts || prefs.restorationAlerts || prefs.communityReports;
       let permission = permissionStatus;
-      if (wantsAlerts && permission === "default") {
+      // Push alerts only exist in the phone apps; don't prompt in a browser
+      if (wantsAlerts && permission === "default" && Platform.OS !== "web") {
         permission = await requestNotificationPermission();
         setPermissionStatus(permission);
       }

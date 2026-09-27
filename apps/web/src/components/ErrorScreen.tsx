@@ -42,7 +42,7 @@ const ErrorScreen = ({ backdrop, note, title, description, actions }: ErrorScree
         alt="PowerWatch splash screen"
         width={1100}
         height={1368}
-        className="absolute left-1/2 top-1/2 h-auto w-[46vw] max-w-[360px] -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_40px_40px_rgba(0,49,120,0.25)]"
+        className="absolute left-1/2 top-1/2 h-auto w-[34vw] max-w-[360px] sm:w-[40vw] -translate-x-1/2 -translate-y-1/2 drop-shadow-[0_40px_40px_rgba(0,49,120,0.25)]"
       />
     </div>
 

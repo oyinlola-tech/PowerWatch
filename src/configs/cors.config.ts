@@ -22,5 +22,8 @@ export function buildCorsOptions(): FastifyCorsOptions {
   return {
     origin: origins.length === 1 ? origins[0]! : origins,
     credentials: true,
+    // @fastify/cors only allows GET, HEAD and POST by default; the API also uses these.
+    methods: ['GET', 'HEAD', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    exposedHeaders: ['x-request-id'],
   };
 }
