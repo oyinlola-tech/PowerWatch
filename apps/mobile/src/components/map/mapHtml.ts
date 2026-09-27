@@ -77,7 +77,9 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOpti
       map.once("load", collapseAttribution);
       map.once("idle", collapseAttribution);
 
-      // Status markers: one GeoJSON circle layer, so hundreds of points stay fast
+      // Status markers: one GeoJSON circle layer, so hundreds of points stay fast.
+      // map.loaded() is false while tiles download even after "load", so track the style ourselves.
+      let styleReady = false;
       let pendingMarkers = null;
       const toGeoJson = (markers) => ({
         type: "FeatureCollection",
@@ -120,6 +122,7 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOpti
         }
       };
       map.once("load", () => {
+        styleReady = true;
         if (pendingMarkers) applyMarkers(pendingMarkers.markers, pendingMarkers.fit);
         pendingMarkers = null;
       });
@@ -127,7 +130,7 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOpti
       window.powerwatchMap = {
         setView: (view) => map.easeTo({ center: [view.longitude, view.latitude], zoom: view.zoom }),
         setMarkers: (markers, fit) => {
-          if (map.loaded() || map.getSource("markers")) applyMarkers(markers, fit);
+          if (styleReady) applyMarkers(markers, fit);
           else pendingMarkers = { markers, fit };
         },
       };
