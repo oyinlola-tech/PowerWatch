@@ -41,7 +41,7 @@ export class GetLatestStatusQuery {
       throw new AppError(404, MESSAGES.NEIGHBORHOOD_UNKNOWN);
     }
 
-    const status: PowerStatus = activeOutage ? 'OFF' : lastReport ? 'ON' : 'UNKNOWN';
+    const status: PowerStatus = activeOutage ? 'OFF' : lastReport || lastClosedOutage ? 'ON' : 'UNKNOWN';
     const since = activeOutage?.startTime ?? lastClosedOutage?.endTime ?? null;
 
     let confirmedBy = 0;

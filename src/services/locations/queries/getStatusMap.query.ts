@@ -125,7 +125,7 @@ export class GetStatusMapQuery {
     if (neighborhoodIds.length === 0) {
       return { active: new Map<number, Date>(), reported: new Set<number>() };
     }
-    const [outages, reportedGroups] = await Promise.all([
+    const [outages, reportedGroups, outageGroups] = await Promise.all([
       prisma.outage.findMany({
         where: { neighborhoodId: { in: neighborhoodIds }, endTime: null },
         select: { neighborhoodId: true, startTime: true },
@@ -134,10 +134,12 @@ export class GetStatusMapQuery {
         by: ['neighborhoodId'],
         where: { neighborhoodId: { in: neighborhoodIds }, deletedAt: null },
       }),
+      prisma.outage.groupBy({ by: ['neighborhoodId'], where: { neighborhoodId: { in: neighborhoodIds } } }),
     ]);
     return {
       active: new Map(outages.map((o) => [o.neighborhoodId, o.startTime])),
-      reported: new Set(reportedGroups.map((g) => g.neighborhoodId)),
+      // Any report or outage history means the status is known (ON unless an outage is open).
+      reported: new Set([...reportedGroups, ...outageGroups].map((g) => g.neighborhoodId)),
     };
   }
 

@@ -17,17 +17,18 @@ export class ListSavedNeighborhoodsQuery {
     });
     const ids = saved.map((s) => s.neighborhood.id);
 
-    const [active, reported] = ids.length
+    const [active, reported, withOutages] = ids.length
       ? await Promise.all([
           prisma.outage.findMany({
             where: { neighborhoodId: { in: ids }, endTime: null },
             select: { neighborhoodId: true, startTime: true },
           }),
           prisma.report.groupBy({ by: ['neighborhoodId'], where: { neighborhoodId: { in: ids }, deletedAt: null } }),
+          prisma.outage.groupBy({ by: ['neighborhoodId'], where: { neighborhoodId: { in: ids } } }),
         ])
-      : [[], []];
+      : [[], [], []];
     const activeById = new Map(active.map((o) => [o.neighborhoodId, o.startTime]));
-    const reportedIds = new Set(reported.map((r) => r.neighborhoodId));
+    const reportedIds = new Set([...reported, ...withOutages].map((r) => r.neighborhoodId));
 
     return saved.map((s) => {
       const id = s.neighborhood.id;
