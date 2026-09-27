@@ -10,11 +10,13 @@ const goHome = () => router.dismissTo("/dashboard");
 
 // Figma "Report submitted off" (103:1509) and "Report submitted on" (103:1623)
 const ReportSubmitted = () => {
-  const { status, streetAddress, area, statusChanged } = useLocalSearchParams<{
+  const { status, streetAddress, area, statusChanged, located } = useLocalSearchParams<{
     status: PowerStatus;
     streetAddress?: string;
     area?: string;
     statusChanged?: string;
+    /** "1" when GPS was attached; otherwise why not ("denied" | "unavailable") */
+    located?: string;
   }>();
 
   const isOn = status === "on";
@@ -48,6 +50,13 @@ const ReportSubmitted = () => {
               {streetAddress ?? "Your neighborhood"}
             </Text>
             {area ? <Text style={styles.detailSub}>{area}</Text> : null}
+            <Text style={styles.detailSub}>
+              {located === "1"
+                ? "Exact location attached"
+                : located === "denied"
+                  ? "Location permission off: sent without GPS"
+                  : "GPS unavailable: sent without exact location"}
+            </Text>
           </View>
         </View>
 

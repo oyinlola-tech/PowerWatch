@@ -127,6 +127,7 @@ export class RegisterCommand {
     const tokenId = crypto.randomUUID();
     const refreshTokenRaw = crypto.randomUUID();
     const refreshTokenExpiresAt = getRefreshTokenExpiryDate();
+    const sessionId = crypto.randomUUID();
 
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
@@ -161,7 +162,7 @@ export class RegisterCommand {
 
       await tx.session.create({
         data: {
-          id: crypto.randomUUID(),
+          id: sessionId,
           userId: created.id,
           refreshTokenId: tokenId,
           ipAddress: ipAddress ?? null,
@@ -216,6 +217,7 @@ export class RegisterCommand {
     const accessToken = signAccessToken({
       userId: user.id,
       role: user.role,
+      sessionId,
     });
 
     const refreshTokenJwt = signRefreshToken({

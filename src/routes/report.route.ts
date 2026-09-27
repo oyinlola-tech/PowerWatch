@@ -5,6 +5,7 @@ import { authMiddleware } from '../middlewares/auth.middleware.js';
 const REPORT_EXTRA_FIELDS = {
   latitude: { type: 'number', description: 'GPS latitude', example: 6.524379 },
   longitude: { type: 'number', description: 'GPS longitude', example: 3.379206 },
+  accuracy: { type: 'number', description: 'GPS accuracy radius in metres', example: 12 },
   deviceType: { type: 'string', enum: ['ANDROID', 'IOS', 'WEB'], description: 'Device platform' },
 } as const;
 

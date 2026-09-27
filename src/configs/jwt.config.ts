@@ -4,6 +4,8 @@ import { env } from './env.config.js';
 interface AccessTokenPayload {
   userId: string;
   role: string;
+  /** The sign-in session this token belongs to (lets the API mark "this device") */
+  sessionId?: string;
 }
 
 interface RefreshTokenPayload {

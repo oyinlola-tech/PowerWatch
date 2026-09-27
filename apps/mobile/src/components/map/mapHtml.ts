@@ -29,7 +29,28 @@ export interface MapOptions {
   /** Zoom to fit the markers whenever they change */
   fitToMarkers?: boolean;
   onMarkerPress?: (id: string) => void;
+  /** Called when a pan/zoom ends; `byUser` is false for programmatic moves */
+  onMove?: (view: { latitude: number; longitude: number; zoom: number; byUser: boolean }) => void;
 }
+
+export interface MapMessage {
+  type: string;
+  id?: string;
+  latitude?: number;
+  longitude?: number;
+  zoom?: number;
+  byUser?: boolean;
+}
+
+/** Parses a message from the map document; returns null for anything unexpected */
+export const parseMapMessage = (data: string): MapMessage | null => {
+  try {
+    const message = JSON.parse(data) as Partial<MapMessage>;
+    return typeof message.type === "string" ? (message as MapMessage) : null;
+  } catch {
+    return null;
+  }
+};
 
 /** JS that pushes markers into the live map document */
 export const markersScript = (markers: MapMarker[], fit: boolean) =>
@@ -137,6 +158,18 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOpti
       post({ type: "ready" });
 
       map.once("idle", () => post({ type: "loaded" }));
+
+      // Report where the map settled; originalEvent is only set for user gestures
+      map.on("moveend", (event) => {
+        const center = map.getCenter();
+        post({
+          type: "move",
+          latitude: center.lat,
+          longitude: center.lng,
+          zoom: map.getZoom(),
+          byUser: Boolean(event.originalEvent),
+        });
+      });
       map.on("error", (event) => post({ type: "error", message: String(event.error && event.error.message) }));
     </script>
   </body>

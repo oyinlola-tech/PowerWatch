@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
-import { buildMapHtml, MAP_BASE_URL, markersScript } from "./mapHtml";
+import { buildMapHtml, MAP_BASE_URL, markersScript, parseMapMessage } from "./mapHtml";
 import type { MapOptions } from "./mapHtml";
 
 export type MapViewProps = MapOptions;
 
 // MapLibre GL rendered in a WebView: no native map SDK or API key to configure
 const MapView = (props: MapViewProps) => {
-  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress } = props;
+  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove } = props;
   const webView = useRef<WebView>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -43,12 +43,15 @@ const MapView = (props: MapViewProps) => {
         const { data } = event.nativeEvent;
         if (data.includes('"ready"')) setIsReady(true);
         if (data.includes('"loaded"')) onLoad?.();
-        if (data.includes('"marker"')) {
-          try {
-            onMarkerPress?.(String((JSON.parse(data) as { id: string }).id));
-          } catch {
-            // ignore malformed messages
-          }
+        const message = parseMapMessage(data);
+        if (message?.type === "marker" && message.id) onMarkerPress?.(String(message.id));
+        if (message?.type === "move" && message.latitude !== undefined && message.longitude !== undefined) {
+          onMove?.({
+            latitude: message.latitude,
+            longitude: message.longitude,
+            zoom: message.zoom ?? 0,
+            byUser: Boolean(message.byUser),
+          });
         }
       }}
       // Keep taps on links (map attribution) from navigating the map away

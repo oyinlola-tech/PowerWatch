@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { buildMapHtml } from "./mapHtml";
+import { buildMapHtml, parseMapMessage } from "./mapHtml";
 import type { MapMarker, MapOptions } from "./mapHtml";
 
 export type MapViewProps = MapOptions;
@@ -13,7 +13,7 @@ interface MapWindow extends Window {
 
 // Browser preview of the native MapView (used with `expo start --web`)
 const MapView = (props: MapViewProps) => {
-  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress } = props;
+  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove } = props;
   const frame = useRef<HTMLIFrameElement>(null);
   // A blob URL gives the document this page's origin, which MapLibre's worker needs
   const [src] = useState(() =>
@@ -29,17 +29,20 @@ const MapView = (props: MapViewProps) => {
       const data = String(event.data);
       if (data.includes('"ready"')) setIsReady(true);
       if (data.includes('"loaded"')) onLoad?.();
-      if (data.includes('"marker"')) {
-        try {
-          onMarkerPress?.(String((JSON.parse(data) as { id: string }).id));
-        } catch {
-          // ignore malformed messages
-        }
+      const message = parseMapMessage(data);
+      if (message?.type === "marker" && message.id) onMarkerPress?.(String(message.id));
+      if (message?.type === "move" && message.latitude !== undefined && message.longitude !== undefined) {
+        onMove?.({
+          latitude: message.latitude,
+          longitude: message.longitude,
+          zoom: message.zoom ?? 0,
+          byUser: Boolean(message.byUser),
+        });
       }
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [onLoad, onMarkerPress]);
+  }, [onLoad, onMarkerPress, onMove]);
 
   // The "ready" message can fire before the listener above is attached, so also
   // poll for the map API until it appears.

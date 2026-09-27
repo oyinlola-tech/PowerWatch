@@ -171,4 +171,23 @@ export const notificationRoutes: FastifyPluginAsync = async (app) => {
       },
     },
   }, notificationController.deleteNotification);
+
+  app.patch('/read-all', {
+    schema: {
+      description: 'Mark all of the authenticated user\'s notifications as read.',
+      tags: ['Notifications'],
+      summary: 'Mark all as read',
+      security: [{ bearerAuth: [] }],
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: { type: 'object', properties: { updated: { type: 'integer' } } },
+          },
+        },
+      },
+    },
+  }, notificationController.markAllAsRead);
 };

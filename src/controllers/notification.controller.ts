@@ -14,6 +14,7 @@ import { GetNotificationsQuery } from '../services/notifications/queries/getNoti
 import { GetUnreadNotificationsQuery } from '../services/notifications/queries/getUnreadNotifications.query.js';
 import { successResponse } from '../utils/response.js';
 import { NOTIFICATION_MESSAGES } from '../constants/notification.constant.js';
+import { NotificationRepository } from '../repositories/notification.repository.js';
 
 const sendInAppNotificationCommand = new SendInAppNotificationCommand();
 const markAsReadCommand = new MarkAsReadCommand();
@@ -21,6 +22,7 @@ const deleteNotificationCommand = new DeleteNotificationCommand();
 const getNotificationQuery = new GetNotificationQuery();
 const getNotificationsQuery = new GetNotificationsQuery();
 const getUnreadNotificationsQuery = new GetUnreadNotificationsQuery();
+const notificationRepository = new NotificationRepository();
 
 export const notificationController = {
   async sendNotification(request: FastifyRequest, reply: FastifyReply) {
@@ -75,5 +77,11 @@ export const notificationController = {
     const { id } = notificationIdSchema.parse(request.params);
     await deleteNotificationCommand.execute(id, authRequest.userId);
     return reply.status(200).send(successResponse({}, NOTIFICATION_MESSAGES.NOTIFICATION_DELETED));
+  },
+
+  async markAllAsRead(request: FastifyRequest, reply: FastifyReply) {
+    const authRequest = request as AuthenticatedRequest;
+    const result = await notificationRepository.markAllOpened(authRequest.userId);
+    return reply.status(200).send(successResponse({ updated: result.count }, 'All notifications marked as read.'));
   },
 };

@@ -85,7 +85,7 @@ export class LoginCommand {
       userAgent: userAgent ?? null,
     });
 
-    const accessToken = signAccessToken({ userId: user.id, role: user.role });
+    const accessToken = signAccessToken({ userId: user.id, role: user.role, sessionId });
     const refreshTokenJwt = signRefreshToken({ userId: user.id, tokenId });
 
     return {

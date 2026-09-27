@@ -19,13 +19,19 @@ import { colors, fonts, shadows, type } from "../theme";
 // Ilorin, the area shown in the design's map
 const ILORIN = { latitude: 8.4799, longitude: 4.5418 };
 
+type Point = { latitude: number; longitude: number };
+
 interface Selection {
-  neighborhoodId: number;
+  /** Unknown for a pin the user dropped; resolved on confirm */
+  neighborhoodId?: number;
   name: string;
   area: string;
-  /** Exact GPS point when chosen with "Use current location" */
-  gps?: { latitude: number; longitude: number };
+  /** Exact point to save: the GPS fix or where the user placed the pin */
+  point?: Point;
+  source: "saved" | "gps" | "search" | "pin";
 }
+
+const describePoint = (p: Point) => `${p.latitude.toFixed(5)}, ${p.longitude.toFixed(5)}`;
 
 // Figma "select location" (71:1495)
 const SetMonitoringArea = () => {
@@ -34,12 +40,18 @@ const SetMonitoringArea = () => {
   const { returnTo, mode } = useLocalSearchParams<{ returnTo?: string; mode?: string }>();
   const isSaveMode = mode === "save";
   const { user, refreshUser } = useAuth();
+  const savedPoint =
+    !isSaveMode && user?.latitude != null && user?.longitude != null
+      ? { latitude: user.latitude, longitude: user.longitude }
+      : null;
   const [selection, setSelection] = useState<Selection | null>(() =>
     !isSaveMode && user?.neighborhood
       ? {
           neighborhoodId: user.neighborhood.id,
           name: user.neighborhood.name,
           area: [user.town?.name, user.lga?.name].filter(Boolean).join(", "),
+          ...(savedPoint ? { point: savedPoint } : {}),
+          source: "saved",
         }
       : null,
   );
@@ -50,8 +62,8 @@ const SetMonitoringArea = () => {
   const [search, setSearch] = useState("");
   const [isLocating, setIsLocating] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [center, setCenter] = useState(ILORIN);
-  const [zoom, setZoom] = useState(13);
+  const [center, setCenter] = useState<Point>(savedPoint ?? ILORIN);
+  const [zoom, setZoom] = useState(savedPoint ? 16 : 13);
   // The design's map artwork shows first; the live map takes over once it is used
   const [isLive, setIsLive] = useState(false);
   const [isMapLoaded, setIsMapLoaded] = useState(false);
@@ -84,6 +96,7 @@ const SetMonitoringArea = () => {
       neighborhoodId: item.neighborhoodId!,
       name: item.neighborhood ?? item.name,
       area: [item.town, item.lga, item.state].filter(Boolean).join(", "),
+      source: "search",
     });
     setSearch(item.neighborhood ?? item.name);
     setResults([]);
@@ -91,39 +104,39 @@ const SetMonitoringArea = () => {
     if (item.latitude !== null && item.longitude !== null) {
       setIsLive(true);
       setCenter({ latitude: item.latitude, longitude: item.longitude });
-      setZoom(13);
+      setZoom(14);
     }
   };
 
-  const handleGetLocation = useCallback(async () => {
+  /** Ask for permission, centre on the phone's exact position and find its neighborhood. */
+  const locate = useCallback(async (silentIfDenied: boolean) => {
     setIsLive(true);
     setIsLocating(true);
     setLocationError(null);
 
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
-
       if (!permission.granted) {
-        setLocationError(
-          "Location access denied. Please allow location access in your device settings.",
-        );
+        if (!silentIfDenied) {
+          setLocationError(
+            "Location access is off. Allow it in your phone's settings, or search and drag the map to place the pin yourself.",
+          );
+        }
         return;
       }
 
-      const position = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+      const position = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Highest });
       const point = { latitude: position.coords.latitude, longitude: position.coords.longitude };
       setCenter(point);
-      setZoom(15);
+      setZoom(17);
 
-      // Resolve the point to a neighborhood
       const place = await locationsApi.reverseGeocode(point.latitude, point.longitude);
       setSelection({
         neighborhoodId: place.neighborhoodId,
         name: place.neighborhood,
         area: [place.town, place.lga, place.state].filter(Boolean).join(", "),
-        gps: point,
+        point,
+        source: "gps",
       });
       setSearch(place.neighborhood);
       setResults([]);
@@ -132,28 +145,65 @@ const SetMonitoringArea = () => {
       setLocationError(
         error instanceof ApiError
           ? `We found your position but couldn't match it to a neighborhood. ${error.message}`
-          : "Couldn't get your location. Please try again.",
+          : "Couldn't get your location. Check that location services are on and try again.",
       );
     } finally {
       setIsLocating(false);
     }
   }, []);
 
+  // Setting the primary area: ask for location straight away so the pin starts on the user
+  const askedOnOpen = useRef(false);
+  useEffect(() => {
+    if (isSaveMode || askedOnOpen.current || selection?.source === "saved") return;
+    askedOnOpen.current = true;
+    const timer = setTimeout(() => void locate(true), 0);
+    return () => clearTimeout(timer);
+  }, [isSaveMode, locate, selection?.source]);
+
+  // Dragging the map moves the pin (always at the centre) to an exact spot
+  const handleMapMove = useCallback((view: Point & { byUser: boolean }) => {
+    if (!view.byUser) return;
+    const point = { latitude: view.latitude, longitude: view.longitude };
+    setSelection({
+      name: "Pinned location",
+      area: describePoint(point),
+      point,
+      source: "pin",
+    });
+    setSearch("");
+    setResults([]);
+    setFormError(null);
+  }, []);
+
   const handleConfirmLocation = async () => {
     if (!selection) {
-      setFormError("Search for your neighborhood or use your current location first.");
+      setFormError("Use your current location, search for your neighborhood, or drag the map to place the pin.");
       return;
     }
     setSaving(true);
     setFormError(null);
     try {
+      let neighborhoodId = selection.neighborhoodId;
+      if (neighborhoodId === undefined && selection.point) {
+        // A dropped pin: find which neighborhood that exact point is in
+        const place = await locationsApi.reverseGeocode(selection.point.latitude, selection.point.longitude);
+        neighborhoodId = place.neighborhoodId;
+      }
+      if (neighborhoodId === undefined) throw new Error("No neighborhood");
+
       if (isSaveMode) {
-        await locationsApi.save(selection.neighborhoodId);
+        await locationsApi.save(neighborhoodId);
       } else {
-        await authApi.updateProfile({ neighborhoodId: selection.neighborhoodId, ...(selection.gps ?? {}) });
+        await authApi.updateProfile({ neighborhoodId, ...(selection.point ?? {}) });
         await refreshUser();
       }
-      mixpanel.track("neighborhood_selected", { neighborhoodId: selection.neighborhoodId, mode: mode ?? "primary" });
+      mixpanel.track("neighborhood_selected", {
+        neighborhoodId,
+        mode: mode ?? "primary",
+        source: selection.source,
+        exact: Boolean(selection.point),
+      });
 
       if (returnTo === "back") goBack();
       else router.push("/notifications");
@@ -201,6 +251,7 @@ const SetMonitoringArea = () => {
               zoom={zoom}
               interactive
               onLoad={() => setIsMapLoaded(true)}
+              onMove={handleMapMove}
             />
           </View>
         )}
@@ -289,7 +340,7 @@ const SetMonitoringArea = () => {
         {/* Use current location */}
         <Pressable
           accessibilityRole="button"
-          onPress={handleGetLocation}
+          onPress={() => void locate(false)}
           disabled={isLocating}
           style={[styles.locate, isLocating && { opacity: 0.6 }]}
         >
@@ -300,15 +351,27 @@ const SetMonitoringArea = () => {
         </Pressable>
       </View>
 
+      <Text style={styles.pinHint}>
+        {isLocating
+          ? "Finding your exact location…"
+          : "Drag the map to put the pin exactly on your home or street."}
+      </Text>
+
       {locationError && <Text style={styles.error}>{locationError}</Text>}
 
-      {/* Chosen neighborhood */}
+      {/* Chosen place */}
       {selection && (
         <View style={styles.selected}>
           <Icon name="locationPin" />
           <View style={{ flex: 1 }}>
             <Text style={[type.boldText, { color: colors.ink }]}>{selection.name}</Text>
             {selection.area ? <Text style={styles.resultArea}>{selection.area}</Text> : null}
+            {selection.point && selection.source !== "pin" ? (
+              <Text style={styles.resultArea}>Exact point: {describePoint(selection.point)}</Text>
+            ) : null}
+            {selection.source === "pin" ? (
+              <Text style={styles.resultArea}>We&apos;ll match this spot to its neighborhood when you confirm.</Text>
+            ) : null}
           </View>
         </View>
       )}
@@ -448,6 +511,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     color: colors.black,
+  },
+  pinHint: {
+    marginTop: 8,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: colors.gray500,
   },
   error: {
     marginTop: 8,

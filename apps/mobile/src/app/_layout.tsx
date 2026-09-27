@@ -118,6 +118,8 @@ const RootStack = () => {
         <Stack.Screen name="saved-neighborhoods" />
         <Stack.Screen name="profile-settings" />
         <Stack.Screen name="language" />
+        <Stack.Screen name="inbox" />
+        <Stack.Screen name="devices" />
       </Stack.Protected>
     </Stack>
   );

@@ -52,7 +52,7 @@ export class RefreshTokenCommand {
       expiresAt: getRefreshTokenExpiryDate(),
     });
 
-    const accessToken = signAccessToken({ userId: user.id, role: user.role });
+    const accessToken = signAccessToken({ userId: user.id, role: user.role, sessionId: session.id });
     const refreshTokenJwt = signRefreshToken({ userId: user.id, tokenId: newTokenId });
 
     return {

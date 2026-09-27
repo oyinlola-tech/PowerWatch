@@ -24,10 +24,11 @@ export class ListSessionsQuery {
     private readonly sessionRepository: SessionRepository = new SessionRepository(),
   ) {}
 
-  async execute(userId: string) {
+  async execute(userId: string, currentSessionId?: string) {
     const sessions = await this.sessionRepository.findActiveByUserId(userId);
     return (sessions as unknown as SessionWithDevice[]).map((s) => ({
       id: s.id,
+      isCurrent: s.id === currentSessionId,
       deviceName: s.device?.deviceName ?? null,
       deviceType: s.device?.deviceType ?? null,
       browser: s.device?.browser ?? s.userAgent ?? null,
@@ -52,7 +53,11 @@ export class RevokeSessionCommand {
     userId: string,
     ipAddress?: string,
     userAgent?: string,
+    currentSessionId?: string,
   ) {
+    if (sessionId === currentSessionId) {
+      throw new AppError(400, 'This is the device you are using. Use Sign Out instead.');
+    }
     const session = await this.sessionRepository.findByIdAndUserId(sessionId, userId);
     if (!session) {
       throw new AppError(404, MESSAGES.NOT_FOUND);

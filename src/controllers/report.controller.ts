@@ -48,6 +48,7 @@ function buildReportDto(request: FastifyRequest, reportType?: 'ON' | 'OFF'): Cre
   };
   if (dto.latitude !== undefined) result.latitude = dto.latitude;
   if (dto.longitude !== undefined) result.longitude = dto.longitude;
+  if (dto.accuracy !== undefined) result.locationAccuracy = dto.accuracy;
   if (dto.deviceType !== undefined) result.deviceType = dto.deviceType;
   return result;
 }

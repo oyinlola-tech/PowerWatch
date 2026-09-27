@@ -167,3 +167,24 @@ export interface SavedNeighborhood {
   outageSince: string | null;
   savedAt: string;
 }
+
+export interface InboxNotification {
+  id: string;
+  title: string;
+  body: string;
+  type: string | null;
+  opened: boolean;
+  createdAt: string;
+}
+
+export interface SignInSession {
+  id: string;
+  isCurrent: boolean;
+  deviceName: string | null;
+  deviceType: string | null;
+  browser: string | null;
+  platform: string | null;
+  ipAddress: string | null;
+  lastActivityAt: string;
+  createdAt: string;
+}

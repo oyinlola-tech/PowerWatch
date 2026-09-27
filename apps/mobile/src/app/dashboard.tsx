@@ -9,7 +9,7 @@ import Icon from "../components/icons/Icon";
 import { ErrorView, LoadingView } from "../components/ui/StateViews";
 import { useUser } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
-import { reportsApi } from "../services/api";
+import { notificationsApi, reportsApi } from "../services/api";
 import type { ApiPowerStatus } from "../services/api";
 import { changeNeighborhood, reportPower } from "../services/navigation";
 import { timeAgo } from "../utils/format";
@@ -33,6 +33,8 @@ const Dashboard = () => {
   const neighborhoodKey = user.neighborhoodId ?? 0;
   const status = useApi(() => reportsApi.status(), neighborhoodKey);
   const activity = useApi(() => reportsApi.activity(5), neighborhoodKey);
+  const unread = useApi(notificationsApi.unreadCount);
+  const unreadCount = unread.data?.unreadCount ?? 0;
 
   const live = status.data;
   const hero = heroCopy[live?.status ?? "UNKNOWN"];
@@ -41,6 +43,7 @@ const Dashboard = () => {
   const refresh = () => {
     void status.refresh();
     void activity.refresh();
+    void unread.refresh();
   };
 
   const report = (next: "on" | "off") => {
@@ -65,14 +68,29 @@ const Dashboard = () => {
     >
       <LogoHeader
         right={
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open map"
-            hitSlop={8}
-            onPress={() => router.navigate("/map")}
-          >
-            <Icon name="locationPin" />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+              hitSlop={8}
+              onPress={() => router.push("/inbox")}
+            >
+              <Icon name="bell" width={16} color={colors.primary} />
+              {unreadCount > 0 && (
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                </View>
+              )}
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open map"
+              hitSlop={8}
+              onPress={() => router.navigate("/map")}
+            >
+              <Icon name="locationPin" />
+            </Pressable>
+          </View>
         }
       />
 
@@ -242,6 +260,29 @@ const Dashboard = () => {
 };
 
 const styles = StyleSheet.create({
+  headerActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 20,
+  },
+  unreadBadge: {
+    position: "absolute",
+    top: -6,
+    right: -8,
+    minWidth: 16,
+    height: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 9999,
+    backgroundColor: colors.powerOff,
+    paddingHorizontal: 3,
+  },
+  unreadText: {
+    fontFamily: fonts.semibold,
+    fontSize: 10,
+    lineHeight: 12,
+    color: colors.white,
+  },
   main: {
     gap: 24,
     paddingHorizontal: 16,

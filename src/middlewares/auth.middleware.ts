@@ -6,6 +6,8 @@ import { MESSAGES } from '../constants/message.constant.js';
 export interface AuthenticatedRequest extends FastifyRequest {
   userId: string;
   userRole: string;
+  /** Session of the calling device, when the token carries one */
+  sessionId?: string;
 }
 
 export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
@@ -19,6 +21,7 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
     const payload = verifyAccessToken(token);
     (request as AuthenticatedRequest).userId = payload.userId;
     (request as AuthenticatedRequest).userRole = payload.role;
+    if (typeof payload.sessionId === 'string') (request as AuthenticatedRequest).sessionId = payload.sessionId;
   } catch {
     throw new AppError(401, MESSAGES.UNAUTHORIZED);
   }

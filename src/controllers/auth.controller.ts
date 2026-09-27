@@ -209,7 +209,7 @@ export const authController = {
 
   async getSessions(request: FastifyRequest, reply: FastifyReply) {
     const authReq = request as AuthenticatedRequest;
-    const result = await listSessionsQuery.execute(authReq.userId);
+    const result = await listSessionsQuery.execute(authReq.userId, authReq.sessionId);
     return reply.status(200).send(successResponse(result, 'Sessions fetched successfully.'));
   },
 
@@ -219,6 +219,7 @@ export const authController = {
     const result = await revokeSessionCommand.execute(
       sessionId, authReq.userId,
       request.ip, request.headers['user-agent'],
+      authReq.sessionId,
     );
     return reply.status(200).send(successResponse(result, 'Session revoked successfully.'));
   },

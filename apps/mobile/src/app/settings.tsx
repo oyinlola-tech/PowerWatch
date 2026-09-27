@@ -201,6 +201,16 @@ const Profile = () => {
           />
           <Divider />
           <Row
+            icon="locate"
+            iconWidth={18}
+            iconColor={colors.slateIcon}
+            title="Signed-in Devices"
+            subtitle="See and sign out other devices"
+            onPress={() => router.push("/devices")}
+            right={chevron}
+          />
+          <Divider />
+          <Row
             icon="helpBox"
             iconWidth={18}
             title={"Help & FAQ"}

@@ -19,7 +19,12 @@ export const createReportSchema = z.object({
     .min(-180, 'Longitude must be between -180 and 180.')
     .max(180, 'Longitude must be between -180 and 180.')
     .optional(),
+  /** GPS accuracy radius in metres */
+  accuracy: z.number().min(0).max(100_000).optional(),
   deviceType: deviceTypeEnum.optional(),
+}).refine((r) => (r.latitude === undefined) === (r.longitude === undefined), {
+  message: 'Provide both latitude and longitude, or neither.',
+  path: ['latitude'],
 });
 
 // Fastify has already coerced query params declared as integers, so accept numbers or strings.

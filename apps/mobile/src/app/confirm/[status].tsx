@@ -7,6 +7,7 @@ import Icon from "../../components/icons/Icon";
 import { FormError } from "../../components/ui/StateViews";
 import { useUser } from "../../context/AuthContext";
 import { ApiError, reportsApi } from "../../services/api";
+import { getExactLocation } from "../../services/location";
 import mixpanel from "../../services/mixpanel";
 import { goBack } from "../../services/navigation";
 import type { PowerStatus } from "../../types/power";
@@ -53,6 +54,7 @@ const ConfirmPowerStatus = () => {
 
   const user = useUser();
   const [submitting, setSubmitting] = useState(false);
+  const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reportType: PowerStatus = status === "on" ? "on" : "off";
@@ -68,8 +70,20 @@ const ConfirmPowerStatus = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await reportsApi.report(reportType === "on" ? "ON" : "OFF", user.neighborhoodId, deviceType);
-      mixpanel.track("power_reported", { status: reportType, statusChanged: result.statusChanged });
+      // Every report carries the exact spot it was made from (when the phone allows it)
+      setLocating(true);
+      const gps = await getExactLocation();
+      setLocating(false);
+
+      const result = await reportsApi.report(reportType === "on" ? "ON" : "OFF", user.neighborhoodId, {
+        deviceType,
+        ...(gps.ok ? { location: gps.location } : {}),
+      });
+      mixpanel.track("power_reported", {
+        status: reportType,
+        statusChanged: result.statusChanged,
+        withLocation: gps.ok,
+      });
       router.replace({
         pathname: "/report-submitted/[status]",
         params: {
@@ -77,11 +91,13 @@ const ConfirmPowerStatus = () => {
           streetAddress: neighborhood,
           area,
           statusChanged: result.statusChanged ? "1" : "0",
+          located: gps.ok ? "1" : gps.reason,
         },
       });
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Couldn't send your report. Please try again.");
     } finally {
+      setLocating(false);
       setSubmitting(false);
     }
   };
@@ -121,7 +137,10 @@ const ConfirmPowerStatus = () => {
             ]}
           >
             {submitting ? (
-              <ActivityIndicator color={colors.white} />
+              <View style={styles.busy}>
+                <ActivityIndicator color={colors.white} />
+                {locating && <Text style={[styles.buttonLabel, { color: colors.white }]}>Getting location…</Text>}
+              </View>
             ) : (
               <Text style={[styles.buttonLabel, { color: colors.white }]}>{config.confirmLabel}</Text>
             )}
@@ -144,6 +163,7 @@ const ConfirmPowerStatus = () => {
           </View>
           <View style={styles.noteText}>
             <Text style={styles.noteBody}>Your report helps neighbors stay informed.</Text>
+            <Text style={styles.noteBody}>Your exact location is attached to verify the report.</Text>
             <Text style={styles.noteWarning}>False reports may affect community standing.</Text>
           </View>
         </View>
@@ -153,6 +173,11 @@ const ConfirmPowerStatus = () => {
 };
 
 const styles = StyleSheet.create({
+  busy: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
   card: {
     marginTop: 60,
     width: 327,

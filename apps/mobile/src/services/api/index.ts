@@ -4,6 +4,8 @@ import type {
   AuthResult,
   DeviceType,
   HistorySummary,
+  InboxNotification,
+  SignInSession,
   LiveStatus,
   LocationSearchItem,
   MyReport,
@@ -61,16 +63,37 @@ export const authApi = {
     request<unknown>("/auth/push-token", { method: "PUT", body }),
   unregisterPushToken: (expoPushToken: string) =>
     request<unknown>("/auth/push-token", { method: "DELETE", body: { expoPushToken } }),
+  sessions: () => request<SignInSession[]>("/auth/sessions"),
+  revokeSession: (sessionId: string) => request<unknown>(`/auth/sessions/${sessionId}`, { method: "DELETE" }),
+  logoutAll: () => request<unknown>("/auth/logout-all", { method: "POST" }),
+};
+
+export const notificationsApi = {
+  list: (page = 1, limit = 30) =>
+    request<Paginated<InboxNotification>>("/notifications", { query: { page, limit } }),
+  unreadCount: () => request<{ unreadCount: number }>("/notifications/unread-count"),
+  markRead: (id: string) =>
+    request<unknown>(`/notifications/${id}/read`, { method: "PATCH", body: { opened: true } }),
+  markAllRead: () => request<{ updated: number }>("/notifications/read-all", { method: "PATCH" }),
+  remove: (id: string) => request<unknown>(`/notifications/${id}`, { method: "DELETE" }),
 };
 
 export const reportsApi = {
   status: (neighborhoodId?: number) => request<LiveStatus>("/reports/status", { query: { neighborhoodId } }),
   activity: (limit = 10, neighborhoodId?: number) =>
     request<ActivityItem[]>("/reports/activity", { query: { limit, neighborhoodId } }),
-  report: (status: "ON" | "OFF", neighborhoodId: number, deviceType?: DeviceType) =>
+  report: (
+    status: "ON" | "OFF",
+    neighborhoodId: number,
+    options: { deviceType?: DeviceType; location?: { latitude: number; longitude: number; accuracy?: number } } = {},
+  ) =>
     request<ReportResult>(status === "ON" ? "/reports/power-on" : "/reports/power-off", {
       method: "POST",
-      body: { neighborhoodId, ...(deviceType ? { deviceType } : {}) },
+      body: {
+        neighborhoodId,
+        ...(options.deviceType ? { deviceType: options.deviceType } : {}),
+        ...(options.location ?? {}),
+      },
     }),
   mine: (page = 1, limit = 20) => request<Paginated<MyReport>>("/reports/my", { query: { page, limit } }),
   remove: (id: string) => request<unknown>(`/reports/${id}`, { method: "DELETE" }),

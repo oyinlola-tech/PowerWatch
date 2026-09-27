@@ -43,6 +43,13 @@ export class NotificationRepository {
     return prisma.notificationLog.update({ where: { id }, data });
   }
 
+  async markAllOpened(userId: string) {
+    return prisma.notificationLog.updateMany({
+      where: { userId, opened: false },
+      data: { opened: true, openedAt: new Date() },
+    });
+  }
+
   async delete(id: string) {
     return prisma.notificationLog.delete({ where: { id } });
   }

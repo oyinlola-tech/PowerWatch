@@ -280,6 +280,8 @@ model Report {
   timestamp      DateTime      @default(now())
   latitude       Float?
   longitude      Float?
+  /** GPS accuracy radius in metres for latitude/longitude */
+  locationAccuracy Float?      @map("location_accuracy")
   deviceType     DeviceType?   @map("device_type")
   createdAt      DateTime      @default(now()) @map("created_at")
   deletedAt      DateTime?     @map("deleted_at")

@@ -54,6 +54,7 @@ export interface CreateReportDto {
   reportType: 'ON' | 'OFF';
   latitude?: number | undefined;
   longitude?: number | undefined;
+  locationAccuracy?: number | undefined;
   deviceType?: 'ANDROID' | 'IOS' | 'WEB' | undefined;
 }
 

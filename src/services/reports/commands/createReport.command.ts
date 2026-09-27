@@ -48,6 +48,7 @@ export class CreateReportCommand {
           timestamp: now,
           latitude: dto.latitude ?? null,
           longitude: dto.longitude ?? null,
+          locationAccuracy: dto.locationAccuracy ?? null,
           deviceType: dto.deviceType ?? null,
         },
       });
