@@ -143,3 +143,8 @@ vite.config.ts.timestamp-*
 .vite/
 
 .kilo
+
+AGENTS.md
+CLAUDE.md
+.claude
+apps/mobile/docs

@@ -14,7 +14,14 @@ export interface LocationSearchItem {
   town: string | null;
   neighborhoodId: number | null;
   neighborhood: string | null;
+  /** Best available point: the place's own, else its nearest parent's (null if none). */
+  latitude: number | null;
+  longitude: number | null;
 }
+
+type Coords = { latitude: number | null; longitude: number | null };
+const pick = (...points: Coords[]): Coords =>
+  points.find((p) => p.latitude !== null && p.longitude !== null) ?? { latitude: null, longitude: null };
 
 export class SearchLocationQuery {
   async execute(query: string, limit: number = 20): Promise<LocationSearchItem[]> {
@@ -25,8 +32,17 @@ export class SearchLocationQuery {
 
     // Independent lookups; run them concurrently rather than one after another.
     const [neighborhoods, towns, cities, lgas] = await Promise.all([
+      // Seeded neighborhoods have generic names ("Central", "East Ward"), so also match
+      // on their town/city/LGA: searching "Alayi" lists Alayi's neighborhoods.
       prisma.neighborhood.findMany({
-        where: { name: { contains: term } },
+        where: {
+          OR: [
+            { name: { contains: term } },
+            { town: { name: { contains: term } } },
+            { town: { city: { name: { contains: term } } } },
+            { town: { city: { lga: { name: { contains: term } } } } },
+          ],
+        },
         take: limit,
         include: {
           town: {
@@ -80,6 +96,7 @@ export class SearchLocationQuery {
         town: n.town.name,
         neighborhoodId: n.id,
         neighborhood: n.name,
+        ...pick(n, n.town, n.town.city, n.town.city.lga),
       });
     }
 
@@ -101,6 +118,7 @@ export class SearchLocationQuery {
         town: t.name,
         neighborhoodId: null,
         neighborhood: null,
+        ...pick(t, t.city, t.city.lga),
       });
     }
 
@@ -122,6 +140,7 @@ export class SearchLocationQuery {
         town: null,
         neighborhoodId: null,
         neighborhood: null,
+        ...pick(c, c.lga),
       });
     }
 
@@ -143,6 +162,7 @@ export class SearchLocationQuery {
         town: null,
         neighborhoodId: null,
         neighborhood: null,
+        ...pick(l),
       });
     }
 

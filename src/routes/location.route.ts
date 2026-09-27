@@ -64,7 +64,7 @@ export const locationRoutes: FastifyPluginAsync = async (app) => {
 
   app.get('/search', {
     schema: {
-      description: 'Search for locations (neighborhoods, towns, cities, LGAs) by name. Returns results with full hierarchy (state → LGA → city → town → neighborhood).',
+      description: 'Search for locations by name, neighborhoods first (also matched by their town/city/LGA name). Returns the full hierarchy and approximate coordinates.',
       tags: ['Locations'],
       summary: 'Search locations by name',
       querystring: {
@@ -100,6 +100,8 @@ export const locationRoutes: FastifyPluginAsync = async (app) => {
                   town: { type: 'string', example: 'Ikeja' },
                   neighborhoodId: { type: 'integer', nullable: true, example: 9012 },
                   neighborhood: { type: 'string', nullable: true, example: 'Ikeja' },
+                  latitude: { type: 'number', nullable: true, description: 'Approximate (falls back to parent area)' },
+                  longitude: { type: 'number', nullable: true },
                 },
               },
             },
