@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Platform, StyleSheet, Text, View } from "react-native";
+import { Platform, Text, View } from "react-native";
 import LogoHeader from "../components/layout/LogoHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -16,7 +16,8 @@ import {
   requestNotificationPermission,
 } from "../services/notifications";
 import type { NotificationPermission } from "../services/notifications";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 interface OptionProps {
   icon: GlyphName;
@@ -26,29 +27,36 @@ interface OptionProps {
   onChange: (value: boolean) => void;
 }
 
-const Option = ({ icon, title, description, enabled, onChange }: OptionProps) => (
-  <View style={styles.option}>
-    <View style={styles.optionText}>
-      <View style={styles.optionTitle}>
-        <View style={styles.optionIcon}>
-          <Icon name={icon} />
-        </View>
-        <Text style={[type.boldText, { color: colors.black }]}>{title}</Text>
-      </View>
-      <Text style={styles.optionDescription}>{description}</Text>
-    </View>
+const Option = ({ icon, title, description, enabled, onChange }: OptionProps) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
 
-    <Toggle
-      enabled={enabled}
-      onChange={onChange}
-      offColor={colors.border}
-      offBorderColor={colors.borderInput}
-    />
-  </View>
-);
+  return (
+    <View style={styles.option}>
+      <View style={styles.optionText}>
+        <View style={styles.optionTitle}>
+          <View style={styles.optionIcon}>
+            <Icon name={icon} color={colors.accent} />
+          </View>
+          <Text style={[type.boldText, { color: colors.black }]}>{title}</Text>
+        </View>
+        <Text style={styles.optionDescription}>{description}</Text>
+      </View>
+
+      <Toggle
+        enabled={enabled}
+        onChange={onChange}
+        offColor={colors.border}
+        offBorderColor={colors.borderInput}
+      />
+    </View>
+  );
+};
 
 // Figma "Onboarding - Notifications" (3:332)
 const NotificationSetup = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { user, setUser } = useAuth();
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>("default");
   const [saving, setSaving] = useState(false);
@@ -119,7 +127,7 @@ const NotificationSetup = () => {
 
       {/* Preview */}
       <View style={styles.preview}>
-        <Icon name="bell" />
+        <Icon name="bell" color={colors.borderInput} />
         <Text style={styles.previewLabel}>Notification Preview</Text>
       </View>
 
@@ -155,7 +163,7 @@ const NotificationSetup = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   error: {
     marginTop: 16,
   },
@@ -167,7 +175,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   subtitle: {
-    color: colors.gray600,
+    color: c.gray600,
     opacity: 0.7,
   },
   preview: {
@@ -177,15 +185,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 13.5,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 16,
-    backgroundColor: colors.borderLight,
+    backgroundColor: c.borderLight,
   },
   previewLabel: {
     fontFamily: fonts.segoe,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.gray400,
+    color: c.gray400,
   },
   options: {
     marginTop: 28,
@@ -196,9 +204,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     // Figma draws the 1px border inside the 16px padding
     padding: 15,
   },
@@ -222,11 +230,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.segoe,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.gray500,
+    color: c.gray500,
   },
   finish: {
     marginTop: 85,
   },
-});
+}));
 
 export default NotificationSetup;

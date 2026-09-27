@@ -1,8 +1,9 @@
 import type { ReactNode } from "react";
-import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, View } from "react-native";
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, View } from "react-native";
 import type { StyleProp, ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { colors, MAX_CONTENT_WIDTH } from "../../theme";
+import { MAX_CONTENT_WIDTH } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 interface ScreenProps {
   children: ReactNode;
@@ -19,6 +20,8 @@ interface ScreenProps {
 
 const Screen = ({ children, top, bottom = 0, contentStyle, overlay, onRefresh, refreshing = false }: ScreenProps) => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useStyles();
 
   return (
     <KeyboardAvoidingView
@@ -48,10 +51,10 @@ const Screen = ({ children, top, bottom = 0, contentStyle, overlay, onRefresh, r
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   root: {
     flex: 1,
-    backgroundColor: colors.screenBg,
+    backgroundColor: c.screenBg,
   },
   content: {
     flexGrow: 1,
@@ -59,6 +62,6 @@ const styles = StyleSheet.create({
     maxWidth: MAX_CONTENT_WIDTH,
     alignSelf: "center",
   },
-});
+}));
 
 export default Screen;

@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import Icon from "../icons/Icon";
 import { comingSoon } from "../../services/navigation";
-import { colors, fonts, type } from "../../theme";
+import { fonts, type } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 interface SocialButtonsProps {
   dividerLabel: string;
@@ -15,40 +16,45 @@ const SocialButtons = ({
   dividerLabel,
   dividerFont = fonts.regular,
   dividerPadding,
-}: SocialButtonsProps) => (
-  <View>
-    {/* Divider */}
-    <View style={[styles.divider, { paddingVertical: dividerPadding }]}>
-      <View style={styles.line} />
-      <Text style={[styles.dividerLabel, { fontFamily: dividerFont }]}>{dividerLabel}</Text>
+}: SocialButtonsProps) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+
+  return (
+    <View>
+      {/* Divider */}
+      <View style={[styles.divider, { paddingVertical: dividerPadding }]}>
+        <View style={styles.line} />
+        <Text style={[styles.dividerLabel, { fontFamily: dividerFont }]}>{dividerLabel}</Text>
+      </View>
+
+      {/* Social buttons */}
+      <View style={styles.row}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Google"
+          onPress={() => comingSoon("Sign in with Google")}
+          style={({ pressed }) => [styles.button, styles.google, pressed && styles.pressed]}
+        >
+          <Icon name="google" />
+          <Text style={[type.boldText, styles.label]}>Google</Text>
+        </Pressable>
+
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Continue with Apple"
+          onPress={() => comingSoon("Sign in with Apple")}
+          style={({ pressed }) => [styles.button, styles.apple, pressed && styles.pressed]}
+        >
+          <Icon name="apple" color={colors.black} />
+          <Text style={[type.boldText, styles.label]}>Apple</Text>
+        </Pressable>
+      </View>
     </View>
+  );
+};
 
-    {/* Social buttons */}
-    <View style={styles.row}>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Continue with Google"
-        onPress={() => comingSoon("Sign in with Google")}
-        style={({ pressed }) => [styles.button, styles.google, pressed && styles.pressed]}
-      >
-        <Icon name="google" />
-        <Text style={[type.boldText, styles.label]}>Google</Text>
-      </Pressable>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Continue with Apple"
-        onPress={() => comingSoon("Sign in with Apple")}
-        style={({ pressed }) => [styles.button, styles.apple, pressed && styles.pressed]}
-      >
-        <Icon name="apple" />
-        <Text style={[type.boldText, styles.label]}>Apple</Text>
-      </Pressable>
-    </View>
-  </View>
-);
-
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   divider: {
     alignItems: "center",
     justifyContent: "center",
@@ -58,14 +64,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
   },
   dividerLabel: {
-    backgroundColor: colors.white,
+    // Sits on the screen, masking the divider line (Figma white on #FBFEFF)
+    backgroundColor: c.screenBg,
     paddingHorizontal: 16,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.gray400,
+    color: c.gray400,
   },
   row: {
     flexDirection: "row",
@@ -78,9 +85,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   google: {
     paddingLeft: 16,
@@ -89,11 +96,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pressed: {
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
   },
   label: {
-    color: colors.black,
+    color: c.black,
   },
-});
+}));
 
 export default SocialButtons;

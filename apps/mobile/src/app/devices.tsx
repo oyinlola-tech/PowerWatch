@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -12,7 +12,8 @@ import { authApi } from "../services/api";
 import type { SignInSession } from "../services/api";
 import { formatDateTime, timeAgo } from "../utils/format";
 import { errorMessage } from "../utils/validation";
-import { alpha, colors, fonts, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 /** Turn a raw user agent into something readable, e.g. "Android · okhttp" */
 const describeDevice = (session: SignInSession) => {
@@ -28,6 +29,8 @@ const describeDevice = (session: SignInSession) => {
 
 // Signed-in devices (no Figma frame; Profile screen family)
 const Devices = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { signOut } = useAuth();
   const sessions = useApi(authApi.sessions);
   const [signingOutAll, setSigningOutAll] = useState(false);
@@ -153,7 +156,7 @@ const Devices = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -166,7 +169,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   row: {
@@ -186,7 +189,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     borderRadius: 9999,
-    backgroundColor: alpha(colors.primary, 0.1),
+    backgroundColor: alpha(c.primary, 0.1),
     paddingHorizontal: 8,
     paddingVertical: 2,
   },
@@ -194,32 +197,32 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 11,
     lineHeight: 14,
-    color: colors.primary,
+    color: c.accent,
   },
   meta: {
     fontFamily: fonts.hankenMedium,
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.48,
-    color: colors.slate,
+    color: c.slate,
   },
   danger: {
     gap: 12,
     borderWidth: 1,
-    borderColor: alpha(colors.danger, 0.2),
+    borderColor: alpha(c.danger, 0.2),
     borderRadius: 8,
-    backgroundColor: alpha(colors.dangerTint, 0.1),
+    backgroundColor: alpha(c.dangerTint, 0.1),
     padding: 16,
   },
   dangerText: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.slate,
+    color: c.slate,
   },
   dangerButton: {
-    backgroundColor: colors.danger,
+    backgroundColor: c.danger,
   },
-});
+}));
 
 export default Devices;

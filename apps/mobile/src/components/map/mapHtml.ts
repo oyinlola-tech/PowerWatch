@@ -3,6 +3,8 @@ const MAPLIBRE_CDN = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist`;
 
 // OpenStreetMap-based street style, the closest free match to the map in the design
 export const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
+// Used in dark mode (Figma has no dark map; this is OpenFreeMap's own dark style)
+export const MAP_STYLE_DARK = "https://tiles.openfreemap.org/styles/dark";
 
 // MapLibre loads its worker from the page origin, so the document needs a real one
 export const MAP_BASE_URL = "https://localhost/";
@@ -22,6 +24,8 @@ export interface MapOptions {
   longitude: number;
   zoom: number;
   interactive: boolean;
+  /** Dark map tiles, set by MapView from the app theme */
+  dark?: boolean;
   /** Called once the map has drawn its first complete frame */
   onLoad?: () => void;
   /** Coloured circles drawn over the map (status map, heatmap) */
@@ -56,7 +60,7 @@ export const parseMapMessage = (data: string): MapMessage | null => {
 export const markersScript = (markers: MapMarker[], fit: boolean) =>
   `window.powerwatchMap && window.powerwatchMap.setMarkers(${JSON.stringify(markers)}, ${fit}); true;`;
 
-export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOptions) => `<!doctype html>
+export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = false }: MapOptions) => `<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -80,7 +84,7 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive }: MapOpti
 
       const map = new maplibre.Map({
         container: "map",
-        style: ${JSON.stringify(MAP_STYLE)},
+        style: ${JSON.stringify(dark ? MAP_STYLE_DARK : MAP_STYLE)},
         center: [${longitude}, ${latitude}],
         zoom: ${zoom},
         interactive: ${interactive},

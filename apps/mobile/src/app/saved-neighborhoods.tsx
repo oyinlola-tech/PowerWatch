@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -11,13 +11,16 @@ import { locationsApi } from "../services/api";
 import type { SavedNeighborhood } from "../services/api";
 import { addSavedNeighborhood } from "../services/navigation";
 import { timeAgo } from "../utils/format";
-import { alpha, colors, fonts, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { errorMessage } from "../utils/validation";
 
 const MAX_SAVED = 10;
 
 
 const StatusPill = ({ place }: { place: SavedNeighborhood }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   let label: string;
   let color: string;
   if (place.status === "ON") {
@@ -47,31 +50,37 @@ interface PlaceRowProps {
   onRemove: () => void;
 }
 
-const PlaceRow = ({ place, removing, onRemove }: PlaceRowProps) => (
-  <View style={[styles.row, removing && styles.rowBusy]}>
-    <View style={styles.rowText}>
-      <Text style={[type.boldText, { color: colors.ink }]}>
-        {place.label ? `${place.name} · ${place.label}` : place.name}
-      </Text>
-      <Text style={styles.town}>{place.town}</Text>
+const PlaceRow = ({ place, removing, onRemove }: PlaceRowProps) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+
+  return (
+    <View style={[styles.row, removing && styles.rowBusy]}>
+      <View style={styles.rowText}>
+        <Text style={[type.boldText, { color: colors.ink }]}>
+          {place.label ? `${place.name} · ${place.label}` : place.name}
+        </Text>
+        <Text style={styles.town}>{place.town}</Text>
+      </View>
+      <StatusPill place={place} />
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Remove ${place.name}`}
+        accessibilityState={{ disabled: removing, busy: removing }}
+        disabled={removing}
+        hitSlop={6}
+        onPress={onRemove}
+        style={({ pressed }) => [styles.remove, pressed && { opacity: 0.7 }]}
+      >
+        <Icon name="minus" color={colors.gray600} />
+      </Pressable>
     </View>
-    <StatusPill place={place} />
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`Remove ${place.name}`}
-      accessibilityState={{ disabled: removing, busy: removing }}
-      disabled={removing}
-      hitSlop={6}
-      onPress={onRemove}
-      style={({ pressed }) => [styles.remove, pressed && { opacity: 0.7 }]}
-    >
-      <Icon name="minus" />
-    </Pressable>
-  </View>
-);
+  );
+};
 
 // Saved Neighborhoods (no Figma frame; styled like the Profile screen)
 const SavedNeighborhoods = () => {
+  const styles = useStyles();
   const { data, error, loading, refreshing, refresh, mutate } = useApi(locationsApi.saved);
   const [removingId, setRemovingId] = useState<number | null>(null);
 
@@ -160,7 +169,7 @@ const SavedNeighborhoods = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -171,13 +180,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   add: {
@@ -188,7 +197,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     textAlign: "center",
-    color: colors.muted,
+    color: c.muted,
   },
   row: {
     flexDirection: "row",
@@ -207,7 +216,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.48,
-    color: colors.slate,
+    color: c.slate,
   },
   pill: {
     flexShrink: 0,
@@ -226,10 +235,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.borderInput,
+    borderColor: c.borderInput,
     borderRadius: 4,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
-});
+}));
 
 export default SavedNeighborhoods;

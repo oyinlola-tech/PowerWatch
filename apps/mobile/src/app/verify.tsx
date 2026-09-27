@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -8,13 +8,16 @@ import Logo from "../components/ui/Logo";
 import { FormError } from "../components/ui/StateViews";
 import { useAuth } from "../context/AuthContext";
 import { ApiError, authApi } from "../services/api";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 // Figma "Email Confirmation Wireframe" (3:554)
 const RESEND_COOLDOWN_SECONDS = 30;
 
 const OtpVerification = () => {
   const { user, refreshUser, signOut } = useAuth();
+  const { colors, isDark } = useTheme();
+  const styles = useStyles();
   const email = user?.email ?? "";
   const [otp, setOtp] = useState<string[]>(Array(6).fill(""));
   const [focused, setFocused] = useState<number | null>(null);
@@ -102,7 +105,7 @@ const OtpVerification = () => {
         onPress={handleBack}
         style={styles.back}
       >
-        <Icon name="backArrowBold" />
+        <Icon name="backArrowBold" color={colors.accent} />
       </Pressable>
 
       <View style={styles.body}>
@@ -134,6 +137,7 @@ const OtpVerification = () => {
                 }}
                 accessibilityLabel={`Digit ${index + 1}`}
                 keyboardType="number-pad"
+                keyboardAppearance={isDark ? "dark" : "light"}
                 inputMode="numeric"
                 textContentType="oneTimeCode"
                 maxLength={index === 0 ? 6 : 1}
@@ -170,7 +174,7 @@ const OtpVerification = () => {
           hitSlop={8}
           style={styles.resend}
         >
-          <Text style={[type.boldText, { color: cooldown > 0 ? colors.gray400 : colors.primary }]}>
+          <Text style={[type.boldText, { color: cooldown > 0 ? colors.gray400 : colors.accent }]}>
             {cooldown > 0 ? `Resend code in ${cooldown}s` : "Didn't get a code? Resend"}
           </Text>
         </Pressable>
@@ -184,7 +188,7 @@ const OtpVerification = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   content: {
     paddingHorizontal: 24,
   },
@@ -194,9 +198,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.tintBlue,
+    borderColor: c.tintBlue,
     borderRadius: 9999,
-    backgroundColor: colors.text,
+    backgroundColor: c.card,
   },
   body: {
     alignItems: "center",
@@ -208,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.tintBlue,
+    backgroundColor: c.tintBlue,
   },
   badgeInner: {
     width: 96,
@@ -216,18 +220,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   title: {
     marginTop: 52,
     textAlign: "center",
-    color: colors.bg,
+    color: c.bg,
   },
   description: {
     marginTop: 16,
     maxWidth: 280,
     textAlign: "center",
-    color: colors.gray500,
+    color: c.gray500,
   },
   otp: {
     marginTop: 62,
@@ -245,10 +249,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: fonts.semibold,
     fontSize: 20,
-    color: colors.black,
+    color: c.black,
   },
   digitActive: {
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     boxShadow: "0 0 0 2px rgba(0, 0, 0, 0.05)",
   },
   message: {
@@ -258,7 +262,7 @@ const styles = StyleSheet.create({
   notice: {
     marginTop: 24,
     textAlign: "center",
-    color: colors.powerOn,
+    color: c.powerOn,
   },
   submit: {
     marginTop: 40,
@@ -270,6 +274,6 @@ const styles = StyleSheet.create({
     marginTop: 60,
     alignItems: "center",
   },
-});
+}));
 
 export default OtpVerification;

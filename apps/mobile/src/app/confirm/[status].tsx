@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ActivityIndicator, Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import BackHeader from "../../components/layout/BackHeader";
 import Screen from "../../components/layout/Screen";
@@ -11,9 +11,11 @@ import { getExactLocation } from "../../services/location";
 import mixpanel from "../../services/mixpanel";
 import { goBack } from "../../services/navigation";
 import type { PowerStatus } from "../../types/power";
-import { alpha, colors, fonts, shadows, type } from "../../theme";
+import { alpha, fonts, shadows, type } from "../../theme";
+import type { Palette } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
-const copy: Record<
+const getCopy = (colors: Palette): Record<
   PowerStatus,
   {
     prompt: string;
@@ -25,7 +27,7 @@ const copy: Record<
     tileColor: string;
     iconColor: string;
   }
-> = {
+> => ({
   off: {
     prompt: "Are you currently experiencing a power outage at your location in",
     suffix: "?",
@@ -44,7 +46,7 @@ const copy: Record<
     tileColor: colors.primary,
     iconColor: colors.white,
   },
-};
+});
 
 const deviceType = Platform.OS === "ios" ? "IOS" : Platform.OS === "android" ? "ANDROID" : "WEB";
 
@@ -53,12 +55,14 @@ const ConfirmPowerStatus = () => {
   const { status } = useLocalSearchParams<{ status: PowerStatus }>();
 
   const user = useUser();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [submitting, setSubmitting] = useState(false);
   const [locating, setLocating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const reportType: PowerStatus = status === "on" ? "on" : "off";
-  const config = copy[reportType];
+  const config = getCopy(colors)[reportType];
   const neighborhood = user.neighborhood?.name ?? "your neighborhood";
   const area = [user.town?.name, user.lga?.name].filter(Boolean).join(", ");
 
@@ -159,7 +163,7 @@ const ConfirmPowerStatus = () => {
 
         <View style={styles.note}>
           <View style={styles.noteIcon}>
-            <Icon name="infoCircle" />
+            <Icon name="infoCircle" color={colors.accent} />
           </View>
           <View style={styles.noteText}>
             <Text style={styles.noteBody}>Your report helps neighbors stay informed.</Text>
@@ -172,7 +176,7 @@ const ConfirmPowerStatus = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   busy: {
     flexDirection: "row",
     alignItems: "center",
@@ -185,9 +189,9 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: c.borderSoft,
     borderRadius: 24,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     // Figma draws the 1px border inside the 32px padding
     padding: 31,
     boxShadow: shadows.sheet,
@@ -202,7 +206,7 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 32,
     textAlign: "center",
-    color: colors.bg,
+    color: c.bg,
   },
   prompt: {
     marginTop: 11.75,
@@ -211,7 +215,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 17,
     textAlign: "center",
-    color: colors.bg,
+    color: c.bg,
   },
   actions: {
     marginTop: 40,
@@ -226,8 +230,8 @@ const styles = StyleSheet.create({
   },
   cancel: {
     borderWidth: 1.5,
-    borderColor: alpha(colors.bg, 0.1),
-    backgroundColor: colors.gray,
+    borderColor: alpha(c.bg, 0.1),
+    backgroundColor: c.gray,
   },
   pressed: {
     opacity: 0.85,
@@ -246,9 +250,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 12,
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: c.borderSoft,
     borderRadius: 12,
-    backgroundColor: colors.surfaceNote,
+    backgroundColor: c.surfaceNote,
     padding: 15,
   },
   noteIcon: {
@@ -264,7 +268,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     letterSpacing: 0.14,
-    color: colors.slate,
+    color: c.slate,
     opacity: 0.7,
   },
   noteWarning: {
@@ -272,8 +276,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 12,
     lineHeight: 15,
-    color: colors.slate,
+    color: c.slate,
   },
-});
+}));
 
 export default ConfirmPowerStatus;

@@ -5,7 +5,7 @@ import { router } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useAuth } from "../context/AuthContext";
 import type { User } from "../services/api";
-import { colors, type } from "../theme";
+import { lightColors, type } from "../theme";
 
 /** Where a signed-in user resumes: finish verification and setup before Home. */
 export const homeRouteFor = (user: User) => {
@@ -48,12 +48,13 @@ const SplashScreen = () => {
   );
 };
 
+// The splash is the brand-blue screen in both themes
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: colors.primary,
+    backgroundColor: lightColors.primary,
     paddingHorizontal: 24,
     paddingVertical: 80,
   },
@@ -67,7 +68,7 @@ const styles = StyleSheet.create({
   },
   tagline: {
     textAlign: "center",
-    color: colors.text,
+    color: lightColors.text,
   },
 });
 

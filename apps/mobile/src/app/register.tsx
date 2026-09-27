@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import LogoHeader from "../components/layout/LogoHeader";
 import Screen from "../components/layout/Screen";
@@ -11,7 +11,8 @@ import { FormError } from "../components/ui/StateViews";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../services/api";
 import mixpanel from "../services/mixpanel";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { PASSWORD_HINT, isValidEmail, passwordProblem } from "../utils/validation";
 
 // Figma "Signup Screen Wireframe" (3:467)
@@ -20,6 +21,8 @@ type Field = "fullName" | "email" | "password" | "terms" | "form";
 
 const Register = () => {
   const { signUp } = useAuth();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [showPassword, setShowPassword] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -123,7 +126,7 @@ const Register = () => {
                 onPress={() => setShowPassword((v) => !v)}
                 style={styles.eye}
               >
-                <Icon name={showPassword ? "eyeSlash" : "eye"} />
+                <Icon name={showPassword ? "eyeSlash" : "eye"} color={colors.gray400} />
               </Pressable>
             }
           />
@@ -193,7 +196,7 @@ const Register = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: {
     marginLeft: 24,
     marginRight: 8,
@@ -203,14 +206,14 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 48,
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     marginTop: 9,
     fontFamily: fonts.segoe,
     fontSize: 15.75,
     lineHeight: 24,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   form: {
@@ -232,13 +235,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.checkboxBorder,
+    borderColor: c.checkboxBorder,
     borderRadius: 2.5,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   checkboxChecked: {
-    borderColor: colors.primary,
-    backgroundColor: colors.primary,
+    borderColor: c.primary,
+    backgroundColor: c.primary,
   },
   checkmark: {
     width: 10,
@@ -246,7 +249,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
     borderLeftWidth: 2,
     borderBottomWidth: 2,
-    borderColor: colors.white,
+    borderColor: c.white,
     transform: [{ rotate: "-45deg" }],
   },
   termsText: {
@@ -256,17 +259,17 @@ const styles = StyleSheet.create({
     fontFamily: fonts.segoe,
     fontSize: 14,
     lineHeight: 19,
-    color: colors.gray500,
+    color: c.gray500,
   },
   termsError: {
     marginTop: -8,
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.danger,
+    color: c.danger,
   },
   termsLink: {
-    color: colors.black,
+    color: c.black,
     textDecorationLine: "underline",
   },
   submit: {
@@ -287,6 +290,6 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     textAlign: "center",
   },
-});
+}));
 
 export default Register;

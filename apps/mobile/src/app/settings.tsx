@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { router } from "expo-router";
@@ -15,7 +15,8 @@ import { ApiError, authApi, locationsApi } from "../services/api";
 import type { NotificationPreferences } from "../services/api";
 import { changeNeighborhood } from "../services/navigation";
 import { fullName, initials } from "../utils/format";
-import { alpha, colors, fonts, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 const APP_SETTINGS_KEY = "pw.appSettings";
 
@@ -26,9 +27,11 @@ const Profile = () => {
   const user = useUser();
   const { setUser, signOut } = useAuth();
   const saved = useApi(locationsApi.saved);
+  const { colors, isDark, setDarkMode } = useTheme();
+  const styles = useStyles();
 
   // Device-only display settings
-  const [appSettings, setAppSettings] = useState({ darkMode: false, dataSaverMode: true });
+  const [appSettings, setAppSettings] = useState({ dataSaverMode: true });
   useEffect(() => {
     AsyncStorage.getItem(APP_SETTINGS_KEY)
       .then((raw) => raw && setAppSettings((s) => ({ ...s, ...JSON.parse(raw) })))
@@ -161,7 +164,7 @@ const Profile = () => {
             icon="moon"
             iconWidth={18}
             title="Dark Mode"
-            right={<Toggle enabled={appSettings.darkMode} onChange={toggleApp("darkMode")} />}
+            right={<Toggle enabled={isDark} onChange={setDarkMode} />}
           />
           <Divider />
           <Row
@@ -178,7 +181,7 @@ const Profile = () => {
             title="Language"
             subtitle="English (US)"
             onPress={() => router.push("/language")}
-            right={<Icon name="translate" />}
+            right={<Icon name="translate" color={colors.muted} />}
           />
         </Section>
 
@@ -230,7 +233,7 @@ const Profile = () => {
         {/* Danger zone */}
         <View style={styles.danger}>
           <Pressable accessibilityRole="button" onPress={handleSignOut} style={styles.signOut}>
-            <Icon name="logout" />
+            <Icon name="logout" color={colors.danger} />
             <Text style={[type.buttonText, { color: colors.danger }]}>Sign Out</Text>
           </Pressable>
           <Text style={styles.version}>PowerWatch Version {version}</Text>
@@ -240,7 +243,7 @@ const Profile = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -252,9 +255,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.6),
+    borderColor: alpha(c.stroke, 0.6),
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     padding: 16,
   },
   avatar: {
@@ -263,19 +266,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-    backgroundColor: colors.avatarBg,
+    backgroundColor: c.avatarBg,
   },
   avatarText: {
     fontFamily: fonts.hankenSemibold,
     fontSize: 20,
     lineHeight: 28,
-    color: colors.navy,
+    color: c.navy,
   },
   name: {
     fontFamily: fonts.hankenSemibold,
     fontSize: 20,
     lineHeight: 28,
-    color: colors.ink,
+    color: c.ink,
   },
   danger: {
     gap: 24,
@@ -285,9 +288,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(colors.danger, 0.2),
+    borderColor: alpha(c.danger, 0.2),
     borderRadius: 8,
-    backgroundColor: alpha(colors.dangerTint, 0.1),
+    backgroundColor: alpha(c.dangerTint, 0.1),
     padding: 16,
   },
   version: {
@@ -296,9 +299,9 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.48,
     textAlign: "center",
-    color: colors.slate,
+    color: c.slate,
     opacity: 0.5,
   },
-});
+}));
 
 export default Profile;

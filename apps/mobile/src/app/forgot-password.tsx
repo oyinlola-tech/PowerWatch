@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { router } from "expo-router";
 import LogoHeader from "../components/layout/LogoHeader";
 import Screen from "../components/layout/Screen";
@@ -8,12 +8,15 @@ import { FormError } from "../components/ui/StateViews";
 import TextField from "../components/ui/TextField";
 import { ApiError, authApi } from "../services/api";
 import { goBack } from "../services/navigation";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { EMAIL_PATTERN } from "../utils/validation";
 
 
 // Forgot Password (no Figma frame; styled like the Login screen)
 const ForgotPassword = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState<string>();
   const [formError, setFormError] = useState<string | null>(null);
@@ -96,7 +99,7 @@ const ForgotPassword = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: {
     marginLeft: 19,
     marginRight: 13,
@@ -106,14 +109,14 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 48,
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     marginTop: 9,
     fontFamily: fonts.segoe,
     fontSize: 16,
     lineHeight: 24,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   form: {
@@ -130,11 +133,11 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   footerText: {
-    color: colors.gray500,
+    color: c.gray500,
   },
   footerLink: {
-    color: colors.primary,
+    color: c.accent,
   },
-});
+}));
 
 export default ForgotPassword;

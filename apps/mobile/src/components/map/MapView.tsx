@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
 import { buildMapHtml, MAP_BASE_URL, markersScript, parseMapMessage } from "./mapHtml";
 import type { MapOptions } from "./mapHtml";
+import { useTheme } from "../../theme/ThemeContext";
 
 export type MapViewProps = MapOptions;
 
@@ -10,10 +11,16 @@ export type MapViewProps = MapOptions;
 const MapView = (props: MapViewProps) => {
   const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove } = props;
   const webView = useRef<WebView>(null);
-  const [isReady, setIsReady] = useState(false);
+  const { isDark } = useTheme();
 
-  // The document is built once; later prop changes are pushed into the live map
-  const [html] = useState(() => buildMapHtml(props));
+  // The document is rebuilt only when the theme changes; later prop changes are
+  // pushed into the live map
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const html = useMemo(() => buildMapHtml({ ...props, dark: isDark }), [isDark]);
+
+  // Readiness belongs to one document, so a theme switch waits for the new map
+  const [readyHtml, setReadyHtml] = useState<string | null>(null);
+  const isReady = readyHtml === html;
 
   useEffect(() => {
     if (!isReady) return;
@@ -41,7 +48,7 @@ const MapView = (props: MapViewProps) => {
       setSupportMultipleWindows={false}
       onMessage={(event) => {
         const { data } = event.nativeEvent;
-        if (data.includes('"ready"')) setIsReady(true);
+        if (data.includes('"ready"')) setReadyHtml(html);
         if (data.includes('"loaded"')) onLoad?.();
         const message = parseMapMessage(data);
         if (message?.type === "marker" && message.id) onMarkerPress?.(String(message.id));

@@ -17,7 +17,7 @@ import {
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import mixpanel from "../services/mixpanel";
 import { configureNotifications, registerForPushNotifications } from "../services/notifications";
-import { colors } from "../theme";
+import { ThemeProvider, useTheme } from "../theme/ThemeContext";
 
 // Keep the native splash up until the design's fonts are ready
 SplashScreen.preventAutoHideAsync();
@@ -47,12 +47,19 @@ const RootLayout = () => {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <AuthProvider>
-        <RootStack />
-      </AuthProvider>
+      <ThemeProvider>
+        <ThemedStatusBar />
+        <AuthProvider>
+          <RootStack />
+        </AuthProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
+};
+
+const ThemedStatusBar = () => {
+  const { isDark } = useTheme();
+  return <StatusBar style={isDark ? "light" : "dark"} />;
 };
 
 // Tapping a power alert opens Home
@@ -81,8 +88,12 @@ const useNotificationTaps = (enabled: boolean) => {
 
 const RootStack = () => {
   const { status } = useAuth();
+  const { colors, ready } = useTheme();
   const signedIn = status === "signedIn";
   useNotificationTaps(signedIn);
+
+  // Wait for the saved theme so screens don't flash the wrong colours
+  if (!ready) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.screenBg } }}>

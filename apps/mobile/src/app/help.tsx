@@ -1,9 +1,10 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Accordion from "../components/ui/Accordion";
 import type { AccordionItem } from "../components/ui/Accordion";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles } from "../theme/ThemeContext";
 
 const faqs: AccordionItem[] = [
   {
@@ -27,9 +28,14 @@ const faqs: AccordionItem[] = [
       "You can report once per neighborhood every 5 minutes. This keeps the status fair and stops accidental repeat reports.",
   },
   {
+    title: "Why does PowerWatch use my location?",
+    body:
+      "To set your monitoring area on your exact spot, and to attach where you were when you report, so reports can be checked against the area they describe. Location is only used while the app is open. Other users never see your location or your name; see the Privacy Policy for details.",
+  },
+  {
     title: "How do I change my neighborhood?",
     body:
-      "On Home, tap Change next to your neighborhood, or go to Profile > Primary Location. You can search for a neighborhood or use your current location.",
+      "On Home, tap Change next to your neighborhood, or go to Profile > Primary Location. You can use your current location, search for a neighborhood, or drag the map so the pin sits exactly on your home.",
   },
   {
     title: "What are saved neighborhoods?",
@@ -54,36 +60,40 @@ const faqs: AccordionItem[] = [
   {
     title: "How do I delete my account?",
     body:
-      "Go to Profile > Profile Settings and choose to delete your account. This signs you out on all devices and deletes your profile.",
+      "Go to Profile > Profile Settings and choose to delete your account. This signs you out on all devices and erases your personal details. Your past reports stay only as anonymous ON/OFF records, without their locations.",
   },
 ];
 
 // Help & FAQ
-const Help = () => (
-  <Screen top={23} bottom={40}>
-    <BackHeader height={63} />
+const Help = () => {
+  const styles = useStyles();
 
-    <View style={styles.main}>
-      <View style={styles.intro}>
-        <Text accessibilityRole="header" style={styles.title}>
-          {"Help & FAQ"}
-        </Text>
-        <Text style={styles.body}>
-          Answers to common questions about reporting power, neighborhood status and alerts.
-        </Text>
+  return (
+    <Screen top={23} bottom={40}>
+      <BackHeader height={63} />
+
+      <View style={styles.main}>
+        <View style={styles.intro}>
+          <Text accessibilityRole="header" style={styles.title}>
+            {"Help & FAQ"}
+          </Text>
+          <Text style={styles.body}>
+            Answers to common questions about reporting power, neighborhood status and alerts.
+          </Text>
+        </View>
+
+        <View style={styles.section}>
+          <Text accessibilityRole="header" style={styles.sectionTitle}>
+            FREQUENTLY ASKED QUESTIONS
+          </Text>
+          <Accordion items={faqs} />
+        </View>
       </View>
+    </Screen>
+  );
+};
 
-      <View style={styles.section}>
-        <Text accessibilityRole="header" style={styles.sectionTitle}>
-          FREQUENTLY ASKED QUESTIONS
-        </Text>
-        <Accordion items={faqs} />
-      </View>
-    </View>
-  </Screen>
-);
-
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -94,21 +104,21 @@ const styles = StyleSheet.create({
   },
   title: {
     ...type.h1,
-    color: colors.bg,
+    color: c.bg,
   },
   body: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 22,
-    color: colors.slate,
+    color: c.slate,
   },
   section: {
     gap: 8,
   },
   sectionTitle: {
     ...type.boldText,
-    color: colors.navy,
+    color: c.navy,
   },
-});
+}));
 
 export default Help;

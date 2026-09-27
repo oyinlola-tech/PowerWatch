@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from "react-native";
+import { Animated, Easing, Pressable, Text, View } from "react-native";
 import Icon from "../icons/Icon";
 import { Divider } from "./ListSection";
-import { alpha, colors, fonts, type } from "../../theme";
+import { alpha, fonts, type } from "../../theme";
+import { makeStyles } from "../../theme/ThemeContext";
 
 // Expandable question/answer list in the settings-style card (used by Help & FAQ)
 
@@ -17,6 +18,7 @@ interface ItemProps extends AccordionItem {
 }
 
 const Item = ({ title, body, expanded, onToggle }: ItemProps) => {
+  const styles = useStyles();
   const [rotation] = useState(() => new Animated.Value(expanded ? 1 : 0));
 
   useEffect(() => {
@@ -56,6 +58,7 @@ interface AccordionProps {
 }
 
 const Accordion = ({ items, initiallyOpen }: AccordionProps) => {
+  const styles = useStyles();
   const [open, setOpen] = useState<number | null>(initiallyOpen ?? null);
 
   return (
@@ -74,12 +77,12 @@ const Accordion = ({ items, initiallyOpen }: AccordionProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   card: {
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.6),
+    borderColor: alpha(c.stroke, 0.6),
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   header: {
     flexDirection: "row",
@@ -90,7 +93,7 @@ const styles = StyleSheet.create({
   },
   title: {
     flexShrink: 1,
-    color: colors.ink,
+    color: c.ink,
   },
   chevron: {
     width: 16,
@@ -105,8 +108,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 22,
-    color: colors.slate,
+    color: c.slate,
   },
-});
+}));
 
 export default Accordion;

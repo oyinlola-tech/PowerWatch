@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Animated, Easing, Pressable, StyleSheet } from "react-native";
-import { colors, shadows } from "../../theme";
+import { shadows } from "../../theme";
+import { useTheme } from "../../theme/ThemeContext";
 
 interface ToggleProps {
   enabled: boolean;
@@ -11,7 +12,9 @@ interface ToggleProps {
 }
 
 // 48x24 track with a 16px knob, 4px inset
-const Toggle = ({ enabled, onChange, offColor = colors.stroke, offBorderColor }: ToggleProps) => {
+const Toggle = ({ enabled, onChange, offColor: offColorProp, offBorderColor }: ToggleProps) => {
+  const { colors } = useTheme();
+  const offColor = offColorProp ?? colors.stroke;
   const progress = useState(() => new Animated.Value(enabled ? 1 : 0))[0];
 
   useEffect(() => {
@@ -76,7 +79,8 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 9999,
-    backgroundColor: colors.white,
+    // The knob stays white on both tracks and in both themes
+    backgroundColor: "#FFFFFF",
     boxShadow: shadows.card,
   },
 });

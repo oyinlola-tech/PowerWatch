@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { buildMapHtml, parseMapMessage } from "./mapHtml";
 import type { MapMarker, MapOptions } from "./mapHtml";
+import { useTheme } from "../../theme/ThemeContext";
 
 export type MapViewProps = MapOptions;
 
@@ -15,11 +16,17 @@ interface MapWindow extends Window {
 const MapView = (props: MapViewProps) => {
   const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove } = props;
   const frame = useRef<HTMLIFrameElement>(null);
-  // A blob URL gives the document this page's origin, which MapLibre's worker needs
-  const [src] = useState(() =>
-    URL.createObjectURL(new Blob([buildMapHtml(props)], { type: "text/html" })),
+  const { isDark } = useTheme();
+  // A blob URL gives the document this page's origin, which MapLibre's worker needs.
+  // It is rebuilt only when the theme changes; later prop changes go into the live map.
+  const src = useMemo(
+    () => URL.createObjectURL(new Blob([buildMapHtml({ ...props, dark: isDark })], { type: "text/html" })),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isDark],
   );
-  const [isReady, setIsReady] = useState(false);
+  // Readiness belongs to one document, so a theme switch waits for the new map
+  const [readySrc, setReadySrc] = useState<string | null>(null);
+  const isReady = readySrc === src;
 
   useEffect(() => () => URL.revokeObjectURL(src), [src]);
 
@@ -27,7 +34,7 @@ const MapView = (props: MapViewProps) => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== frame.current?.contentWindow) return;
       const data = String(event.data);
-      if (data.includes('"ready"')) setIsReady(true);
+      if (data.includes('"ready"')) setReadySrc(src);
       if (data.includes('"loaded"')) onLoad?.();
       const message = parseMapMessage(data);
       if (message?.type === "marker" && message.id) onMarkerPress?.(String(message.id));
@@ -42,17 +49,17 @@ const MapView = (props: MapViewProps) => {
     };
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [onLoad, onMarkerPress, onMove]);
+  }, [onLoad, onMarkerPress, onMove, src]);
 
   // The "ready" message can fire before the listener above is attached, so also
   // poll for the map API until it appears.
   useEffect(() => {
     if (isReady) return;
     const timer = setInterval(() => {
-      if ((frame.current?.contentWindow as MapWindow | null)?.powerwatchMap) setIsReady(true);
+      if ((frame.current?.contentWindow as MapWindow | null)?.powerwatchMap) setReadySrc(src);
     }, 250);
     return () => clearInterval(timer);
-  }, [isReady]);
+  }, [isReady, src]);
 
   useEffect(() => {
     if (!isReady) return;

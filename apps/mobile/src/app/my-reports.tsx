@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -11,7 +11,8 @@ import { reportsApi } from "../services/api";
 import type { MyReport } from "../services/api";
 import { goToDashboard } from "../services/navigation";
 import { formatDateTime } from "../utils/format";
-import { alpha, colors, fonts, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { errorMessage } from "../utils/validation";
 
 const PAGE_SIZE = 50;
@@ -24,6 +25,8 @@ interface ReportRowProps {
 }
 
 const ReportRow = ({ report, deleting, onDelete }: ReportRowProps) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const isOn = report.reportType === "ON";
   const when = formatDateTime(report.timestamp);
 
@@ -55,6 +58,7 @@ const ReportRow = ({ report, deleting, onDelete }: ReportRowProps) => {
 
 // My Reports (no Figma frame; styled like the Profile and History screens)
 const MyReports = () => {
+  const styles = useStyles();
   const { data, error, loading, refreshing, refresh, mutate } = useApi(() => reportsApi.mine(1, PAGE_SIZE));
   const [loadingMore, setLoadingMore] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -164,7 +168,7 @@ const MyReports = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -175,20 +179,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   card: {
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.6),
+    borderColor: alpha(c.stroke, 0.6),
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   row: {
     flexDirection: "row",
@@ -212,7 +216,7 @@ const styles = StyleSheet.create({
   },
   meta: {
     lineHeight: 16,
-    color: colors.muted,
+    color: c.muted,
   },
   empty: {
     gap: 8,
@@ -222,13 +226,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: c.borderSoft,
     borderRadius: 8,
   },
   loadMoreLabel: {
     textAlign: "center",
-    color: colors.primary,
+    color: c.accent,
   },
-});
+}));
 
 export default MyReports;

@@ -1,15 +1,18 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import BackHeader from "../../components/layout/BackHeader";
 import Screen from "../../components/layout/Screen";
 import Icon from "../../components/icons/Icon";
 import type { PowerStatus } from "../../types/power";
-import { alpha, colors, fonts, shadows, type } from "../../theme";
+import { alpha, fonts, shadows, type } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 const goHome = () => router.dismissTo("/dashboard");
 
 // Figma "Report submitted off" (103:1509) and "Report submitted on" (103:1623)
 const ReportSubmitted = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { status, streetAddress, area, statusChanged, located } = useLocalSearchParams<{
     status: PowerStatus;
     streetAddress?: string;
@@ -42,7 +45,7 @@ const ReportSubmitted = () => {
       <View style={styles.details}>
         <View style={styles.detailRow}>
           <View style={styles.locationTile}>
-            <Icon name="locationPinOutline" />
+            <Icon name="locationPinOutline" color={colors.navy} />
           </View>
           <View>
             <Text style={styles.detailLabel}>Reported Location</Text>
@@ -80,7 +83,7 @@ const ReportSubmitted = () => {
         <Text style={styles.nextTitle}>Next Steps</Text>
         <View style={styles.nextBox}>
           <View style={styles.nextIcon}>
-            <Icon name="pencilSmall" />
+            <Icon name="pencilSmall" color={colors.navy} />
           </View>
           <Text style={styles.nextText}>
             {statusChanged === "1"
@@ -115,15 +118,15 @@ const ReportSubmitted = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   success: {
     marginTop: 21,
     marginHorizontal: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.3),
+    borderColor: alpha(c.stroke, 0.3),
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     // Figma draws the 1px border inside the padding
     paddingTop: 12,
     paddingHorizontal: 23,
@@ -135,17 +138,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   title: {
     marginTop: 24,
     textAlign: "center",
-    color: colors.bg,
+    color: c.bg,
   },
   thanks: {
     marginTop: 8,
     textAlign: "center",
-    color: colors.muted,
+    color: c.muted,
     opacity: 0.9,
   },
   details: {
@@ -154,9 +157,9 @@ const styles = StyleSheet.create({
     height: 177,
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.3),
+    borderColor: alpha(c.stroke, 0.3),
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     padding: 19,
     boxShadow: shadows.card,
   },
@@ -174,7 +177,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-    backgroundColor: colors.tintBlue,
+    backgroundColor: c.tintBlue,
   },
   statusCircle: {
     width: 40,
@@ -182,7 +185,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.muted,
+    backgroundColor: c.muted,
   },
   detailLabel: {
     fontFamily: fonts.segoeSemibold,
@@ -190,7 +193,7 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     letterSpacing: 0.6,
     textTransform: "uppercase",
-    color: colors.muted,
+    color: c.muted,
   },
   detailValue: {
     fontFamily: fonts.segoeBold,
@@ -201,11 +204,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.segoe,
     fontSize: 14,
     lineHeight: 21,
-    color: colors.muted,
+    color: c.muted,
   },
   divider: {
     height: 1,
-    backgroundColor: alpha(colors.stroke, 0.3),
+    backgroundColor: alpha(c.stroke, 0.3),
   },
   nextSteps: {
     marginTop: 22,
@@ -218,14 +221,14 @@ const styles = StyleSheet.create({
     lineHeight: 21,
     letterSpacing: 0.7,
     textTransform: "uppercase",
-    color: colors.muted,
+    color: c.muted,
   },
   nextBox: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
     borderRadius: 12,
-    backgroundColor: colors.gray,
+    backgroundColor: c.gray,
     padding: 16,
   },
   nextIcon: {
@@ -236,7 +239,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.segoe,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.slate,
+    color: c.slate,
   },
   actions: {
     marginTop: 61,
@@ -254,16 +257,16 @@ const styles = StyleSheet.create({
     boxShadow: shadows.card,
   },
   primary: {
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   secondary: {
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.3),
-    backgroundColor: colors.gray,
+    borderColor: alpha(c.stroke, 0.3),
+    backgroundColor: c.gray,
   },
   pressed: {
     opacity: 0.85,
   },
-});
+}));
 
 export default ReportSubmitted;

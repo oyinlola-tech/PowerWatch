@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -8,13 +8,16 @@ import { notificationsApi } from "../services/api";
 import type { InboxNotification } from "../services/api";
 import { timeAgo } from "../utils/format";
 import { errorMessage } from "../utils/validation";
-import { alpha, colors, fonts, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 const isOutage = (n: InboxNotification) => n.title.toLowerCase().includes("outage");
 
 // Notifications inbox (no Figma frame; Profile screen family). Lists the alerts
 // the server sent: outage/restoration pushes, broadcasts and in-app messages.
 const Inbox = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const inbox = useApi(() => notificationsApi.list(1, 50));
   const items = inbox.data?.data ?? [];
   const unread = items.filter((n) => !n.opened).length;
@@ -70,7 +73,7 @@ const Inbox = () => {
           </View>
           {unread > 0 && (
             <Pressable accessibilityRole="button" onPress={markAllRead} hitSlop={8}>
-              <Text style={[type.boldText, { color: colors.primary }]}>Mark all read</Text>
+              <Text style={[type.boldText, { color: colors.accent }]}>Mark all read</Text>
             </Pressable>
           )}
         </View>
@@ -121,7 +124,7 @@ const Inbox = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -137,26 +140,26 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   list: {
     gap: 1,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.6),
+    borderColor: alpha(c.stroke, 0.6),
     borderRadius: 8,
-    backgroundColor: alpha(colors.stroke, 0.6),
+    backgroundColor: alpha(c.stroke, 0.6),
   },
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     padding: 16,
   },
   rowUnread: {
-    backgroundColor: alpha(colors.primary, 0.05),
+    backgroundColor: alpha(c.primary, 0.05),
   },
   icon: {
     width: 40,
@@ -177,28 +180,28 @@ const styles = StyleSheet.create({
   },
   title: {
     flexShrink: 1,
-    color: colors.bg,
+    color: c.bg,
   },
   body: {
     fontFamily: fonts.regular,
     fontSize: 13,
     lineHeight: 18,
-    color: colors.slate,
+    color: c.slate,
   },
   dot: {
     width: 8,
     height: 8,
     marginTop: 6,
     borderRadius: 9999,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   hint: {
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
     textAlign: "center",
-    color: colors.gray500,
+    color: c.gray500,
   },
-});
+}));
 
 export default Inbox;

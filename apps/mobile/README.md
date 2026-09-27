@@ -43,6 +43,19 @@ npx eas-cli@latest build --platform ios
 - `src/components/icons/glyphs.ts`: the icon vectors, generated from the export.
 - `assets/fonts/README.md`: why Selawik stands in for Segoe UI.
 
+## Light and dark mode
+
+Figma only has light designs. `src/theme/index.ts` holds `lightColors` (from Figma) and
+`darkColors` (derived, same values as the landing page). The app follows the phone's
+setting until the user flips Profile → Dark Mode, which is saved on the device.
+
+- Style a component with `makeStyles((c) => ({ ... }))` and `const styles = useStyles()`,
+  or read `useTheme().colors` for inline colours (`src/theme/ThemeContext.tsx`).
+- Use `card` for white surfaces and `white` only for text and icons on coloured fills.
+  Use `accent` for blue text and icons, and `primary` for blue fills.
+- Icons drawn in their Figma colour are remapped to the matching token automatically.
+- The splash screen stays brand blue in both themes. The map switches to OpenFreeMap's dark style.
+
 ## Screens
 
 | Route                        | Figma frame                  |

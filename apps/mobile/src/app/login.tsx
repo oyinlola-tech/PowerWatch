@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../services/api";
@@ -10,12 +10,15 @@ import Icon from "../components/icons/Icon";
 import Button from "../components/ui/Button";
 import SocialButtons from "../components/ui/SocialButtons";
 import TextField from "../components/ui/TextField";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { isValidEmail } from "../utils/validation";
 
 // Figma "Login Screen Wireframe" (3:398)
 
 const Login = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { signIn } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -111,7 +114,7 @@ const Login = () => {
               onPress={() => setShowPassword((v) => !v)}
               style={styles.eye}
             >
-              <Icon name={showPassword ? "eye" : "eyeSlash"} />
+              <Icon name={showPassword ? "eye" : "eyeSlash"} color={colors.gray400} />
             </Pressable>
           }
         />
@@ -138,7 +141,7 @@ const Login = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: {
     marginLeft: 19,
     marginRight: 13,
@@ -148,14 +151,14 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 48,
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     marginTop: 9,
     fontFamily: fonts.segoe,
     fontSize: 16,
     lineHeight: 24,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   email: {
@@ -165,7 +168,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   forgot: {
-    color: colors.black,
+    color: c.black,
   },
   eye: {
     paddingRight: 16,
@@ -185,13 +188,13 @@ const styles = StyleSheet.create({
   footerText: {
     width: 171.52,
     textAlign: "center",
-    color: colors.gray500,
+    color: c.gray500,
   },
   footerLink: {
     width: 60.47,
     textAlign: "center",
-    color: colors.primary,
+    color: c.accent,
   },
-});
+}));
 
 export default Login;

@@ -1,6 +1,7 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text } from "react-native";
+import { ActivityIndicator, Pressable, Text } from "react-native";
 import type { StyleProp, TextStyle, ViewStyle } from "react-native";
-import { colors, shadows, type } from "../../theme";
+import { shadows, type } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 interface ButtonProps {
   label: string;
@@ -26,40 +27,45 @@ const Button = ({
   labelStyle,
   loading = false,
   disabled = false,
-}: ButtonProps) => (
-  <Pressable
-    accessibilityRole="button"
-    accessibilityState={{ disabled: disabled || loading, busy: loading }}
-    onPress={onPress}
-    disabled={disabled || loading}
-    style={({ pressed }) => [
-      styles.button,
-      { height },
-      variant === "primary" ? styles.primary : styles.secondary,
-      shadow && { boxShadow: shadows.card },
-      pressed && styles.pressed,
-      (disabled || loading) && styles.disabled,
-      style,
-    ]}
-  >
-    {loading ? (
-      <ActivityIndicator color={variant === "primary" ? colors.white : colors.primary} />
-    ) : (
-    <Text
-      style={[
-        type.buttonText,
-        styles.label,
-        { color: variant === "primary" ? colors.white : colors.primary },
-        labelStyle,
+}: ButtonProps) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      onPress={onPress}
+      disabled={disabled || loading}
+      style={({ pressed }) => [
+        styles.button,
+        { height },
+        variant === "primary" ? styles.primary : styles.secondary,
+        shadow && { boxShadow: shadows.card },
+        pressed && styles.pressed,
+        (disabled || loading) && styles.disabled,
+        style,
       ]}
     >
-      {label}
-    </Text>
-    )}
-  </Pressable>
-);
+      {loading ? (
+        <ActivityIndicator color={variant === "primary" ? colors.white : colors.accent} />
+      ) : (
+      <Text
+        style={[
+          type.buttonText,
+          styles.label,
+          { color: variant === "primary" ? colors.white : colors.accent },
+          labelStyle,
+        ]}
+      >
+        {label}
+      </Text>
+      )}
+    </Pressable>
+  );
+};
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   button: {
     width: "100%",
     alignItems: "center",
@@ -67,12 +73,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
   },
   primary: {
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   secondary: {
     borderWidth: 1,
-    borderColor: colors.borderButton,
-    backgroundColor: colors.gray,
+    borderColor: c.borderButton,
+    backgroundColor: c.gray,
   },
   pressed: {
     opacity: 0.85,
@@ -83,6 +89,6 @@ const styles = StyleSheet.create({
   label: {
     textAlign: "center",
   },
-});
+}));
 
 export default Button;

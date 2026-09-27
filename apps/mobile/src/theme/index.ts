@@ -1,14 +1,19 @@
 // Design tokens taken from the PowerWatch Figma file (HI-FI section).
 // See docs/figma-spec.md for the per-screen values.
 
-export const colors = {
+export const lightColors = {
   // Figma colour styles
   primary: "#0663EA",
   bg: "#1B3A4B", // dark text colour, named "Bg" in Figma
   text: "#FCFEFF",
   screenBg: "#FBFEFF",
   gray: "#F2F5F4",
+  /** Foreground on coloured fills (buttons, badges); white in both themes */
   white: "#FFFFFF",
+  /** Card and sheet surfaces: white in light mode */
+  card: "#FFFFFF",
+  /** Brand blue for text, links and icons on screen/card backgrounds */
+  accent: "#0663EA",
   powerOn: "#07B447",
   powerOff: "#E20911",
 
@@ -44,7 +49,58 @@ export const colors = {
   timelineOn: "#4CAF50",
   danger: "#BA1A1A",
   dangerTint: "#FFDAD6",
-} as const;
+};
+
+export type Palette = { [K in keyof typeof lightColors]: string };
+
+// Figma has no dark designs. This palette keeps the brand blue and status colours
+// and swaps the neutrals for navy surfaces (same values as the landing page).
+export const darkColors: Palette = {
+  primary: "#0663EA",
+  bg: "#E8F0F8",
+  text: "#FCFEFF",
+  screenBg: "#07111F",
+  gray: "#15243A",
+  white: "#FFFFFF",
+  card: "#0E1B2E",
+  accent: "#6BA5FF",
+  powerOn: "#07B447",
+  powerOff: "#E20911",
+
+  black: "#F3F6FA",
+  ink: "#E8F0F8",
+  navy: "#9CC2FF",
+  slate: "#C3CAD6",
+  slateMuted: "#9AA8B6",
+  slateIcon: "#9AA8B6",
+  muted: "#8C97A8",
+  buttonMuted: "#A6B4C6",
+
+  gray400: "#6B7A8F",
+  gray500: "#8C97A8",
+  gray600: "#A6B4C6",
+  gray700: "#C3CAD6",
+  checkboxBorder: "#8C97A8",
+
+  border: "#24344C",
+  borderLight: "#1A2A41",
+  borderSoft: "#22324A",
+  borderInput: "#2E405C",
+  borderButton: "#2A3A52",
+  stroke: "#3A4B66",
+
+  surface: "#111F33",
+  surfaceNote: "#111F33",
+  tintBlue: "#12305E",
+  tintBlueLight: "#102746",
+  avatarBg: "#1B3563",
+  mapBg: "#1A2433",
+
+  timelineOn: "#4CAF50",
+  danger: "#FF6B6B",
+  dangerTint: "#3A1518",
+};
+
 
 /** `color` at the given opacity, e.g. alpha(colors.stroke, 0.3) */
 export const alpha = (hex: string, opacity: number) => {

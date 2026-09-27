@@ -13,12 +13,14 @@ import { notificationsApi, reportsApi } from "../services/api";
 import type { ApiPowerStatus } from "../services/api";
 import { changeNeighborhood, reportPower } from "../services/navigation";
 import { timeAgo } from "../utils/format";
-import { alpha, colors, fonts, shadows, type } from "../theme";
+import { alpha, fonts, lightColors, shadows, type } from "../theme";
+import type { Palette } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
-const heroCopy: Record<ApiPowerStatus, { badge: string; title: string; color: string }> = {
-  ON: { badge: "On", title: "Power is Live", color: colors.powerOn },
-  OFF: { badge: "Off", title: "Power is Out", color: colors.powerOff },
-  UNKNOWN: { badge: "Unknown", title: "No reports yet", color: colors.gray400 },
+const heroCopy: Record<ApiPowerStatus, { badge: string; title: string; color: keyof Palette }> = {
+  ON: { badge: "On", title: "Power is Live", color: "powerOn" },
+  OFF: { badge: "Off", title: "Power is Out", color: "powerOff" },
+  UNKNOWN: { badge: "Unknown", title: "No reports yet", color: "gray400" },
 };
 
 const confirmedLabel = (count: number, status: ApiPowerStatus) => {
@@ -29,6 +31,8 @@ const confirmedLabel = (count: number, status: ApiPowerStatus) => {
 
 // Figma "Home Screen (Status Hub)" (33:910)
 const Dashboard = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const user = useUser();
   const neighborhoodKey = user.neighborhoodId ?? 0;
   const status = useApi(() => reportsApi.status(), neighborhoodKey);
@@ -75,7 +79,7 @@ const Dashboard = () => {
               hitSlop={8}
               onPress={() => router.push("/inbox")}
             >
-              <Icon name="bell" width={16} color={colors.primary} />
+              <Icon name="bell" width={16} color={colors.accent} />
               {unreadCount > 0 && (
                 <View style={styles.unreadBadge}>
                   <Text style={styles.unreadText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
@@ -88,7 +92,7 @@ const Dashboard = () => {
               hitSlop={8}
               onPress={() => router.navigate("/map")}
             >
-              <Icon name="locationPin" />
+              <Icon name="locationPin" color={colors.accent} />
             </Pressable>
           </View>
         }
@@ -104,8 +108,8 @@ const Dashboard = () => {
             hitSlop={8}
             style={styles.change}
           >
-            <Text style={[type.lightText, { color: colors.primary }]}>Change</Text>
-            <Icon name="pencil" />
+            <Text style={[type.lightText, { color: colors.accent }]}>Change</Text>
+            <Icon name="pencil" color={colors.accent} />
           </Pressable>
         </View>
 
@@ -126,7 +130,7 @@ const Dashboard = () => {
               </View>
 
               <View style={styles.bulb}>
-                <Icon name="bulb" color={hero.color} />
+                <Icon name="bulb" color={colors[hero.color]} />
               </View>
 
               <Text style={styles.heroTitle}>{hero.title}</Text>
@@ -246,7 +250,8 @@ const Dashboard = () => {
           contentFit="cover"
         />
         <LinearGradient
-          colors={[alpha(colors.black, 0), alpha(colors.black, 0.6)]}
+          // Shade over the photo stays black in both themes
+          colors={[alpha("#000000", 0), alpha("#000000", 0.6)]}
           style={styles.mapOverlay}
         >
           <View style={styles.rowBetween}>
@@ -259,7 +264,8 @@ const Dashboard = () => {
   );
 };
 
-const styles = StyleSheet.create({
+// The status badge keeps the design's light-blue pill in light mode
+const useStyles = makeStyles((c) => ({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
@@ -274,14 +280,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.powerOff,
+    backgroundColor: c.powerOff,
     paddingHorizontal: 3,
   },
   unreadText: {
     fontFamily: fonts.semibold,
     fontSize: 10,
     lineHeight: 12,
-    color: colors.white,
+    color: c.white,
   },
   main: {
     gap: 24,
@@ -296,7 +302,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   caption: {
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   change: {
@@ -308,14 +314,14 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semibold,
     fontSize: 20,
     lineHeight: 24,
-    color: colors.bg,
+    color: c.bg,
   },
   hero: {
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     paddingTop: 32,
     paddingHorizontal: 24,
     paddingBottom: 24,
@@ -325,9 +331,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: "#99B3D5",
+    borderColor: c === lightColors ? "#99B3D5" : alpha(c.accent, 0.4),
     borderRadius: 12,
-    backgroundColor: "#D3E2ED",
+    backgroundColor: c === lightColors ? "#D3E2ED" : c.tintBlue,
     paddingHorizontal: 16,
     paddingVertical: 6,
   },
@@ -335,7 +341,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   badgeLabel: {
     fontFamily: fonts.medium,
@@ -343,7 +349,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     letterSpacing: 0.7,
     textTransform: "uppercase",
-    color: colors.primary,
+    color: c.accent,
   },
   bulb: {
     marginTop: 16,
@@ -355,12 +361,12 @@ const styles = StyleSheet.create({
     fontSize: 24,
     lineHeight: 29,
     textAlign: "center",
-    color: colors.bg,
+    color: c.bg,
   },
   heroSubtitle: {
     marginTop: 4,
     textAlign: "center",
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   stats: {
@@ -370,7 +376,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 75,
     borderTopWidth: 1,
-    borderTopColor: colors.stroke,
+    borderTopColor: c.stroke,
     paddingTop: 24,
   },
   stat: {
@@ -378,11 +384,11 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     textAlign: "center",
-    color: colors.muted,
+    color: c.muted,
   },
   statValue: {
     textAlign: "center",
-    color: colors.navy,
+    color: c.navy,
   },
   section: {
     gap: 16,
@@ -400,26 +406,26 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   activityTitle: {
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.8,
   },
   seeHistory: {
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   list: {
     gap: 1,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.3),
+    borderColor: alpha(c.stroke, 0.3),
     borderRadius: 8,
-    backgroundColor: alpha(colors.stroke, 0.3),
+    backgroundColor: alpha(c.stroke, 0.3),
   },
   listRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     padding: 16,
   },
   listLeft: {
@@ -434,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   listText: {
     flexShrink: 1,
@@ -446,19 +452,19 @@ const styles = StyleSheet.create({
   listEmpty: {
     flex: 1,
     textAlign: "center",
-    color: colors.muted,
+    color: c.muted,
   },
   listTitle: {
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.9,
   },
   map: {
     height: 192,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.3),
+    borderColor: alpha(c.stroke, 0.3),
     borderRadius: 8,
-    backgroundColor: colors.mapBg,
+    backgroundColor: c.mapBg,
   },
   mapOverlay: {
     ...StyleSheet.absoluteFill,
@@ -470,8 +476,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     letterSpacing: 0.14,
-    color: colors.white,
+    color: c.white,
   },
-});
+}));
 
 export default Dashboard;

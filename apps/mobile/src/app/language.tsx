@@ -1,61 +1,69 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { Divider, Row, Section } from "../components/ui/ListSection";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles } from "../theme/ThemeContext";
 
 const upcoming = ["Yorùbá", "Hausa", "Igbo", "Nigerian Pidgin"];
 
-const Check = () => (
-  <View style={styles.check}>
-    <View style={styles.checkmark} />
-  </View>
-);
+const Check = () => {
+  const styles = useStyles();
+  return (
+    <View style={styles.check}>
+      <View style={styles.checkmark} />
+    </View>
+  );
+};
 
 // Language
-const Language = () => (
-  <Screen top={23} bottom={40}>
-    <BackHeader height={63} />
+const Language = () => {
+  const styles = useStyles();
 
-    <View style={styles.main}>
-      <Text accessibilityRole="header" style={styles.title}>
-        Language
-      </Text>
+  return (
+    <Screen top={23} bottom={40}>
+      <BackHeader height={63} />
 
-      <Section title="APP LANGUAGE">
-        <View accessible accessibilityRole="radio" accessibilityState={{ checked: true }} accessibilityLabel="English (US)">
-          <Row title="English (US)" right={<Check />} />
-        </View>
-        {upcoming.map((language) => (
-          <View key={language}>
-            <Divider />
-            <View
-              accessible
-              accessibilityRole="radio"
-              accessibilityState={{ checked: false, disabled: true }}
-              accessibilityLabel={`${language}, coming soon`}
-              style={styles.disabled}
-            >
-              <Row title={language} subtitle="Coming soon" />
-            </View>
-          </View>
-        ))}
-      </Section>
-
-      <View style={styles.note}>
-        <View style={styles.noteIcon}>
-          <Icon name="infoSolid" />
-        </View>
-        <Text style={styles.noteText}>
-          PowerWatch is currently available in English. More languages are coming soon.
+      <View style={styles.main}>
+        <Text accessibilityRole="header" style={styles.title}>
+          Language
         </Text>
-      </View>
-    </View>
-  </Screen>
-);
 
-const styles = StyleSheet.create({
+        <Section title="APP LANGUAGE">
+          <View accessible accessibilityRole="radio" accessibilityState={{ checked: true }} accessibilityLabel="English (US)">
+            <Row title="English (US)" right={<Check />} />
+          </View>
+          {upcoming.map((language) => (
+            <View key={language}>
+              <Divider />
+              <View
+                accessible
+                accessibilityRole="radio"
+                accessibilityState={{ checked: false, disabled: true }}
+                accessibilityLabel={`${language}, coming soon`}
+                style={styles.disabled}
+              >
+                <Row title={language} subtitle="Coming soon" />
+              </View>
+            </View>
+          ))}
+        </Section>
+
+        <View style={styles.note}>
+          <View style={styles.noteIcon}>
+            <Icon name="infoSolid" />
+          </View>
+          <Text style={styles.noteText}>
+            PowerWatch is currently available in English. More languages are coming soon.
+          </Text>
+        </View>
+      </View>
+    </Screen>
+  );
+};
+
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -63,7 +71,7 @@ const styles = StyleSheet.create({
   },
   title: {
     ...type.h1,
-    color: colors.bg,
+    color: c.bg,
   },
   check: {
     width: 20,
@@ -71,7 +79,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   checkmark: {
     width: 10,
@@ -79,7 +87,7 @@ const styles = StyleSheet.create({
     marginTop: -2,
     borderLeftWidth: 2,
     borderBottomWidth: 2,
-    borderColor: colors.white,
+    borderColor: c.white,
     transform: [{ rotate: "-45deg" }],
   },
   disabled: {
@@ -90,9 +98,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 12,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: c.borderLight,
     borderRadius: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     padding: 15,
   },
   noteIcon: {
@@ -103,8 +111,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 22,
-    color: colors.gray600,
+    color: c.gray600,
   },
-});
+}));
 
 export default Language;

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import BackHeader from "../components/layout/BackHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -10,28 +10,34 @@ import TextField from "../components/ui/TextField";
 import { useAuth, useUser } from "../context/AuthContext";
 import { ApiError, authApi } from "../services/api";
 import { fullName, initials } from "../utils/format";
-import { alpha, colors, fonts, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { PASSWORD_HINT, errorMessage, passwordProblem } from "../utils/validation";
 
 
 
 
-const EyeToggle = ({ visible, onToggle }: { visible: boolean; onToggle: () => void }) => (
-  <Pressable
-    accessibilityRole="button"
-    accessibilityLabel={visible ? "Hide password" : "Show password"}
-    hitSlop={8}
-    onPress={onToggle}
-    style={styles.eye}
-  >
-    <Icon name={visible ? "eye" : "eyeSlash"} />
-  </Pressable>
-);
+const EyeToggle = ({ visible, onToggle }: { visible: boolean; onToggle: () => void }) => {
+  const styles = useStyles();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={visible ? "Hide password" : "Show password"}
+      hitSlop={8}
+      onPress={onToggle}
+      style={styles.eye}
+    >
+      <Icon name={visible ? "eye" : "eyeSlash"} />
+    </Pressable>
+  );
+};
 
 // Personal information: read-only email + editable full name
 const PersonalInfo = () => {
   const user = useUser();
   const { refreshUser } = useAuth();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const savedName = fullName(user);
   const [name, setName] = useState(savedName);
   const [nameError, setNameError] = useState<string>();
@@ -115,6 +121,7 @@ type PasswordField = "currentPassword" | "newPassword" | "confirmNewPassword";
 
 const ChangePassword = () => {
   const { signOut } = useAuth();
+  const styles = useStyles();
   const [values, setValues] = useState<Record<PasswordField, string>>({
     currentPassword: "",
     newPassword: "",
@@ -224,6 +231,8 @@ const ChangePassword = () => {
 
 const DeleteAccount = () => {
   const { signOut } = useAuth();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState<string>();
@@ -302,6 +311,8 @@ const DeleteAccount = () => {
 // Profile Settings (no Figma frame; styled like the Profile screen)
 const ProfileSettings = () => {
   const user = useUser();
+  const { colors } = useTheme();
+  const styles = useStyles();
 
   return (
     <Screen top={23} bottom={40}>
@@ -339,7 +350,7 @@ const ProfileSettings = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
     paddingTop: 24,
@@ -350,13 +361,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   title: {
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   summary: {
@@ -364,9 +375,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.6),
+    borderColor: alpha(c.stroke, 0.6),
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     padding: 16,
   },
   avatar: {
@@ -375,13 +386,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 12,
-    backgroundColor: colors.avatarBg,
+    backgroundColor: c.avatarBg,
   },
   avatarText: {
     fontFamily: fonts.hankenSemibold,
     fontSize: 20,
     lineHeight: 28,
-    color: colors.navy,
+    color: c.navy,
   },
   summaryText: {
     flexShrink: 1,
@@ -390,7 +401,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.hankenSemibold,
     fontSize: 20,
     lineHeight: 28,
-    color: colors.ink,
+    color: c.ink,
   },
   badge: {
     borderRadius: 9999,
@@ -414,19 +425,20 @@ const styles = StyleSheet.create({
   },
   danger: {
     borderWidth: 1,
-    borderColor: alpha(colors.danger, 0.2),
+    borderColor: alpha(c.danger, 0.2),
     borderRadius: 8,
-    backgroundColor: alpha(colors.dangerTint, 0.1),
+    backgroundColor: alpha(c.dangerTint, 0.1),
   },
   dangerText: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.danger,
+    color: c.danger,
   },
   deleteButton: {
-    backgroundColor: colors.danger,
+    // Same deep red in both themes so the white label stays readable
+    backgroundColor: "#BA1A1A",
   },
-});
+}));
 
 export default ProfileSettings;

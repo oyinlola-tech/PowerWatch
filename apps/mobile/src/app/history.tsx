@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import BackHeader from "../components/layout/BackHeader";
 import NavBar from "../components/layout/NavBar";
@@ -12,12 +12,15 @@ import { historyApi } from "../services/api";
 import type { HistorySummary } from "../services/api";
 import { startReport } from "../services/navigation";
 import { dayFraction, dayLabel, formatDuration, weekdayName } from "../utils/format";
-import { colors, shadows, type } from "../theme";
+import { shadows, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 // Older days fade out, as in the design (cards 4 and 5)
 const dayOpacity = (index: number) => (index === 3 ? 0.8 : index >= 4 ? 0.7 : 1);
 
 const DayCard = ({ day, index }: { day: HistorySummary["days"][number]; index: number }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const hadOutage = day.offMinutes > 0;
   return (
     <View style={[styles.day_, { opacity: dayOpacity(index) }]}>
@@ -64,6 +67,7 @@ const DayCard = ({ day, index }: { day: HistorySummary["days"][number]; index: n
 
 const FloatingReportButton = () => {
   const insets = useSafeAreaInsets();
+  const styles = useStyles();
 
   return (
     <Pressable
@@ -80,6 +84,8 @@ const FloatingReportButton = () => {
 // Figma "History" (60:1419); "History, empty variant" (270:229) when there's no data
 const WeeklyHistory = () => {
   const user = useUser();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [days, setDays] = useState<7 | 30>(7);
   const summary = useApi(() => historyApi.summary(days), `${days}-${user.neighborhoodId ?? 0}`);
   const data = summary.data;
@@ -136,7 +142,7 @@ const WeeklyHistory = () => {
                 </View>
                 <View style={[styles.card, { height: 75 }]}>
                   <Text style={[type.lightText, { color: colors.slate }]}>Uptime Percentage</Text>
-                  <Text style={[type.buttonText, styles.value, { color: colors.primary }]}>
+                  <Text style={[type.buttonText, styles.value, { color: colors.accent }]}>
                     {data.uptimePercent}%
                   </Text>
                 </View>
@@ -157,7 +163,7 @@ const WeeklyHistory = () => {
                   </View>
                 </View>
                 <View style={styles.timer}>
-                  <Icon name="timer" />
+                  <Icon name="timer" color={colors.accent} />
                 </View>
               </View>
             </View>
@@ -201,7 +207,7 @@ const WeeklyHistory = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   content: {
     width: 319,
     maxWidth: "100%",
@@ -226,7 +232,7 @@ const styles = StyleSheet.create({
   card: {
     flex: 1,
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 8,
     padding: 15,
   },
@@ -239,9 +245,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 8,
-    backgroundColor: "#E2EEFF",
+    backgroundColor: c.tintBlueLight,
     paddingTop: 16,
     paddingLeft: 15,
     paddingRight: 12,
@@ -253,10 +259,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   duration: {
-    color: colors.slateMuted,
+    color: c.slateMuted,
   },
   day: {
-    color: colors.slateMuted,
+    color: c.slateMuted,
     opacity: 0.7,
   },
   timer: {
@@ -291,15 +297,15 @@ const styles = StyleSheet.create({
   day_: {
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: c.borderSoft,
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   dayHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.gray,
+    backgroundColor: c.gray,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -311,13 +317,13 @@ const styles = StyleSheet.create({
     height: 24,
     overflow: "hidden",
     borderRadius: 2,
-    backgroundColor: colors.timelineOn,
+    backgroundColor: c.timelineOn,
   },
   outage: {
     position: "absolute",
     top: 0,
     bottom: 0,
-    backgroundColor: colors.danger,
+    backgroundColor: c.danger,
   },
   scale: {
     flexDirection: "row",
@@ -329,12 +335,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.borderSoft,
+    borderColor: c.borderSoft,
     borderRadius: 8,
   },
   loadMoreLabel: {
     textAlign: "center",
-    color: colors.primary,
+    color: c.accent,
   },
   fab: {
     position: "absolute",
@@ -344,9 +350,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-    backgroundColor: colors.primary,
-    boxShadow: shadows.raised(colors.black),
+    backgroundColor: c.primary,
+    boxShadow: shadows.raised("#000000"),
   },
-});
+}));
 
 export default WeeklyHistory;

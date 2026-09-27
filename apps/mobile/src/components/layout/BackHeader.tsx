@@ -1,8 +1,8 @@
-import { Pressable, StyleSheet, View } from "react-native";
+import { Pressable, View } from "react-native";
 import Icon from "../icons/Icon";
 import Logo from "../ui/Logo";
 import { goBack } from "../../services/navigation";
-import { colors } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 interface BackHeaderProps {
   onBack?: () => void;
@@ -11,28 +11,32 @@ interface BackHeaderProps {
 }
 
 // Figma "Header": back arrow + logo, 1px bottom border
-const BackHeader = ({ onBack, height }: BackHeaderProps) => (
-  <View style={[styles.header, { height }]}>
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Go back"
-      onPress={onBack ?? goBack}
-      hitSlop={8}
-      style={styles.back}
-    >
-      <Icon name="backArrow" />
-    </Pressable>
-    <Logo />
-  </View>
-);
+const BackHeader = ({ onBack, height }: BackHeaderProps) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  return (
+    <View style={[styles.header, { height }]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Go back"
+        onPress={onBack ?? goBack}
+        hitSlop={8}
+        style={styles.back}
+      >
+        <Icon name="backArrow" color={colors.bg} />
+      </Pressable>
+      <Logo />
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: {
     flexDirection: "row",
     alignItems: "center",
     borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    backgroundColor: colors.white,
+    borderBottomColor: c.border,
+    backgroundColor: c.card,
     paddingHorizontal: 24,
   },
   back: {
@@ -42,6 +46,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     borderRadius: 9999,
   },
-});
+}));
 
 export default BackHeader;

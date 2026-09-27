@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import LogoHeader from "../components/layout/LogoHeader";
 import Screen from "../components/layout/Screen";
@@ -9,7 +9,8 @@ import { FormError } from "../components/ui/StateViews";
 import TextField from "../components/ui/TextField";
 import { ApiError, authApi } from "../services/api";
 import { goBack } from "../services/navigation";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { PASSWORD_HINT, passwordProblem } from "../utils/validation";
 
 const RESEND_COOLDOWN = 30;
@@ -22,6 +23,8 @@ type FieldErrors = Partial<Record<Field, string>>;
 const ResetPassword = () => {
   const params = useLocalSearchParams<{ email?: string }>();
   const email = typeof params.email === "string" ? params.email : "";
+  const { colors } = useTheme();
+  const styles = useStyles();
 
   const [code, setCode] = useState("");
   const [password, setPassword] = useState("");
@@ -108,7 +111,7 @@ const ResetPassword = () => {
       onPress={toggle}
       style={styles.eye}
     >
-      <Icon name={visible ? "eye" : "eyeSlash"} />
+      <Icon name={visible ? "eye" : "eyeSlash"} color={colors.gray400} />
     </Pressable>
   );
 
@@ -221,7 +224,7 @@ const ResetPassword = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: {
     marginLeft: 19,
     marginRight: 13,
@@ -231,14 +234,14 @@ const styles = StyleSheet.create({
   },
   title: {
     marginTop: 48,
-    color: colors.bg,
+    color: c.bg,
   },
   subtitle: {
     marginTop: 9,
     fontFamily: fonts.segoe,
     fontSize: 16,
     lineHeight: 24,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   form: {
@@ -249,7 +252,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     lineHeight: 18,
-    color: colors.powerOn,
+    color: c.powerOn,
   },
   eye: {
     paddingRight: 16,
@@ -264,19 +267,19 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   footerText: {
-    color: colors.gray500,
+    color: c.gray500,
   },
   footerLink: {
-    color: colors.primary,
+    color: c.accent,
   },
   footerLinkDisabled: {
-    color: colors.gray400,
+    color: c.gray400,
   },
   back: {
     marginTop: 16,
     textAlign: "center",
-    color: colors.gray500,
+    color: c.gray500,
   },
-});
+}));
 
 export default ResetPassword;

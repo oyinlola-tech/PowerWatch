@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import type { TextStyle } from "react-native";
 import { router } from "expo-router";
 import LogoHeader from "../components/layout/LogoHeader";
@@ -6,7 +6,8 @@ import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import type { GlyphName } from "../components/icons/glyphs";
 import Button from "../components/ui/Button";
-import { colors, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 interface Step {
   icon: GlyphName;
@@ -49,34 +50,39 @@ const steps: Step[] = [
 ];
 
 // Figma "Signup Screen Wireframe" (12:693), the "How it works" screen
-const HowItWorks = () => (
-  <Screen top={37} bottom={40}>
-    <LogoHeader style={styles.header} />
+const HowItWorks = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
 
-    <View style={styles.content}>
-      <Text accessibilityRole="header" style={[type.h1, styles.title]}>
-        How it works
-      </Text>
+  return (
+    <Screen top={37} bottom={40}>
+      <LogoHeader style={styles.header} />
 
-      {steps.map(({ icon, title, description, textWidth, descriptionStyle, marginTop }) => (
-        <View key={title} style={[styles.card, { marginTop }]}>
-          <View style={styles.badge}>
-            <Icon name={icon} />
+      <View style={styles.content}>
+        <Text accessibilityRole="header" style={[type.h1, styles.title]}>
+          How it works
+        </Text>
+
+        {steps.map(({ icon, title, description, textWidth, descriptionStyle, marginTop }) => (
+          <View key={title} style={[styles.card, { marginTop }]}>
+            <View style={styles.badge}>
+              <Icon name={icon} />
+            </View>
+
+            <View style={{ minWidth: textWidth, flexShrink: 1 }}>
+              <Text style={styles.cardTitle}>{title}</Text>
+              <Text style={[descriptionStyle, { color: colors.gray600 }]}>{description}</Text>
+            </View>
           </View>
+        ))}
 
-          <View style={{ minWidth: textWidth, flexShrink: 1 }}>
-            <Text style={styles.cardTitle}>{title}</Text>
-            <Text style={[descriptionStyle, { color: colors.gray600 }]}>{description}</Text>
-          </View>
-        </View>
-      ))}
+        <Button label="Next" height={48} onPress={() => router.push("/location")} style={styles.next} />
+      </View>
+    </Screen>
+  );
+};
 
-      <Button label="Next" height={48} onPress={() => router.push("/location")} style={styles.next} />
-    </View>
-  </Screen>
-);
-
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   header: {
     marginLeft: 12,
     marginRight: 20,
@@ -87,14 +93,14 @@ const styles = StyleSheet.create({
   title: {
     marginTop: 50,
     marginBottom: 8,
-    color: colors.bg,
+    color: c.bg,
   },
   card: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 16,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: c.borderLight,
     borderRadius: 8,
     // Figma draws the 1px border inside the 16px padding
     padding: 15,
@@ -105,17 +111,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 9999,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   cardTitle: {
     fontFamily: fonts.segoe,
     fontSize: 16,
     lineHeight: 24,
-    color: colors.black,
+    color: c.black,
   },
   next: {
     marginTop: 56.5,
   },
-});
+}));
 
 export default HowItWorks;

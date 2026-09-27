@@ -1,10 +1,11 @@
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Icon from "../icons/Icon";
 import type { GlyphName } from "../icons/glyphs";
 import { goToTab } from "../../services/navigation";
 import type { NavItem } from "../../services/navigation";
-import { alpha, colors, fonts } from "../../theme";
+import { alpha, fonts } from "../../theme";
+import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 interface NavBarProps {
   active: NavItem;
@@ -20,6 +21,8 @@ const items: { id: NavItem; label: string; icon: GlyphName }[] = [
 // Figma component "nav bar": 80px tall, four equal items, active item in a blue tile
 const NavBar = ({ active }: NavBarProps) => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useStyles();
 
   return (
     <View style={[styles.bar, { height: 80 + insets.bottom, paddingBottom: insets.bottom + 1 }]}>
@@ -69,7 +72,7 @@ const NavBar = ({ active }: NavBarProps) => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   bar: {
     position: "absolute",
     bottom: 0,
@@ -78,10 +81,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: alpha(colors.stroke, 0.6),
+    borderTopColor: alpha(c.stroke, 0.6),
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   item: {
     flex: 1,
@@ -94,26 +97,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   label: {
     fontSize: 10,
     lineHeight: 15,
   },
   activeLabel: {
-    color: colors.white,
+    color: c.white,
   },
   inactiveLabel: {
     marginTop: 4,
-    color: alpha(colors.bg, 0.7),
+    color: alpha(c.bg, 0.7),
   },
   inactiveHome: {
     opacity: 0.7,
   },
   inactiveHomeLabel: {
     marginTop: 2,
-    color: alpha(colors.bg, 0.7),
+    color: alpha(c.bg, 0.7),
   },
-});
+}));
 
 export default NavBar;

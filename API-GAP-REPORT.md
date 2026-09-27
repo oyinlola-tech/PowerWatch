@@ -25,7 +25,13 @@ Other changes made along the way:
 - `POST locations/reverse-geocode` now requires sign-in.
 - `reports/power-on` and `reports/power-off` were rejecting valid requests and returning no data; both are fixed.
 
-Still open: A8 (social sign-in), all screens in section B, and the mobile app still has to be connected to these endpoints.
+**Mobile app (September 27, 2026):** connected to the backend with no mock data left.
+- **Section B screens:** all built — Map/Heatmap, Forgot/Reset Password, Profile Settings (incl. delete account), Saved Neighborhoods, My Reports, Language, Help & FAQ, About, Terms and Privacy.
+- **Section C screens:** the notifications inbox (C4) and Signed-in Devices (C6) were added.
+- **Exact location:** the location step asks for permission and lets the user drag the pin to their exact spot. Every report attaches a fresh GPS fix with its accuracy.
+- **New endpoints:** `PATCH notifications/read-all`. `GET auth/sessions` now marks `isCurrent`.
+
+Still open: A8 (social sign-in), and C7/C8/C9 (outage detail, public statistics, admin panel), which have no screens.
 
 ---
 

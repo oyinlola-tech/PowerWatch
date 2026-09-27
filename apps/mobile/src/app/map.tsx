@@ -14,18 +14,20 @@ import { locationsApi } from "../services/api";
 import type { ApiPowerStatus, StatusMapByLga, StatusMapByState } from "../services/api";
 import { changeNeighborhood } from "../services/navigation";
 import { timeAgo } from "../utils/format";
-import { alpha, colors, fonts, shadows, type } from "../theme";
+import { alpha, fonts, shadows, type } from "../theme";
+import type { Palette } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 type View_ = "area" | "heatmap";
 
 // Nigeria, for the first frame before markers arrive
 const NIGERIA = { latitude: 9.082, longitude: 8.6753, zoom: 5 };
 
-const statusColor: Record<ApiPowerStatus, string> = {
+const statusColors = (colors: Palette): Record<ApiPowerStatus, string> => ({
   ON: colors.powerOn,
   OFF: colors.powerOff,
   UNKNOWN: colors.gray400,
-};
+});
 
 /**
  * Most neighborhoods only have their LGA's coordinates, so they would sit on top
@@ -45,7 +47,7 @@ const spreadOverlapping = (points: { id: string; latitude: number; longitude: nu
 };
 
 /** 0% out -> green, 100% out -> red; no data -> gray */
-const heatColor = (percent: number | null) => {
+const heatColor = (percent: number | null, colors: Palette) => {
   if (percent === null) return colors.gray400;
   if (percent >= 60) return colors.powerOff;
   if (percent >= 30) return "#F59E0B";
@@ -53,15 +55,22 @@ const heatColor = (percent: number | null) => {
   return colors.powerOn;
 };
 
-const CountCard = ({ on, count, label }: { on: boolean; count: number; label: string }) => (
-  <View style={[styles.countCard, { borderColor: on ? colors.timelineOn : colors.danger }]}>
-    <Icon name="bulb" width={18} color={on ? colors.timelineOn : alpha(colors.danger, 0.4)} />
-    <Text style={[styles.countValue, { color: on ? colors.timelineOn : colors.danger }]}>{count}</Text>
-    <Text style={[styles.countLabel, { color: on ? colors.timelineOn : colors.danger }]}>{label}</Text>
-  </View>
-);
+const CountCard = ({ on, count, label }: { on: boolean; count: number; label: string }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  return (
+    <View style={[styles.countCard, { borderColor: on ? colors.timelineOn : colors.danger }]}>
+      <Icon name="bulb" width={18} color={on ? colors.timelineOn : alpha(colors.danger, 0.4)} />
+      <Text style={[styles.countValue, { color: on ? colors.timelineOn : colors.danger }]}>{count}</Text>
+      <Text style={[styles.countLabel, { color: on ? colors.timelineOn : colors.danger }]}>{label}</Text>
+    </View>
+  );
+};
 
 const AreaView = ({ data, selected, onSelect }: { data: StatusMapByLga; selected: number | null; onSelect: (id: number) => void }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const statusColor = statusColors(colors);
   const counts = data.neighborhoods.reduce(
     (acc, n) => ({ ...acc, [n.status]: acc[n.status] + 1 }),
     { ON: 0, OFF: 0, UNKNOWN: 0 } as Record<ApiPowerStatus, number>,
@@ -114,12 +123,14 @@ const AreaView = ({ data, selected, onSelect }: { data: StatusMapByLga; selected
 };
 
 const HeatmapView = ({ data }: { data: StatusMapByState }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   const sorted = [...data.lgas].sort((a, b) => (b.outagePercent ?? -1) - (a.outagePercent ?? -1));
   return (
     <View style={styles.list}>
       {sorted.map((lga) => (
         <View key={lga.id} style={styles.listRow}>
-          <View style={[styles.dot, { backgroundColor: heatColor(lga.outagePercent) }]} />
+          <View style={[styles.dot, { backgroundColor: heatColor(lga.outagePercent, colors) }]} />
           <View style={styles.listText}>
             <Text style={[type.boldText, { color: colors.ink }]} numberOfLines={1}>
               {lga.name}
@@ -130,7 +141,7 @@ const HeatmapView = ({ data }: { data: StatusMapByState }) => {
                 : "No reports yet"}
             </Text>
           </View>
-          <Text style={[styles.listStatus, { color: heatColor(lga.outagePercent) }]}>
+          <Text style={[styles.listStatus, { color: heatColor(lga.outagePercent, colors) }]}>
             {lga.outagePercent === null ? "—" : `${lga.outagePercent}% out`}
           </Text>
         </View>
@@ -143,6 +154,8 @@ const HeatmapView = ({ data }: { data: StatusMapByState }) => {
 // "Map Screen" reference in docs/figma-export/extras (Light ON / Light OFF cards).
 const PowerMap = () => {
   const user = useUser();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { view: initialView } = useLocalSearchParams<{ view?: string }>();
   const [view, setView] = useState<View_>(initialView === "heatmap" ? "heatmap" : "area");
   const [selected, setSelected] = useState<number | null>(null);
@@ -164,7 +177,7 @@ const PowerMap = () => {
           id: String(n.id),
           latitude: n.latitude!,
           longitude: n.longitude!,
-          color: statusColor[n.status],
+          color: statusColors(colors)[n.status],
         }));
       return spreadOverlapping(points).map((p) => ({ ...p, radius: Number(p.id) === selected ? 12 : 8 }));
     }
@@ -175,10 +188,10 @@ const PowerMap = () => {
         id: `lga-${l.id}`,
         latitude: l.latitude!,
         longitude: l.longitude!,
-        color: heatColor(l.outagePercent),
+        color: heatColor(l.outagePercent, colors),
         radius: 6 + Math.min(10, Math.sqrt(l.neighborhoods) * 2),
       }));
-  }, [view, area.data, heat.data, selected]);
+  }, [view, area.data, heat.data, selected, colors]);
 
   const handleMarkerPress = useCallback((id: string) => {
     if (!id.startsWith("lga-")) setSelected(Number(id));
@@ -289,8 +302,8 @@ const PowerMap = () => {
           ) : null}
 
           <Pressable accessibilityRole="button" onPress={changeNeighborhood} style={styles.change}>
-            <Icon name="pencil" />
-            <Text style={[type.lightText, { color: colors.primary }]}>Change my neighborhood</Text>
+            <Icon name="pencil" color={colors.accent} />
+            <Text style={[type.lightText, { color: colors.accent }]}>Change my neighborhood</Text>
           </Pressable>
         </>
       )}
@@ -298,14 +311,18 @@ const PowerMap = () => {
   );
 };
 
-const Legend = ({ color, label }: { color: string; label: string }) => (
-  <View style={styles.legendItem}>
-    <View style={[styles.legendDot, { backgroundColor: color }]} />
-    <Text style={[type.boldText, { color: colors.muted }]}>{label}</Text>
-  </View>
-);
+const Legend = ({ color, label }: { color: string; label: string }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  return (
+    <View style={styles.legendItem}>
+      <View style={[styles.legendDot, { backgroundColor: color }]} />
+      <Text style={[type.boldText, { color: colors.muted }]}>{label}</Text>
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   main: {
     gap: 20,
     paddingHorizontal: 16,
@@ -317,15 +334,15 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   segment: {
     flexDirection: "row",
     borderWidth: 1,
-    borderColor: colors.borderButton,
+    borderColor: c.borderButton,
     borderRadius: 24,
-    backgroundColor: colors.gray,
+    backgroundColor: c.gray,
     padding: 4,
   },
   segmentItem: {
@@ -336,21 +353,21 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   segmentActive: {
-    backgroundColor: colors.primary,
+    backgroundColor: c.primary,
   },
   map: {
     height: 320,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
-    backgroundColor: colors.borderLight,
+    backgroundColor: c.borderLight,
   },
   mapOverlay: {
     ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: alpha(colors.white, 0.6),
+    backgroundColor: alpha(c.card, 0.6),
   },
   legend: {
     flexDirection: "row",
@@ -372,7 +389,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.gray500,
+    color: c.gray500,
   },
   counts: {
     flexDirection: "row",
@@ -384,7 +401,7 @@ const styles = StyleSheet.create({
     gap: 4,
     borderWidth: 2,
     borderRadius: 16,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     paddingVertical: 16,
   },
   countValue: {
@@ -403,7 +420,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderRadius: 9999,
-    backgroundColor: colors.gray,
+    backgroundColor: c.gray,
     paddingHorizontal: 16,
     paddingVertical: 8,
   },
@@ -411,27 +428,27 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.gray500,
+    color: c.gray500,
   },
   list: {
     gap: 1,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(colors.stroke, 0.3),
+    borderColor: alpha(c.stroke, 0.3),
     borderRadius: 8,
-    backgroundColor: alpha(colors.stroke, 0.3),
+    backgroundColor: alpha(c.stroke, 0.3),
     boxShadow: shadows.card,
   },
   listRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
   listRowSelected: {
-    backgroundColor: alpha(colors.primary, 0.06),
+    backgroundColor: alpha(c.primary, 0.06),
   },
   dot: {
     width: 12,
@@ -445,7 +462,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.muted,
+    color: c.muted,
   },
   listStatus: {
     fontFamily: fonts.medium,
@@ -458,6 +475,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 4,
   },
-});
+}));
 
 export default PowerMap;

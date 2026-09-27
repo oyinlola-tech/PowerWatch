@@ -14,7 +14,8 @@ import { ApiError, authApi, locationsApi } from "../services/api";
 import type { LocationSearchItem } from "../services/api";
 import mixpanel from "../services/mixpanel";
 import { goBack } from "../services/navigation";
-import { colors, fonts, shadows, type } from "../theme";
+import { fonts, shadows, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 // Ilorin, the area shown in the design's map
 const ILORIN = { latitude: 8.4799, longitude: 4.5418 };
@@ -35,6 +36,8 @@ const describePoint = (p: Point) => `${p.latitude.toFixed(5)}, ${p.longitude.toF
 
 // Figma "select location" (71:1495)
 const SetMonitoringArea = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
   // "back" when opened from Home or Profile instead of onboarding;
   // mode "save" adds a saved neighborhood instead of changing the primary one
   const { returnTo, mode } = useLocalSearchParams<{ returnTo?: string; mode?: string }>();
@@ -266,7 +269,7 @@ const SetMonitoringArea = () => {
         {/* Search */}
         <View style={styles.search}>
           <View style={styles.searchIcon}>
-            <Icon name="search" />
+            <Icon name="search" color={colors.gray400} />
           </View>
           <TextInput
             value={search}
@@ -322,7 +325,7 @@ const SetMonitoringArea = () => {
             }}
             style={styles.zoomButton}
           >
-            <Icon name="plus" />
+            <Icon name="plus" color={colors.gray600} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
@@ -333,7 +336,7 @@ const SetMonitoringArea = () => {
             }}
             style={styles.zoomButton}
           >
-            <Icon name="minus" />
+            <Icon name="minus" color={colors.gray600} />
           </Pressable>
         </View>
 
@@ -344,7 +347,7 @@ const SetMonitoringArea = () => {
           disabled={isLocating}
           style={[styles.locate, isLocating && { opacity: 0.6 }]}
         >
-          <Icon name="locate" />
+          <Icon name="locate" color={colors.black} />
           <Text style={styles.locateLabel}>
             {isLocating ? "Locating..." : "Use current location"}
           </Text>
@@ -362,7 +365,7 @@ const SetMonitoringArea = () => {
       {/* Chosen place */}
       {selection && (
         <View style={styles.selected}>
-          <Icon name="locationPin" />
+          <Icon name="locationPin" color={colors.accent} />
           <View style={{ flex: 1 }}>
             <Text style={[type.boldText, { color: colors.ink }]}>{selection.name}</Text>
             {selection.area ? <Text style={styles.resultArea}>{selection.area}</Text> : null}
@@ -379,7 +382,7 @@ const SetMonitoringArea = () => {
       {/* Note */}
       <View style={styles.note}>
         <View style={styles.noteIcon}>
-          <Icon name="infoSolid" />
+          <Icon name="infoSolid" color={colors.gray400} />
         </View>
         <Text style={styles.noteText}>
           {
@@ -400,7 +403,7 @@ const SetMonitoringArea = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   content: {
     paddingHorizontal: 24,
   },
@@ -416,7 +419,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 17,
-    color: colors.bg,
+    color: c.bg,
     opacity: 0.7,
   },
   map: {
@@ -424,9 +427,9 @@ const styles = StyleSheet.create({
     height: 320,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
-    backgroundColor: colors.borderLight,
+    backgroundColor: c.borderLight,
   },
   pinLayer: {
     ...StyleSheet.absoluteFill,
@@ -438,16 +441,17 @@ const styles = StyleSheet.create({
     height: 32,
     alignItems: "center",
     justifyContent: "center",
+    // The map pin is drawn over map tiles and keeps its colours in both themes
     borderWidth: 2,
-    borderColor: colors.white,
+    borderColor: "#FFFFFF",
     borderRadius: 9999,
-    backgroundColor: colors.black,
+    backgroundColor: "#000000",
   },
   pinDot: {
     width: 8,
     height: 8,
     borderRadius: 9999,
-    backgroundColor: colors.white,
+    backgroundColor: "#FFFFFF",
   },
   search: {
     position: "absolute",
@@ -458,9 +462,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.borderInput,
+    borderColor: c.borderInput,
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     paddingHorizontal: 16,
     boxShadow: shadows.card,
   },
@@ -473,7 +477,7 @@ const styles = StyleSheet.create({
     padding: 0,
     ...type.boldText,
     lineHeight: undefined,
-    color: colors.black,
+    color: c.black,
   },
   zoom: {
     position: "absolute",
@@ -487,9 +491,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: colors.borderInput,
+    borderColor: c.borderInput,
     borderRadius: 4,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
   },
   locate: {
     position: "absolute",
@@ -500,9 +504,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 8,
     borderWidth: 1,
-    borderColor: colors.borderInput,
+    borderColor: c.borderInput,
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     paddingHorizontal: 16,
     boxShadow: shadows.card,
   },
@@ -510,21 +514,21 @@ const styles = StyleSheet.create({
     fontFamily: fonts.segoe,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.black,
+    color: c.black,
   },
   pinHint: {
     marginTop: 8,
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.gray500,
+    color: c.gray500,
   },
   error: {
     marginTop: 8,
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.danger,
+    color: c.danger,
   },
   note: {
     marginTop: 44,
@@ -532,9 +536,9 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     gap: 12,
     borderWidth: 1,
-    borderColor: colors.borderLight,
+    borderColor: c.borderLight,
     borderRadius: 8,
-    backgroundColor: colors.surface,
+    backgroundColor: c.surface,
     // Figma draws the 1px border inside the 16px padding
     padding: 15,
   },
@@ -546,7 +550,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.segoe,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.gray600,
+    color: c.gray600,
   },
   results: {
     position: "absolute",
@@ -557,23 +561,23 @@ const styles = StyleSheet.create({
     right: 16,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.borderInput,
+    borderColor: c.borderInput,
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     boxShadow: shadows.card,
   },
   result: {
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: c.borderLight,
     gap: 2,
   },
   resultArea: {
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
-    color: colors.gray500,
+    color: c.gray500,
   },
   noResults: {
     padding: 16,
@@ -584,9 +588,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: c.primary,
     borderRadius: 8,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     padding: 15,
   },
   formError: {
@@ -595,6 +599,6 @@ const styles = StyleSheet.create({
   confirm: {
     marginTop: 44,
   },
-});
+}));
 
 export default SetMonitoringArea;

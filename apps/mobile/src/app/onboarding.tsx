@@ -4,11 +4,14 @@ import { router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Button from "../components/ui/Button";
 import Logo from "../components/ui/Logo";
-import { alpha, colors, fonts, shadows, type } from "../theme";
+import { alpha, fonts, shadows, type } from "../theme";
+import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 // Figma "Onboarding - Welcome" (3:201)
 const Onboarding = () => {
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
+  const styles = useStyles();
 
   return (
     <View
@@ -72,10 +75,10 @@ const Onboarding = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((c) => ({
   screen: {
     flex: 1,
-    backgroundColor: colors.screenBg,
+    backgroundColor: c.screenBg,
     paddingHorizontal: 16,
   },
   card: {
@@ -85,9 +88,9 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderRadius: 12,
-    backgroundColor: colors.white,
+    backgroundColor: c.card,
     boxShadow: shadows.card,
   },
   header: {
@@ -95,7 +98,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingBottom: 1,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderLight,
+    borderBottomColor: c.borderLight,
     paddingLeft: 22,
   },
   body: {
@@ -108,7 +111,7 @@ const styles = StyleSheet.create({
     height: 258,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: c.primary,
     borderRadius: 12,
   },
   heroOverlay: {
@@ -128,7 +131,7 @@ const styles = StyleSheet.create({
     width: 8,
     height: 8,
     borderRadius: 9999,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
   },
   text: {
     marginTop: 53,
@@ -138,7 +141,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 23,
-    color: colors.gray600,
+    color: c.gray600,
     opacity: 0.8,
   },
   actions: {
@@ -146,6 +149,6 @@ const styles = StyleSheet.create({
     gap: 11,
     paddingTop: 16,
   },
-});
+}));
 
 export default Onboarding;
