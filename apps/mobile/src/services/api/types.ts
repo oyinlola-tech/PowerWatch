@@ -44,6 +44,13 @@ export interface NotificationPreferences {
   communityUpdates: boolean;
 }
 
+export interface RecentStreetReport {
+  street: string;
+  reportType: "ON" | "OFF";
+  reports: number;
+  lastReportAt: string | null;
+}
+
 export interface LiveStatus {
   neighborhood: { id: number; name: string; town: string };
   status: ApiPowerStatus;
@@ -52,6 +59,8 @@ export interface LiveStatus {
   confidence: number;
   recentReporters: number;
   lastReportAt: string | null;
+  /** Streets reported from in the last 2 hours, per street and ON/OFF, most recent first. */
+  recentStreets: RecentStreetReport[];
 }
 
 export interface ActivityItem {
@@ -63,9 +72,19 @@ export interface ActivityItem {
   isCurrentNeighborhood: boolean;
 }
 
+/** Where a report was filed, worked out on the server from the GPS point that was sent. */
+export interface ReportedPlace {
+  neighborhood: string;
+  street: string | null;
+  town: string;
+  lga: string;
+  state: string;
+}
+
 export interface ReportResult {
   id: string;
   neighborhoodId: number;
+  place: ReportedPlace;
   reportType: "ON" | "OFF";
   timestamp: string;
   neighborhoodStatus: "ON" | "OFF";
@@ -126,6 +145,8 @@ export interface ReverseGeocodeResult {
   city: string;
   lga: string;
   state: string;
+  /** Street name at the point, when OpenStreetMap has one. */
+  road: string | null;
 }
 
 export type CoordinatePrecision = "neighborhood" | "town" | "city" | "lga" | "none";

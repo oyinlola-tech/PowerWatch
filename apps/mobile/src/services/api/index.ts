@@ -32,6 +32,10 @@ export const authApi = {
     /** The person ticked "I agree to the Terms & Conditions and Privacy Policy" */
     acceptedTerms: true;
     termsVersion: string;
+    /** Sets the person's home neighborhood (and street) on the server. Omit if they declined. */
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
   }) =>
     request<AuthResult>("/auth/register", { method: "POST", body, auth: false }),
   login: (email: string, password: string) =>
@@ -90,17 +94,18 @@ export const reportsApi = {
   status: (neighborhoodId?: number) => request<LiveStatus>("/reports/status", { query: { neighborhoodId } }),
   activity: (limit = 10, neighborhoodId?: number) =>
     request<ActivityItem[]>("/reports/activity", { query: { limit, neighborhoodId } }),
+  // The neighborhood is no longer chosen by the app: the server works it out from the
+  // GPS point, so a fresh, precise, non-mocked fix is required on every report.
   report: (
     status: "ON" | "OFF",
-    neighborhoodId: number,
-    options: { deviceType?: DeviceType; location?: { latitude: number; longitude: number; accuracy?: number } } = {},
+    location: { latitude: number; longitude: number; accuracy: number; mocked?: boolean },
+    options: { deviceType?: DeviceType } = {},
   ) =>
     request<ReportResult>(status === "ON" ? "/reports/power-on" : "/reports/power-off", {
       method: "POST",
       body: {
-        neighborhoodId,
+        ...location,
         ...(options.deviceType ? { deviceType: options.deviceType } : {}),
-        ...(options.location ?? {}),
       },
     }),
   mine: (page = 1, limit = 20) => request<Paginated<MyReport>>("/reports/my", { query: { page, limit } }),

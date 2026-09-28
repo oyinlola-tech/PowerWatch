@@ -14,7 +14,12 @@ interface AuthContextValue {
   status: Status;
   user: User | null;
   signIn: (email: string, password: string) => Promise<User>;
-  signUp: (fullName: string, email: string, password: string) => Promise<{ user: User; verificationEmailSent: boolean }>;
+  signUp: (
+    fullName: string,
+    email: string,
+    password: string,
+    location?: { latitude: number; longitude: number; accuracy: number },
+  ) => Promise<{ user: User; verificationEmailSent: boolean }>;
   signOut: () => Promise<void>;
   /** Re-fetch the profile (after changing location, name, preferences...) */
   refreshUser: () => Promise<User | null>;
@@ -95,8 +100,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const signUp = useCallback(
-    async (fullName: string, email: string, password: string) => {
-      // The sign-up form cannot be submitted without ticking the agreement box
+    async (
+      fullName: string,
+      email: string,
+      password: string,
+      location?: { latitude: number; longitude: number; accuracy: number },
+    ) => {
+      // The sign-up form cannot be submitted without ticking the agreement box. Location is
+      // optional here (Apple 5.1.1: sign-up can't be blocked on a permission) — when the
+      // person shared it, the server uses it to set their home neighborhood and street.
       const result = await authApi.register({
         fullName,
         email,
@@ -104,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         deviceType,
         acceptedTerms: true,
         termsVersion: LEGAL_VERSION,
+        ...(location ?? {}),
       });
       const me = await startSession(result);
       return { user: me, verificationEmailSent: result.verificationEmailSent !== false };
