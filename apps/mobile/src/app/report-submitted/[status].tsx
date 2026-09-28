@@ -13,16 +13,20 @@ const goHome = () => router.dismissTo("/dashboard");
 const ReportSubmitted = () => {
   const { colors } = useTheme();
   const styles = useStyles();
-  const { status, streetAddress, area, statusChanged, located } = useLocalSearchParams<{
+  const { status, street, neighborhood, area, statusChanged } = useLocalSearchParams<{
     status: PowerStatus;
-    streetAddress?: string;
+    /** Street name where the report was filed, when GPS resolved one */
+    street?: string;
+    /** Neighborhood where the report was filed, worked out from GPS — never the saved home area */
+    neighborhood?: string;
     area?: string;
     statusChanged?: string;
-    /** "1" when GPS was attached; otherwise why not ("denied" | "unavailable") */
-    located?: string;
   }>();
 
   const isOn = status === "on";
+  // A report always counts for the place the GPS point resolved to, so lead with the
+  // street when one is known; fall back to the neighborhood name.
+  const reportedPlace = street || neighborhood || "Your area";
 
   return (
     <Screen header={<AppHeader back onBack={goHome} />} nav="dashboard" bottom={40}>
@@ -47,17 +51,9 @@ const ReportSubmitted = () => {
           </View>
           <View style={styles.detailText}>
             <Text style={styles.detailLabel}>Reported Location</Text>
-            <Text style={[styles.detailValue, { color: colors.ink }]}>
-              {streetAddress ?? "Your neighborhood"}
-            </Text>
+            <Text style={[styles.detailValue, { color: colors.ink }]}>{reportedPlace}</Text>
             {area ? <Text style={styles.detailSub}>{area}</Text> : null}
-            <Text style={styles.detailSub}>
-              {located === "1"
-                ? "Exact location attached"
-                : located === "denied"
-                  ? "Location permission off: sent without GPS"
-                  : "GPS unavailable: sent without exact location"}
-            </Text>
+            <Text style={styles.detailSub}>Exact GPS location attached and verified</Text>
           </View>
         </View>
 

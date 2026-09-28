@@ -1,4 +1,4 @@
-import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
@@ -49,16 +49,9 @@ const Dashboard = () => {
     void unread.refresh();
   };
 
-  const report = (next: "on" | "off") => {
-    if (!user.neighborhoodId) {
-      Alert.alert("Choose your neighborhood", "Set your monitoring area before reporting.", [
-        { text: "Not now", style: "cancel" },
-        { text: "Choose", onPress: changeNeighborhood },
-      ]);
-      return;
-    }
-    reportPower(next);
-  };
+  // A report always counts for wherever the phone's GPS says the person is standing,
+  // never the saved home neighborhood, so reporting needs no monitoring area set up front.
+  const report = (next: "on" | "off") => reportPower(next);
 
   return (
     <Screen

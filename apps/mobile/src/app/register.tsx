@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Alert, Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
 import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
@@ -10,6 +10,7 @@ import TextField from "../components/ui/TextField";
 import { FormError } from "../components/ui/StateViews";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../services/api";
+import { getExactLocation } from "../services/location";
 import mixpanel from "../services/mixpanel";
 import { fonts, type } from "../theme";
 import { makeStyles, useTheme } from "../theme/ThemeContext";
@@ -18,6 +19,45 @@ import { PASSWORD_HINT, isValidEmail, passwordProblem } from "../utils/validatio
 // Figma "Signup Screen Wireframe" (3:467)
 
 type Field = "fullName" | "email" | "password" | "terms" | "form";
+
+/**
+ * Explains why PowerWatch wants the person's location, then asks for it. Sign-up is never
+ * blocked on the answer (App Store guideline 5.1.1 forbids gating account creation on a
+ * permission) — declining, denial, or no fix all just mean the account is created without
+ * a home neighborhood, which the app asks for again right after. A mocked position is
+ * never sent; the server would refuse it, so it's treated the same as "not now".
+ */
+const requestLocationForSignUp = (): Promise<{ latitude: number; longitude: number; accuracy: number } | undefined> =>
+  new Promise((resolve) => {
+    Alert.alert(
+      "Use your location?",
+      "PowerWatch uses your location to set your home neighborhood, so you can see its power status as soon as you sign up. You can skip this and set it later.",
+      [
+        { text: "Not Now", style: "cancel", onPress: () => resolve(undefined) },
+        {
+          text: "Allow",
+          onPress: () => {
+            void (async () => {
+              const gps = await getExactLocation();
+              if (!gps.ok) {
+                resolve(undefined);
+                return;
+              }
+              if (gps.location.mocked) {
+                Alert.alert(
+                  "Location not used",
+                  "Your phone says its location is being simulated, so we didn't use it. You can set your neighborhood after signing up.",
+                );
+                resolve(undefined);
+                return;
+              }
+              resolve({ latitude: gps.location.latitude, longitude: gps.location.longitude, accuracy: gps.location.accuracy });
+            })();
+          },
+        },
+      ],
+    );
+  });
 
 const Register = () => {
   const { signUp } = useAuth();
@@ -47,11 +87,13 @@ const Register = () => {
     setErrors(next);
     if (Object.keys(next).length) return;
 
+    const location = await requestLocationForSignUp();
+
     setSubmitting(true);
     try {
       // On success the auth guard leaves this screen; the splash sends the user to verify
-      await signUp(fullName.trim(), email.trim(), password);
-      mixpanel.track("sign_up_completed");
+      await signUp(fullName.trim(), email.trim(), password, location);
+      mixpanel.track("sign_up_completed", { withLocation: Boolean(location) });
     } catch (error) {
       const apiError = error instanceof ApiError ? error : null;
       setErrors({

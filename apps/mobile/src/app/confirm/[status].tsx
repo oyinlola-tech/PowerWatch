@@ -1,13 +1,14 @@
-import { useState } from "react";
-import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { ActivityIndicator, Linking, Platform, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import AppHeader from "../../components/layout/AppHeader";
 import Screen from "../../components/layout/Screen";
 import Icon from "../../components/icons/Icon";
 import { FormError } from "../../components/ui/StateViews";
-import { useUser } from "../../context/AuthContext";
-import { ApiError, reportsApi } from "../../services/api";
+import { ApiError, locationsApi, reportsApi } from "../../services/api";
+import type { ReverseGeocodeResult } from "../../services/api";
 import { getExactLocation } from "../../services/location";
+import type { ExactLocation } from "../../services/location";
 import mixpanel from "../../services/mixpanel";
 import { goBack } from "../../services/navigation";
 import type { PowerStatus } from "../../types/power";
@@ -19,7 +20,7 @@ const getCopy = (colors: Palette): Record<
   PowerStatus,
   {
     prompt: string;
-    /** The off screen ends the neighborhood with a question mark */
+    /** The off screen ends the place with a question mark */
     suffix: string;
     confirmLabel: string;
     cancelLabel: string;
@@ -29,7 +30,7 @@ const getCopy = (colors: Palette): Record<
   }
 > => ({
   off: {
-    prompt: "Are you currently experiencing a power outage at your location in",
+    prompt: "Is the power OFF here:",
     suffix: "?",
     confirmLabel: "Yes, Power is off",
     cancelLabel: "No, Cancel Report",
@@ -38,8 +39,8 @@ const getCopy = (colors: Palette): Record<
     iconColor: colors.bg,
   },
   on: {
-    prompt: "Please confirm if electricity has been restored at your location in",
-    suffix: "",
+    prompt: "Is the power back ON here:",
+    suffix: "?",
     confirmLabel: "Yes, Power is on",
     cancelLabel: "No, still out",
     confirmColor: colors.powerOn,
@@ -50,61 +51,146 @@ const getCopy = (colors: Palette): Record<
 
 const deviceType = Platform.OS === "ios" ? "IOS" : Platform.OS === "android" ? "ANDROID" : "WEB";
 
-// Figma "Reporting power off" (57:1036) and "Reporting power on" (60:1221)
+/** "Adewole Street, Bodija, Ibadan North" when a street is known, else "Bodija, Ibadan North" */
+const describePlace = (place: ReverseGeocodeResult) =>
+  place.road ? `${place.road}, ${place.neighborhood}, ${place.lga}` : `${place.neighborhood}, ${place.lga}`;
+
+type LoadPhase = "locating" | "previewing" | "ready" | "error";
+type ErrorKind = "denied" | "deniedForever" | "unavailable" | "mocked" | "imprecise" | "outsideNigeria" | "network" | "unknown";
+
+interface LoadError {
+  kind: ErrorKind;
+  message: string;
+}
+
+// A GPS fix vaguer than this can't reliably be matched to one neighborhood (matches the server).
+const MAX_ACCURACY_METERS = 200;
+
+// Figma "Reporting power off" (57:1036) and "Reporting power on" (60:1221).
+// Loading/error/permission states beyond the ready confirmation are new (no Figma frame);
+// they follow the same card, spacing and button styles as the rest of this screen.
 const ConfirmPowerStatus = () => {
   const { status } = useLocalSearchParams<{ status: PowerStatus }>();
 
-  const user = useUser();
   const { colors } = useTheme();
   const styles = useStyles();
+
+  const [phase, setPhase] = useState<LoadPhase>("locating");
+  const [loadError, setLoadError] = useState<LoadError | null>(null);
+  const [location, setLocation] = useState<ExactLocation | null>(null);
+  const [place, setPlace] = useState<ReverseGeocodeResult | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [locating, setLocating] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const reportType: PowerStatus = status === "on" ? "on" : "off";
   const config = getCopy(colors)[reportType];
-  const neighborhood = user.neighborhood?.name ?? "your neighborhood";
-  const area = [user.town?.name, user.lga?.name].filter(Boolean).join(", ");
 
-  const handleConfirm = async () => {
-    if (!user.neighborhoodId) {
-      setError("Set your monitoring area first (Home > Change).");
+  /** Gets a fresh GPS fix and previews the place it resolves to. Never reuses a stale fix. */
+  const load = useCallback(async () => {
+    setSubmitError(null);
+    setLoadError(null);
+    setPlace(null);
+    setPhase("locating");
+
+    const gps = await getExactLocation();
+    if (!gps.ok) {
+      if (gps.reason === "denied") {
+        setLocation(null);
+        setLoadError(
+          gps.canAskAgain
+            ? {
+                kind: "denied",
+                message: "PowerWatch needs your location to file a report. Allow location access and try again.",
+              }
+            : {
+                kind: "deniedForever",
+                message: "Location access is off for PowerWatch. Turn it on in Settings, then try again.",
+              },
+        );
+      } else {
+        setLocation(null);
+        setLoadError({
+          kind: "unavailable",
+          message: "Couldn't get a precise location. Move to an open spot or check that location services are on, then try again.",
+        });
+      }
+      setPhase("error");
       return;
     }
-    setSubmitting(true);
-    setError(null);
-    try {
-      // Every report carries the exact spot it was made from (when the phone allows it)
-      setLocating(true);
-      const gps = await getExactLocation();
-      setLocating(false);
 
-      const result = await reportsApi.report(reportType === "on" ? "ON" : "OFF", user.neighborhoodId, {
-        deviceType,
-        ...(gps.ok ? { location: gps.location } : {}),
+    setLocation(gps.location);
+
+    if (gps.location.mocked) {
+      setLoadError({
+        kind: "mocked",
+        message: "Your phone says its location is being simulated. Turn off any mock location app, then try again.",
       });
-      mixpanel.track("power_reported", {
-        status: reportType,
-        statusChanged: result.statusChanged,
-        withLocation: gps.ok,
+      setPhase("error");
+      return;
+    }
+
+    if (gps.location.accuracy > MAX_ACCURACY_METERS) {
+      setLoadError({
+        kind: "imprecise",
+        message: "Your location isn't precise enough to report. Move to an open spot or turn on high-accuracy location, then try again.",
       });
+      setPhase("error");
+      return;
+    }
+
+    setPhase("previewing");
+    try {
+      const found = await locationsApi.reverseGeocode(gps.location.latitude, gps.location.longitude);
+      setPlace(found);
+      setPhase("ready");
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 422) {
+        setLoadError({ kind: "outsideNigeria", message: e.message });
+      } else if (e instanceof ApiError && e.isNetworkError) {
+        setLoadError({ kind: "network", message: "Couldn't confirm your area. Check your connection and try again." });
+      } else {
+        setLoadError({
+          kind: "unknown",
+          message: e instanceof ApiError ? e.message : "Couldn't confirm your area. Please try again.",
+        });
+      }
+      setPhase("error");
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const handleConfirm = async () => {
+    if (!location || !place) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const result = await reportsApi.report(
+        reportType === "on" ? "ON" : "OFF",
+        { latitude: location.latitude, longitude: location.longitude, accuracy: location.accuracy, mocked: location.mocked },
+        { deviceType },
+      );
+      mixpanel.track("power_reported", { status: reportType, statusChanged: result.statusChanged });
       router.replace({
         pathname: "/report-submitted/[status]",
         params: {
           status: reportType,
-          streetAddress: neighborhood,
-          area,
+          street: result.place.street ?? "",
+          neighborhood: result.place.neighborhood,
+          area: [result.place.town, result.place.lga, result.place.state].filter(Boolean).join(", "),
           statusChanged: result.statusChanged ? "1" : "0",
-          located: gps.ok ? "1" : gps.reason,
         },
       });
     } catch (e) {
-      setError(e instanceof ApiError ? e.message : "Couldn't send your report. Please try again.");
+      setSubmitError(e instanceof ApiError ? e.message : "Couldn't send your report. Please try again.");
     } finally {
-      setLocating(false);
       setSubmitting(false);
     }
   };
+
+  const loadingLabel = phase === "previewing" ? "Matching your location to your area…" : "Finding your location…";
 
   return (
     <Screen header={<AppHeader back />} bottom={40}>
@@ -117,69 +203,110 @@ const ConfirmPowerStatus = () => {
           Confirm Power{"\n"}Status
         </Text>
 
-        <Text style={styles.prompt}>
-          {config.prompt}{" "}
-          <Text style={{ fontFamily: fonts.semibold }}>
-            {neighborhood}
-            {config.suffix}
-          </Text>
-        </Text>
-
-        <View style={styles.actions}>
-          <FormError message={error} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityState={{ busy: submitting, disabled: submitting }}
-            onPress={handleConfirm}
-            disabled={submitting}
-            style={({ pressed }) => [
-              styles.button,
-              { backgroundColor: config.confirmColor, boxShadow: shadows.raised("#1E3A8A") },
-              pressed && styles.pressed,
-            ]}
-          >
-            {submitting ? (
-              <View style={styles.busy}>
-                <ActivityIndicator color={colors.white} />
-                {locating && <Text style={[styles.buttonLabel, { color: colors.white }]}>Getting location…</Text>}
-              </View>
-            ) : (
-              <Text style={[styles.buttonLabel, { color: colors.white }]}>{config.confirmLabel}</Text>
-            )}
-          </Pressable>
-
-          <Pressable
-            accessibilityRole="button"
-            onPress={goBack}
-            style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.pressed]}
-          >
-            <Text style={[styles.buttonLabel, { color: colors.bg, opacity: 0.7 }]}>
-              {config.cancelLabel}
+        {phase === "ready" && place ? (
+          <>
+            <Text style={styles.prompt}>
+              {config.prompt}{" "}
+              <Text style={{ fontFamily: fonts.semibold }}>
+                {describePlace(place)}
+                {config.suffix}
+              </Text>
             </Text>
-          </Pressable>
-        </View>
 
-        <View style={styles.note}>
-          <View style={styles.noteIcon}>
-            <Icon name="infoCircle" color={colors.accent} />
+            <View style={styles.actions}>
+              <FormError message={submitError} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ busy: submitting, disabled: submitting }}
+                onPress={handleConfirm}
+                disabled={submitting}
+                style={({ pressed }) => [
+                  styles.button,
+                  { backgroundColor: config.confirmColor, boxShadow: shadows.raised("#1E3A8A") },
+                  pressed && styles.pressed,
+                ]}
+              >
+                {submitting ? (
+                  <ActivityIndicator color={colors.white} />
+                ) : (
+                  <Text style={[styles.buttonLabel, { color: colors.white }]}>{config.confirmLabel}</Text>
+                )}
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="button"
+                onPress={goBack}
+                style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.pressed]}
+              >
+                <Text style={[styles.buttonLabel, { color: colors.bg, opacity: 0.7 }]}>{config.cancelLabel}</Text>
+              </Pressable>
+            </View>
+
+            <View style={styles.note}>
+              <View style={styles.noteIcon}>
+                <Icon name="infoCircle" color={colors.accent} />
+              </View>
+              <View style={styles.noteText}>
+                <Text style={styles.noteBody}>Your report helps neighbors stay informed.</Text>
+                <Text style={styles.noteBody}>Your exact location is attached to verify the report.</Text>
+                <Text style={styles.noteWarning}>False reports may affect community standing.</Text>
+              </View>
+            </View>
+          </>
+        ) : phase === "error" && loadError ? (
+          <View style={styles.stateBlock}>
+            <Icon name="infoCircle" color={colors.danger} />
+            <Text style={styles.stateMessage}>{loadError.message}</Text>
+
+            <View style={styles.actions}>
+              {loadError.kind === "deniedForever" && (
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void Linking.openSettings()}
+                  style={({ pressed }) => [styles.button, { backgroundColor: colors.primary }, pressed && styles.pressed]}
+                >
+                  <Text style={[styles.buttonLabel, { color: colors.white }]}>Open Settings</Text>
+                </Pressable>
+              )}
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void load()}
+                style={({ pressed }) => [
+                  styles.button,
+                  loadError.kind === "deniedForever" ? styles.cancel : { backgroundColor: colors.primary },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.buttonLabel,
+                    { color: loadError.kind === "deniedForever" ? colors.bg : colors.white },
+                  ]}
+                >
+                  Try Again
+                </Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                onPress={goBack}
+                style={({ pressed }) => [styles.button, styles.cancel, pressed && styles.pressed]}
+              >
+                <Text style={[styles.buttonLabel, { color: colors.bg, opacity: 0.7 }]}>Cancel</Text>
+              </Pressable>
+            </View>
           </View>
-          <View style={styles.noteText}>
-            <Text style={styles.noteBody}>Your report helps neighbors stay informed.</Text>
-            <Text style={styles.noteBody}>Your exact location is attached to verify the report.</Text>
-            <Text style={styles.noteWarning}>False reports may affect community standing.</Text>
+        ) : (
+          <View style={styles.stateBlock}>
+            <ActivityIndicator color={colors.accent} />
+            <Text style={styles.stateMessage}>{loadingLabel}</Text>
           </View>
-        </View>
+        )}
       </View>
     </Screen>
   );
 };
 
 const useStyles = makeStyles((c) => ({
-  busy: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
   card: {
     alignItems: "center",
     borderWidth: 1,
@@ -209,6 +336,21 @@ const useStyles = makeStyles((c) => ({
     lineHeight: 20,
     textAlign: "center",
     color: c.bg,
+  },
+  stateBlock: {
+    marginTop: 32,
+    alignSelf: "stretch",
+    alignItems: "center",
+    gap: 12,
+  },
+  stateMessage: {
+    maxWidth: 280,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
+    color: c.bg,
+    opacity: 0.85,
   },
   actions: {
     marginTop: 40,
