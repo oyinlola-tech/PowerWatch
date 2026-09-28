@@ -189,7 +189,8 @@ export class UserRepository {
     await prisma.$transaction([
       prisma.report.updateMany({
         where: { userId: id },
-        data: { latitude: null, longitude: null, locationAccuracy: null },
+        // The street can point to someone's home, so it goes with the exact position
+        data: { latitude: null, longitude: null, locationAccuracy: null, streetId: null },
       }),
       prisma.savedNeighborhood.deleteMany({ where: { userId: id } }),
       prisma.notificationLog.deleteMany({ where: { userId: id } }),
@@ -219,6 +220,7 @@ export class UserRepository {
           cityId: null,
           townId: null,
           neighborhoodId: null,
+          streetId: null,
           deletedAt: new Date(),
         },
       }),

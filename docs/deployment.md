@@ -78,6 +78,11 @@ dotenv never overrides a variable that is already set:
 | `CORS_ORIGIN` | `https://powerwatch.oyinlola.site,https://admin-powerwatch.oyinlola.site` |
 | `SUPPORT_EMAIL` | `help@telente.site` |
 | `APP_WEB_URL` | `https://powerwatch.oyinlola.site` |
+| `LOG_STREAM` | `stderr` (the host keeps only stderr, in `stderr.log`) |
+| `LOG_LEVEL` | `warn` (keeps `stderr.log` to warnings and errors) |
+
+Background problems (emails that failed, failed jobs, push errors, server errors) are also
+recorded in the database and shown in the admin dashboard under System problems.
 
 The admin dashboard builds on Vercel from `apps/admin` with `VITE_API_URL` set to the API
 address. If the API address changes, also change `connect-src` in `apps/admin/vercel.json` and

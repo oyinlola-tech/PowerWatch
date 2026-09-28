@@ -2,6 +2,7 @@ import { AppError } from '../../../errors/index.js';
 import { MESSAGES } from '../../../constants/message.constant.js';
 import { UserRepository } from '../../../repositories/user.repository.js';
 import { AuditRepository } from '../../../repositories/audit.repository.js';
+import { goodbyeEmail, sendAccountEmail } from '../../mail/templates/account.js';
 import { type AdminActor, assertCanModifyUser } from './adminActor.js';
 
 export class DeleteUserCommand {
@@ -17,7 +18,9 @@ export class DeleteUserCommand {
     }
     assertCanModifyUser(actor, user);
 
+    const wasActive = !user.deletedAt;
     await this.userRepository.anonymizeAndDelete(userId);
+    if (wasActive) sendAccountEmail(user.email, goodbyeEmail({ firstName: user.firstName, removedByAdmin: true }));
 
     await this.auditRepository.create({
       userId: actor.userId,

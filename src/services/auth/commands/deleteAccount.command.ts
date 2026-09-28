@@ -3,6 +3,7 @@ import { UserRepository } from '../../../repositories/user.repository.js';
 import { AuditRepository } from '../../../repositories/audit.repository.js';
 import { AppError } from '../../../errors/index.js';
 import { MESSAGES } from '../../../constants/message.constant.js';
+import { goodbyeEmail, sendAccountEmail } from '../../mail/templates/account.js';
 
 export class DeleteAccountCommand {
   constructor(
@@ -25,6 +26,7 @@ export class DeleteAccountCommand {
     }
 
     await this.userRepository.anonymizeAndDelete(userId);
+    sendAccountEmail(user.email, goodbyeEmail({ firstName: user.firstName }));
 
     // Records that the deletion happened, without the IP address or device of the person who left
     await this.auditRepository.create({

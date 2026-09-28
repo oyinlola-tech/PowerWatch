@@ -3,6 +3,7 @@ import crypto from 'node:crypto';
 import { prisma } from '../configs/database.config.js';
 import { env } from '../configs/env.config.js';
 import { passwordSchema } from '../validators/auth.validator.js';
+import { sendAccountEmail, welcomeEmail } from '../services/mail/templates/account.js';
 
 export async function seedAdmin(): Promise<void> {
   if (!env.admin.email) {
@@ -41,4 +42,5 @@ export async function seedAdmin(): Promise<void> {
   });
 
   console.log('Admin user seeded successfully.');
+  sendAccountEmail(normalizedEmail, welcomeEmail({ firstName: env.admin.firstName, isAdmin: true }));
 }

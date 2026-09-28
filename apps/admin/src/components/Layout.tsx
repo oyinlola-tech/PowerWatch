@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from "react-router";
 import { request } from "../lib/api";
 import { useAuth } from "../lib/authContext";
 import { TIME_ZONE_LABEL, fullName } from "../lib/format";
+import { useProblems } from "../lib/problemsContext";
 import type { HealthReport, SessionUser } from "../lib/types";
 import { useApi } from "../lib/useApi";
 import Footer from "./Footer";
@@ -40,43 +41,52 @@ const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
     label: "Manage",
     items: [
       { to: "/locations", label: "Locations", icon: "locations", context: "The state-to-neighborhood hierarchy" },
-      { to: "/broadcast", label: "Broadcast", icon: "broadcast", context: "Send a push notification to users" },
+      { to: "/broadcast", label: "Messages", icon: "broadcast", context: "Send an inbox message or push alert" },
       { to: "/summaries", label: "Summaries", icon: "jobs", context: "Run daily, weekly and monthly rollups" },
     ],
   },
   {
     label: "System",
     items: [
+      { to: "/problems", label: "System problems", icon: "alert", context: "Grouped errors and warnings from background jobs" },
       { to: "/health", label: "System health", icon: "health", context: "API, database and Firebase status" },
       { to: "/account", label: "Account", icon: "account", context: "Your profile and signed-in sessions" },
     ],
   },
 ];
 
-function NavList({ onNavigate }: { onNavigate?: () => void }) {
+function NavList({ onNavigate, badges }: { onNavigate?: () => void; badges?: Record<string, number> }) {
   return (
     <nav aria-label="Main" className="flex-1 overflow-y-auto px-3 py-4">
       {NAV_GROUPS.map((group) => (
         <div key={group.label} className="mb-5">
           <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted">{group.label}</p>
           <ul className="space-y-0.5">
-            {group.items.map((item) => (
-              <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.to === "/"}
-                  {...(onNavigate ? { onClick: onNavigate } : {})}
-                  className={({ isActive }) =>
-                    `flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition ${
-                      isActive ? "bg-info-soft text-accent" : "text-body hover:bg-soft hover:text-ink"
-                    }`
-                  }
-                >
-                  <Icon name={item.icon} size={18} />
-                  {item.label}
-                </NavLink>
-              </li>
-            ))}
+            {group.items.map((item) => {
+              const badge = badges?.[item.to];
+              return (
+                <li key={item.to}>
+                  <NavLink
+                    to={item.to}
+                    end={item.to === "/"}
+                    {...(onNavigate ? { onClick: onNavigate } : {})}
+                    className={({ isActive }) =>
+                      `flex min-h-10 items-center gap-3 rounded-lg px-3 text-sm font-medium transition ${
+                        isActive ? "bg-info-soft text-accent" : "text-body hover:bg-soft hover:text-ink"
+                      }`
+                    }
+                  >
+                    <Icon name={item.icon} size={18} />
+                    <span className="flex-1">{item.label}</span>
+                    {Boolean(badge) && (
+                      <span className="flex h-5 min-w-5 flex-shrink-0 items-center justify-center rounded-full bg-off-ink px-1 text-[11px] font-bold text-white">
+                        {badge}
+                      </span>
+                    )}
+                  </NavLink>
+                </li>
+              );
+            })}
           </ul>
         </div>
       ))}
@@ -179,6 +189,9 @@ export default function Layout() {
   const location = useLocation();
   const meta = ROUTE_META.get(location.pathname) ?? { title: "PowerWatch Admin", context: "" };
   const health = useApi("layout-health", (signal) => request<HealthReport>("/health", { signal, acceptStatus: [503] }));
+  const problems = useProblems();
+  const openProblems = (problems.open?.errors ?? 0) + (problems.open?.warnings ?? 0);
+  const navBadges = openProblems > 0 ? { "/problems": openProblems } : undefined;
 
   useEffect(() => {
     const dialog = drawer.current;
@@ -213,7 +226,7 @@ export default function Layout() {
           <Logo height={26} />
           <span className="rounded-md bg-info-soft px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-accent">Admin</span>
         </div>
-        <NavList />
+        <NavList badges={navBadges} />
         <SidebarFooter />
       </aside>
 
@@ -238,7 +251,7 @@ export default function Layout() {
               <Icon name="close" label="Close navigation" />
             </button>
           </div>
-          <NavList onNavigate={() => setDrawerOpen(false)} />
+          <NavList onNavigate={() => setDrawerOpen(false)} badges={navBadges} />
           <SidebarFooter />
         </div>
       </dialog>

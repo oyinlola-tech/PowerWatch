@@ -5,6 +5,7 @@ import { ToastProvider } from "./components/Toast";
 import { AuthProvider } from "./lib/auth";
 import { useAuth } from "./lib/authContext";
 import { LocationsProvider } from "./lib/locations";
+import { ProblemsProvider } from "./lib/problems";
 import Account from "./pages/Account";
 import Analytics from "./pages/Analytics";
 import Broadcast from "./pages/Broadcast";
@@ -17,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Outages from "./pages/Outages";
 import Overview from "./pages/Overview";
 import Reports from "./pages/Reports";
+import SystemProblems from "./pages/SystemProblems";
 import Summaries from "./pages/Summaries";
 import Users from "./pages/Users";
 
@@ -33,23 +35,26 @@ function Gate() {
   if (status === "signedOut") return <Login />;
   return (
     <LocationsProvider>
-      <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<Overview />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="neighborhood-stats" element={<NeighborhoodStats />} />
-          <Route path="status" element={<LiveStatus />} />
-          <Route path="users" element={<Users />} />
-          <Route path="reports" element={<Reports />} />
-          <Route path="outages" element={<Outages />} />
-          <Route path="locations" element={<Locations />} />
-          <Route path="broadcast" element={<Broadcast />} />
-          <Route path="summaries" element={<Summaries />} />
-          <Route path="health" element={<Health />} />
-          <Route path="account" element={<Account />} />
-          <Route path="*" element={<NotFound />} />
-        </Route>
-      </Routes>
+      <ProblemsProvider>
+        <Routes>
+          <Route element={<Layout />}>
+            <Route index element={<Overview />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="neighborhood-stats" element={<NeighborhoodStats />} />
+            <Route path="status" element={<LiveStatus />} />
+            <Route path="users" element={<Users />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="outages" element={<Outages />} />
+            <Route path="locations" element={<Locations />} />
+            <Route path="broadcast" element={<Broadcast />} />
+            <Route path="summaries" element={<Summaries />} />
+            <Route path="problems" element={<SystemProblems />} />
+            <Route path="health" element={<Health />} />
+            <Route path="account" element={<Account />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+        </Routes>
+      </ProblemsProvider>
     </LocationsProvider>
   );
 }

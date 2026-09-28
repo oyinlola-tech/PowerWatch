@@ -60,6 +60,7 @@ export interface Dashboard {
   activeOutages: number;
   totalOutages: number;
   totalNeighborhoods: number;
+  openSystemErrors: number;
 }
 
 export interface AdminAnalytics {
@@ -235,12 +236,50 @@ export interface ActivityItem {
   isCurrentNeighborhood: boolean;
 }
 
+export type BroadcastAudience =
+  | { type: "all" }
+  | { type: "users"; userIds: string[] }
+  | { type: "neighborhood"; neighborhoodId: number }
+  | { type: "lga"; lgaId: number }
+  | { type: "state"; stateId: number };
+
+export interface BroadcastRequest {
+  title: string;
+  body: string;
+  audience: BroadcastAudience;
+  dryRun?: boolean;
+}
+
 export interface BroadcastResult {
-  totalUsers: number;
-  devicesFound: number;
-  pushSuccess: number;
-  pushFailed: number;
-  topic: string;
+  recipients: number;
+  pushEnabledRecipients: number;
+  devices: number;
+  dryRun?: true;
+  pushSent?: number;
+  pushFailed?: number;
+}
+
+export type SystemEventLevel = "ERROR" | "WARNING";
+export type SystemEventSource = "email" | "push" | "job" | "geocoding" | "api" | "startup";
+export type SystemEventStatus = "open" | "resolved" | "all";
+
+export interface SystemEvent {
+  id: string;
+  level: SystemEventLevel;
+  source: SystemEventSource;
+  message: string;
+  details: Record<string, unknown>;
+  count: number;
+  firstSeenAt: string;
+  lastSeenAt: string;
+  resolvedAt: string | null;
+  resolvedBy: string | null;
+}
+
+export interface SystemEventsResponse {
+  data: SystemEvent[];
+  pagination: Pagination;
+  open: { errors: number; warnings: number };
 }
 
 export interface HealthPart {

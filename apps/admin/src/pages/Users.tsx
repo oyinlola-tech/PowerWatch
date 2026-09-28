@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { EmptyState, ResourceView } from "../components/DataState";
+import Icon from "../components/Icon";
 import { ConfirmDialog } from "../components/Modal";
 import { Pagination } from "../components/Pagination";
 import { Table, Td, Th } from "../components/Table";
@@ -112,20 +113,32 @@ export default function Users() {
                         <span title={formatDateTime(u.createdAt)}>{formatDate(u.createdAt)}</span>
                       </Td>
                       <Td>
-                        {canModify(u) ? (
-                          <div className="flex justify-end gap-1.5">
-                            <Button size="sm" tone="warning" icon="pause" onClick={() => setPending({ action: "suspend", user: u })}>
-                              Suspend<span className="sr-only"> {fullName(u)}</span>
-                            </Button>
-                            <Button size="sm" tone="secondary" icon="play" onClick={() => setPending({ action: "unsuspend", user: u })}>
-                              Restore<span className="sr-only"> {fullName(u)}</span>
-                            </Button>
-                            <Button size="sm" tone="ghost" icon="trash" className="text-off-ink hover:text-off-ink" onClick={() => setPending({ action: "delete", user: u })}>
-                              Delete<span className="sr-only"> {fullName(u)}</span>
-                            </Button>
-                          </div>
-                        ) : (
-                          <p className="text-right text-xs text-muted">
+                        <div className="flex flex-wrap justify-end gap-1.5">
+                          {!deleted && (
+                            <Link
+                              to="/broadcast"
+                              state={{ prefillUser: u }}
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent"
+                            >
+                              <Icon name="send" size={16} /> Message<span className="sr-only"> {fullName(u)}</span>
+                            </Link>
+                          )}
+                          {canModify(u) && (
+                            <>
+                              <Button size="sm" tone="warning" icon="pause" onClick={() => setPending({ action: "suspend", user: u })}>
+                                Suspend<span className="sr-only"> {fullName(u)}</span>
+                              </Button>
+                              <Button size="sm" tone="secondary" icon="play" onClick={() => setPending({ action: "unsuspend", user: u })}>
+                                Restore<span className="sr-only"> {fullName(u)}</span>
+                              </Button>
+                              <Button size="sm" tone="ghost" icon="trash" className="text-off-ink hover:text-off-ink" onClick={() => setPending({ action: "delete", user: u })}>
+                                Delete<span className="sr-only"> {fullName(u)}</span>
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                        {!canModify(u) && (
+                          <p className="mt-1 text-right text-xs text-muted">
                             {deleted ? "Already deleted" : u.id === me?.id ? "Your account" : "Admins can't be changed"}
                           </p>
                         )}

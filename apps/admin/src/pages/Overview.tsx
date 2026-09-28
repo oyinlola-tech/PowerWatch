@@ -1,7 +1,7 @@
 import { Link } from "react-router";
 import { ResourceView, EmptyState } from "../components/DataState";
 import { Table, Td, Th } from "../components/Table";
-import { Badge, Button, Card, PageHeader, StatCard } from "../components/ui";
+import { Badge, Button, Card, Notice, PageHeader, StatCard } from "../components/ui";
 import { request } from "../lib/api";
 import { formatDateTime, formatNumber } from "../lib/format";
 import type { Dashboard, HealthReport, Outage, Paged } from "../lib/types";
@@ -36,12 +36,29 @@ export default function Overview() {
 
       <ResourceView {...dashboard}>
         {(d) => (
-          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
-            <StatCard label="Active outages" value={formatNumber(d.activeOutages)} tone={d.activeOutages ? "off" : "on"} hint={`${formatNumber(d.totalOutages)} outages recorded in total`} />
-            <StatCard label="Reports today" value={formatNumber(d.reportsToday)} hint={`${formatNumber(d.reportsThisWeek)} this week · ${formatNumber(d.totalReports)} in total`} />
-            <StatCard label="Users" value={formatNumber(d.totalUsers)} hint={`${formatNumber(d.newUsersToday)} joined today`} tone="accent" />
-            <StatCard label="Neighborhoods covered" value={formatNumber(d.totalNeighborhoods)} />
-          </div>
+          <>
+            {d.openSystemErrors > 0 && (
+              <div className="mb-4">
+                <Notice
+                  tone="error"
+                  title={`${formatNumber(d.openSystemErrors)} open system error${d.openSystemErrors === 1 ? "" : "s"}`}
+                  action={
+                    <Link to="/problems" className="whitespace-nowrap text-sm font-semibold text-off-ink hover:underline">
+                      View system problems
+                    </Link>
+                  }
+                >
+                  Something in email, push, jobs or geocoding needs attention.
+                </Notice>
+              </div>
+            )}
+            <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 xl:grid-cols-4">
+              <StatCard label="Active outages" value={formatNumber(d.activeOutages)} tone={d.activeOutages ? "off" : "on"} hint={`${formatNumber(d.totalOutages)} outages recorded in total`} />
+              <StatCard label="Reports today" value={formatNumber(d.reportsToday)} hint={`${formatNumber(d.reportsThisWeek)} this week · ${formatNumber(d.totalReports)} in total`} />
+              <StatCard label="Users" value={formatNumber(d.totalUsers)} hint={`${formatNumber(d.newUsersToday)} joined today`} tone="accent" />
+              <StatCard label="Neighborhoods covered" value={formatNumber(d.totalNeighborhoods)} />
+            </div>
+          </>
         )}
       </ResourceView>
 

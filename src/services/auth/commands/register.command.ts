@@ -14,6 +14,7 @@ import { signAccessToken, signRefreshToken, getRefreshTokenExpiryDate } from '..
 import { env } from '../../../configs/env.config.js';
 import { ReverseGeocodeQuery } from '../../locations/queries/reverseGeocode.query.js';
 import { SendOtpCommand } from './sendOtp.command.js';
+import { sendAccountEmail, welcomeEmail } from '../../mail/templates/account.js';
 
 export class RegisterCommand {
   constructor(
@@ -226,10 +227,11 @@ export class RegisterCommand {
     let verificationEmailSent = true;
     try {
       await this.sendOtpCommand.execute(normalizedEmail, 'EMAIL_VERIFICATION');
-    } catch (error) {
+    } catch {
+      // Already recorded (with the address masked) as a system event by the mail service
       verificationEmailSent = false;
-      console.error('Sending the verification code after registration failed:', error);
     }
+    sendAccountEmail(normalizedEmail, welcomeEmail({ firstName: dto.firstName }));
 
     const accessToken = signAccessToken({
       userId: user.id,
