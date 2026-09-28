@@ -54,7 +54,7 @@ export default function Analytics() {
                     <div>
                       <h3 className="mb-1 text-sm font-semibold text-ink">Most reported neighborhoods</h3>
                       <p className="mb-3 text-xs text-muted">
-                        {p.fromCache ? "Within the selected range." : "All time: the API does not apply the date range to this ranking."}
+                        Within the selected range.
                       </p>
                       {p.topNeighborhoods.length ? (
                         <BarList items={p.topNeighborhoods.map((n) => ({ key: n.neighborhoodId, label: n.neighborhoodName, value: n.reportCount }))} unit="reports" />
@@ -80,7 +80,7 @@ export default function Analytics() {
                     <div>
                       <h3 className="mb-1 text-sm font-semibold text-ink">Neighborhoods with the most outages</h3>
                       <p className="mb-3 text-xs text-muted">
-                        {o.fromCache ? "Within the selected range." : "All time: the API does not apply the date range to this ranking."}
+                        Within the selected range.
                       </p>
                       {o.topNeighborhoods.length ? (
                         <BarList

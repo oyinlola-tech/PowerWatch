@@ -87,7 +87,9 @@ const ReportSplit = ({ stats, emptyMessage }: { stats: PowerStatistics; emptyMes
         <NumberTile icon="bolt" value={stats.onReports} label="Power ON" color={colors.powerOn} />
         <NumberTile icon="plugOff" value={stats.offReports} label="Power OFF" color={colors.powerOff} />
       </View>
-      <Text style={styles.sectionNote}>{stats.totalReports} reports in total</Text>
+      <Text style={styles.sectionNote}>
+        {stats.totalReports} {stats.totalReports === 1 ? "report" : "reports"} in total
+      </Text>
     </>
   );
 };

@@ -1,11 +1,15 @@
 import { prisma } from '../../../configs/database.config.js';
+import { env } from '../../../configs/env.config.js';
+import { startOfLocalDay } from '../../../utils/time.js';
 
 export class GetPowerStatisticsQuery {
   async execute(params: { startDate?: string; endDate?: string }) {
     const start = params.startDate ? new Date(params.startDate) : undefined;
     const end = params.endDate ? new Date(params.endDate) : undefined;
 
-    const isHistorical = start && end && (end.getTime() - start.getTime() < 7 * 86_400_000);
+    // Daily summaries are only complete for days that are over, so any range reaching into
+    // today is counted live from the reports themselves.
+    const isHistorical = start && end && end < startOfLocalDay(new Date(), env.timeZone);
 
     if (isHistorical) {
       const summaries = await prisma.dailyReportSummary.findMany({
@@ -63,6 +67,7 @@ export class GetPowerStatisticsQuery {
 
     const topReportedNeighborhoods = await prisma.report.groupBy({
       by: ['neighborhoodId'],
+      where,
       _count: { id: true },
       orderBy: { _count: { id: 'desc' } },
       take: 10,

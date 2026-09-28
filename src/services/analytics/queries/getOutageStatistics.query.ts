@@ -1,11 +1,15 @@
 import { prisma } from '../../../configs/database.config.js';
+import { env } from '../../../configs/env.config.js';
+import { startOfLocalDay } from '../../../utils/time.js';
 
 export class GetOutageStatisticsQuery {
   async execute(params: { startDate?: string; endDate?: string }) {
     const start = params.startDate ? new Date(params.startDate) : undefined;
     const end = params.endDate ? new Date(params.endDate) : undefined;
 
-    if (start && end) {
+    // Weekly summaries are only complete for weeks that are over; ranges reaching into the
+    // current day are counted live from the outages themselves.
+    if (start && end && end < startOfLocalDay(new Date(), env.timeZone)) {
       const weeklySummaries = await prisma.weeklyOutageSummary.findMany({
         where: {
           weekStart: { gte: start, lte: end },
@@ -71,6 +75,7 @@ export class GetOutageStatisticsQuery {
 
     const topOutageNeighborhoods = await prisma.outage.groupBy({
       by: ['neighborhoodId'],
+      where,
       _count: { id: true },
       _avg: { duration: true },
       orderBy: { _count: { id: 'desc' } },
