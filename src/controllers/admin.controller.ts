@@ -50,9 +50,19 @@ const userIdParamsSchema = z.object({ userId: z.uuid() });
 const reportIdParamsSchema = z.object({ id: z.uuid() });
 
 const sendBroadcastSchema = z.object({
-  title: z.string().trim().min(1).max(200),
-  body: z.string().trim().min(1).max(1000),
-  topic: z.string().trim().min(1).max(100).regex(/^[a-zA-Z0-9-_.~%]+$/).optional(),
+  // Phones cut push titles and text short, so keep them brief
+  title: z.string().trim().min(1).max(100),
+  body: z.string().trim().min(1).max(500),
+  audience: z
+    .discriminatedUnion('type', [
+      z.object({ type: z.literal('all') }),
+      z.object({ type: z.literal('users'), userIds: z.array(z.uuid()).min(1).max(500) }),
+      z.object({ type: z.literal('neighborhood'), neighborhoodId: z.number().int().positive() }),
+      z.object({ type: z.literal('lga'), lgaId: z.number().int().positive() }),
+      z.object({ type: z.literal('state'), stateId: z.number().int().positive() }),
+    ])
+    .default({ type: 'all' }),
+  dryRun: z.boolean().optional(),
 });
 
 function getActor(request: FastifyRequest): AdminActor {
@@ -133,11 +143,12 @@ export const adminController = {
   },
 
   async sendBroadcast(request: FastifyRequest, reply: FastifyReply) {
-    const { title, body, topic } = sendBroadcastSchema.parse(request.body);
-    const params: { title: string; body: string; topic?: string } = { title, body };
-    if (topic !== undefined) params.topic = topic;
-    const result = await sendBroadcastCommand.execute(params);
-    return reply.status(200).send(successResponse(result, 'Broadcast sent.'));
+    const { title, body, audience, dryRun } = sendBroadcastSchema.parse(request.body);
+    const result = await sendBroadcastCommand.execute(
+      { title, body, audience, ...(dryRun ? { dryRun } : {}) },
+      getActor(request),
+    );
+    return reply.status(200).send(successResponse(result, dryRun ? 'Audience counted. Nothing was sent.' : 'Message sent.'));
   },
 
   async materializeDaily(request: FastifyRequest, reply: FastifyReply) {

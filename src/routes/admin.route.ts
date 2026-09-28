@@ -158,7 +158,10 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
   app.post('/broadcast', {
     preHandler: [adminMiddleware],
     schema: {
-      description: '[ADMIN] Send a push notification broadcast to all users.',
+      description:
+        '[ADMIN] Send a message to users: every recipient gets it in their in-app inbox, and those with ' +
+        'notifications on also get a push on each device. Audience: everyone, chosen users, or people who live in ' +
+        'or saved a neighborhood or state. With dryRun, nothing is sent and the counts show who would receive it.',
       tags: ['Admin'],
       security: [{ bearerAuth: [] }],
       summary: 'Send broadcast',
@@ -166,9 +169,21 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
         type: 'object',
         required: ['title', 'body'],
         properties: {
-          title: { type: 'string', maxLength: 200 },
-          body: { type: 'string', maxLength: 1000 },
-          topic: { type: 'string' },
+          title: { type: 'string', maxLength: 100 },
+          body: { type: 'string', maxLength: 500 },
+          audience: {
+            type: 'object',
+            description: '{ type: "all" } (default), { type: "users", userIds: [...] }, { type: "neighborhood", neighborhoodId }, { type: "lga", lgaId }, { type: "state", stateId }',
+            required: ['type'],
+            properties: {
+              type: { type: 'string', enum: ['all', 'users', 'neighborhood', 'lga', 'state'] },
+              userIds: { type: 'array', items: { type: 'string', format: 'uuid' }, maxItems: 500 },
+              neighborhoodId: { type: 'integer' },
+              lgaId: { type: 'integer' },
+              stateId: { type: 'integer' },
+            },
+          },
+          dryRun: { type: 'boolean', description: 'Only count recipients; send nothing.' },
         },
       },
       response: {
