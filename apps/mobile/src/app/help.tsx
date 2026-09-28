@@ -28,9 +28,14 @@ const faqs: AccordionItem[] = [
       "You can report once per neighborhood every 5 minutes. This keeps the status fair and stops accidental repeat reports.",
   },
   {
+    title: "Why do I need to allow location to report?",
+    body:
+      "A report always counts for the neighborhood and street your phone's GPS says you're standing in right now — never a saved or chosen area. Without a precise, genuine GPS fix, PowerWatch can't tell where to file the report, so it can't be submitted. Simulated (\"mock\") locations are refused.",
+  },
+  {
     title: "Why does PowerWatch use my location?",
     body:
-      "To set your monitoring area on your exact spot, and to attach where you were when you report, so reports can be checked against the area they describe. Location is only used while the app is open. Other users never see your location or your name; see the Privacy Policy for details.",
+      "To work out your home neighborhood when you sign up or change it, and, every time you report, to work out which neighborhood and street the report counts for. Location is only used while the app is open. Other users never see your location or your name; see the Privacy Policy for details.",
   },
   {
     title: "How do I change my neighborhood?",

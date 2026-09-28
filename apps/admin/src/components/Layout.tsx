@@ -92,6 +92,84 @@ function SidebarFooter() {
   );
 }
 
+/** pathname -> page title and short context, for the top bar. Built once from NAV_GROUPS. */
+const ROUTE_META = new Map<string, { title: string; context: string }>(
+  NAV_GROUPS.flatMap((group) => group.items.map((item) => [item.to, { title: item.label, context: item.context }] as const)),
+);
+
+function UserMenu({ user, signingOut, onSignOut }: { user: SessionUser; signingOut: boolean; onSignOut: () => void }) {
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onPointerDown = (event: MouseEvent) => {
+      if (root.current && !root.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const initials = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`.toUpperCase() || "A";
+
+  return (
+    <div ref={root} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+        className="flex h-10 flex-shrink-0 items-center gap-2 rounded-full border border-line pl-1 pr-1.5 text-ink transition hover:border-accent sm:pr-2.5"
+      >
+        <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-info-soft text-xs font-bold text-accent">
+          {initials}
+        </span>
+        <span className="hidden max-w-[9rem] truncate text-sm font-semibold sm:inline">{fullName(user)}</span>
+        <Icon name="chevronRight" size={14} className="hidden rotate-90 text-muted sm:block" />
+      </button>
+
+      {open && (
+        <div role="menu" aria-label="Account menu" className="absolute right-0 top-12 z-30 w-64 overflow-hidden rounded-xl border border-line bg-card shadow-lg">
+          <div className="border-b border-line px-4 py-3">
+            <p className="truncate text-sm font-semibold text-ink">{fullName(user)}</p>
+            <p className="truncate text-xs text-muted">{user.email}</p>
+            <span className="mt-1.5 inline-flex rounded-md bg-info-soft px-1.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-accent">
+              {user.role}
+            </span>
+          </div>
+          <Link
+            role="menuitem"
+            to="/account"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-2 px-4 py-2.5 text-sm text-body transition hover:bg-soft hover:text-ink"
+          >
+            <Icon name="account" size={16} /> Account
+          </Link>
+          <button
+            role="menuitem"
+            type="button"
+            disabled={signingOut}
+            onClick={() => {
+              setOpen(false);
+              onSignOut();
+            }}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-off-ink transition hover:bg-off-soft disabled:opacity-60"
+          >
+            <Icon name="logout" size={16} /> {signingOut ? "Signing out…" : "Sign out"}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Layout() {
   const { user, signOut } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -99,6 +177,8 @@ export default function Layout() {
   const drawer = useRef<HTMLDialogElement>(null);
   const main = useRef<HTMLElement>(null);
   const location = useLocation();
+  const meta = ROUTE_META.get(location.pathname) ?? { title: "PowerWatch Admin", context: "" };
+  const health = useApi("layout-health", (signal) => request<HealthReport>("/health", { signal, acceptStatus: [503] }));
 
   useEffect(() => {
     const dialog = drawer.current;
@@ -163,49 +243,38 @@ export default function Layout() {
         </div>
       </dialog>
 
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-line bg-card/95 px-4 backdrop-blur sm:px-6">
+      <div className="flex min-h-dvh flex-col lg:pl-64">
+        <header className="sticky top-0 z-20 flex h-16 items-center gap-2 border-b border-line bg-card/95 px-4 backdrop-blur sm:gap-4 sm:px-6">
           <button
             type="button"
             onClick={() => setDrawerOpen(true)}
             aria-expanded={drawerOpen}
-            className="-ml-1 flex h-10 w-10 items-center justify-center rounded-lg text-ink hover:bg-soft lg:hidden"
+            className="-ml-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg text-ink hover:bg-soft lg:hidden"
           >
             <Icon name="menu" label="Open navigation" />
           </button>
-          <div className="lg:hidden">
-            <span className="text-base font-bold text-ink">PowerWatch</span>
-            <span className="ml-1.5 text-xs font-bold uppercase text-accent">Admin</span>
+
+          {/* Page title and short context, so the top bar always says where you are */}
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-bold text-ink sm:text-lg">{meta.title}</p>
+            {meta.context && <p className="hidden truncate text-xs text-muted sm:block">{meta.context}</p>}
           </div>
-          <p className="hidden items-center gap-1.5 text-xs text-muted min-[420px]:flex">
+
+          <p className="hidden flex-shrink-0 items-center gap-1.5 text-xs text-muted min-[420px]:flex">
             <Icon name="clock" size={14} />
-            <span className="xl:hidden">Times in WAT</span>
+            <span className="xl:hidden">WAT</span>
             <span className="hidden xl:inline">Times in {TIME_ZONE_LABEL}</span>
           </p>
-          <div className="ml-auto flex items-center gap-2 sm:gap-3">
-            {user && (
-              <div className="hidden min-w-0 text-right sm:block">
-                <p className="truncate text-sm font-semibold text-ink">{fullName(user)}</p>
-                <p className="truncate text-xs text-muted">{user.email}</p>
-              </div>
-            )}
-            <ThemeToggle />
-            <button
-              type="button"
-              onClick={handleSignOut}
-              disabled={signingOut}
-              className="flex h-10 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-sm font-medium text-ink transition hover:border-off-ink hover:text-off-ink disabled:opacity-60"
-            >
-              <Icon name="logout" size={16} />
-              <span className="hidden sm:inline">{signingOut ? "Signing out…" : "Sign out"}</span>
-              <span className="sr-only sm:hidden">Sign out</span>
-            </button>
-          </div>
+
+          <ThemeToggle />
+          {user && <UserMenu user={user} signingOut={signingOut} onSignOut={handleSignOut} />}
         </header>
 
-        <main id="main" ref={main} tabIndex={-1} className="relative mx-auto w-full max-w-[90rem] px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8">
+        <main id="main" ref={main} tabIndex={-1} className="relative mx-auto w-full max-w-[90rem] flex-1 px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
+
+        <Footer health={health.data} healthLoading={health.loading} />
       </div>
     </div>
   );

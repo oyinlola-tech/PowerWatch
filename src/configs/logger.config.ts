@@ -7,7 +7,9 @@ export const REQUEST_ID_HEADER = 'x-request-id';
 const isProduction = env.nodeEnv === 'production';
 
 export const loggerOptions: NonNullable<FastifyServerOptions['logger']> = {
-  level: isProduction ? 'info' : 'debug',
+  level: process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug'),
+  // Some hosts (cPanel Application Manager) keep only stderr, so logs can be sent there.
+  ...(process.env.LOG_STREAM === 'stderr' && { stream: process.stderr }),
   redact: {
     paths: [
       'req.headers.authorization',
