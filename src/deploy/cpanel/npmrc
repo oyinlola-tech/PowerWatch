@@ -1,3 +1,7 @@
 # Uploaded as .npmrc. The host's PATH has no "node"; npm-shell.sh adds it for package
 # install scripts. The path must be absolute: change it if the application root changes.
 script-shell=/home/telente/powerwatch-api/npm-shell.sh
+# The host's memory cap refuses the large block Node reserves for WebAssembly, which
+# Prisma needs. This flag skips that reservation. The running app gets the same flag
+# from the NODE_OPTIONS variable set in Application Manager.
+node-options=--disable-wasm-trap-handler

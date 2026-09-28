@@ -39,6 +39,11 @@ These are handled by the files in `src/deploy/cpanel/`, not by the application c
 | Picks the port itself | Nothing to set: leave `PORT` out of `.env` |
 | Sits in front of the app as a proxy | `TRUST_PROXY=1` in `.env`, so rate limits count real visitors |
 | Adds a 30-day cache lifetime to responses without one | The API sends `Cache-Control: no-store` |
+| Its memory cap refuses the large block Node reserves for WebAssembly, which Prisma uses (`RangeError: WebAssembly.Instance(): Out of memory`) | `--disable-wasm-trap-handler`: in `.npmrc` (`node-options`) for installs, and as the `NODE_OPTIONS` environment variable of the application in Application Manager for the running server |
+| Force HTTPS Redirect has no effect on Application Manager apps | Plain `http://` still answers. The API sends `Strict-Transport-Security`, and the mobile app refuses non-HTTPS addresses |
+
+`npm install` runs `prisma generate` (the `postinstall` script), so **Ensure dependencies**
+also rebuilds the database client.
 
 ### Release a new version
 
@@ -62,6 +67,20 @@ file is never committed. `src/.env.example` lists every variable. The production
 `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, `JWT_ACCESS_EXPIRES_IN`, `JWT_REFRESH_EXPIRES_IN`,
 `APP_TIMEZONE`, `CORS_ORIGIN`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`,
 `SMTP_PASS`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`, `NOMINATIM_CONTACT_EMAIL`.
+
+Application Manager also sets `NODE_OPTIONS=--disable-wasm-trap-handler` for the app (see above).
+
+### Location data
+
+The Nigerian states, LGAs, towns and neighborhoods are loaded once with `prisma/seed.ts`. It
+skips itself if locations already exist. Without SSH, run it from cPanel **Cron Jobs** with a
+job set to every minute, and delete the job as soon as `seed.log` shows it finished:
+
+```sh
+cd /home/telente/powerwatch-api && /opt/cpanel/ea-nodejs22/bin/node --disable-wasm-trap-handler node_modules/tsx/dist/cli.mjs prisma/seed.ts > seed.log 2>&1
+```
+
+Restart the app afterwards so it fills in map coordinates for the new locations.
 
 Changing `JWT_ACCESS_SECRET` or `JWT_REFRESH_SECRET` signs everyone out and makes unused
 verification codes invalid.

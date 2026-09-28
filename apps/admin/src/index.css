@@ -71,6 +71,11 @@ body {
   border-radius: 6px;
 }
 
+/* Page content receives focus after navigation for screen readers; no ring needed there */
+[tabindex="-1"]:focus {
+  outline: none;
+}
+
 dialog::backdrop {
   background: rgb(7 17 31 / 0.55);
 }

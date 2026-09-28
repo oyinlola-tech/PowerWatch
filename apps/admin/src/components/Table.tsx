@@ -6,7 +6,7 @@ import type { ReactNode } from "react";
  */
 export function Table({ caption, head, children }: { caption: string; head: ReactNode; children: ReactNode }) {
   return (
-    <div className="-mx-4 overflow-x-auto sm:-mx-5" tabIndex={0} role="region" aria-label={caption}>
+    <div className="relative -mx-4 overflow-x-auto sm:-mx-5" tabIndex={0} role="region" aria-label={caption}>
       <table className="w-full min-w-[40rem] border-collapse text-left text-sm">
         <caption className="sr-only">{caption}</caption>
         <thead>

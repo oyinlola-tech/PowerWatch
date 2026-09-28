@@ -171,7 +171,7 @@ export default function Layout() {
             <span className="text-base font-bold text-ink">PowerWatch</span>
             <span className="ml-1.5 text-xs font-bold uppercase text-accent">Admin</span>
           </div>
-          <p className="hidden items-center gap-1.5 text-xs text-muted md:flex">
+          <p className="hidden items-center gap-1.5 text-xs text-muted xl:flex">
             <Icon name="clock" size={14} />
             Times in {TIME_ZONE_LABEL}
           </p>
@@ -187,7 +187,7 @@ export default function Layout() {
               type="button"
               onClick={handleSignOut}
               disabled={signingOut}
-              className="flex h-10 items-center gap-2 rounded-full border border-line px-3 text-sm font-medium text-ink transition hover:border-off-ink hover:text-off-ink disabled:opacity-60"
+              className="flex h-10 flex-shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-line px-3 text-sm font-medium text-ink transition hover:border-off-ink hover:text-off-ink disabled:opacity-60"
             >
               <Icon name="logout" size={16} />
               <span className="hidden sm:inline">{signingOut ? "Signing out…" : "Sign out"}</span>
@@ -196,7 +196,7 @@ export default function Layout() {
           </div>
         </header>
 
-        <main id="main" ref={main} tabIndex={-1} className="mx-auto w-full max-w-[90rem] px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8">
+        <main id="main" ref={main} tabIndex={-1} className="relative mx-auto w-full max-w-[90rem] px-4 py-6 outline-none sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>
