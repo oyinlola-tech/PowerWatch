@@ -165,6 +165,11 @@ export const env = {
     fromName: process.env.SMTP_FROM_NAME ?? 'PowerWatch',
   },
 
+  google: {
+    // OAuth client IDs whose Google ID tokens are accepted (web, Android and iOS clients).
+    clientIds: (process.env.GOOGLE_CLIENT_IDS ?? '').split(',').map((id) => id.trim()).filter(Boolean),
+  },
+
   // Shown in emails: the logo and links point at the website, replies go to support
   mailBranding: {
     webUrl: (process.env.APP_WEB_URL || 'https://powerwatch.oyinlola.site').replace(/\/+$/, ''),

@@ -13,6 +13,7 @@ import { UpdateFcmTokenCommand } from '../services/auth/commands/updatefcmToken.
 import { UpdateProfileCommand } from '../services/auth/commands/updateProfile.command.js';
 import { LogoutAllCommand } from '../services/auth/commands/logoutAll.command.js';
 import { DeleteAccountCommand } from '../services/auth/commands/deleteAccount.command.js';
+import { GoogleSignInCommand } from '../services/auth/commands/googleSignIn.command.js';
 import { ListSessionsQuery, RevokeSessionCommand } from '../services/auth/commands/session.commands.js';
 import { ListDevicesQuery, RemoveDeviceCommand } from '../services/auth/commands/device.commands.js';
 import { GetProfileQuery } from '../services/auth/queries/getProfile.query.js';
@@ -33,6 +34,7 @@ import {
   updateProfileSchema,
   updateFcmTokenSchema,
   deleteAccountSchema,
+  googleSignInSchema,
   verifyResetOtpSchema,
   notificationPreferencesSchema,
   registerPushTokenSchema,
@@ -42,6 +44,7 @@ import { successResponse } from '../utils/response.js';
 import { MESSAGES } from '../constants/message.constant.js';
 
 const registerCommand = new RegisterCommand();
+const googleSignInCommand = new GoogleSignInCommand();
 const loginCommand = new LoginCommand();
 const logoutCommand = new LogoutCommand();
 const refreshTokenCommand = new RefreshTokenCommand();
@@ -83,6 +86,14 @@ export const authController = {
       request.headers['user-agent'],
     );
     return reply.status(201).send(successResponse(result, MESSAGES.REGISTER_SUCCESS));
+  },
+
+  async googleSignIn(request: FastifyRequest, reply: FastifyReply) {
+    const dto = googleSignInSchema.parse(request.body);
+    const result = await googleSignInCommand.execute(dto, request.ip, request.headers['user-agent']);
+    return reply
+      .status(result.isNewUser ? 201 : 200)
+      .send(successResponse(result, result.isNewUser ? MESSAGES.REGISTER_SUCCESS : MESSAGES.LOGIN_SUCCESS));
   },
 
   async login(request: FastifyRequest, reply: FastifyReply) {
@@ -235,8 +246,8 @@ export const authController = {
 
   async deleteAccount(request: FastifyRequest, reply: FastifyReply) {
     const authReq = request as AuthenticatedRequest;
-    const { password } = deleteAccountSchema.parse(request.body);
-    const result = await deleteAccountCommand.execute(authReq.userId, password);
+    const { password, googleIdToken } = deleteAccountSchema.parse(request.body);
+    const result = await deleteAccountCommand.execute(authReq.userId, { password, googleIdToken });
     return reply.status(200).send(successResponse(result, 'Account deleted successfully.'));
   },
 

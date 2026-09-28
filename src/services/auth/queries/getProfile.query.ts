@@ -12,6 +12,8 @@ export class GetProfileQuery {
     if (!user) {
       throw new AppError(404, MESSAGES.NOT_FOUND);
     }
-    return user;
+    // Which ways the person can sign in, without exposing the provider account IDs
+    const { googleId, appleId, ...profile } = user;
+    return { ...profile, signInMethods: { google: googleId !== null, apple: appleId !== null } };
   }
 }

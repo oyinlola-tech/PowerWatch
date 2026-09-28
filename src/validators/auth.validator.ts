@@ -303,8 +303,31 @@ export const unregisterPushTokenSchema = z.object({
   expoPushToken: expoPushTokenSchema,
 });
 
-export const deleteAccountSchema = z.object({
-  password: z.string({ message: 'Password is required.' }).min(1, 'Password is required.'),
+// Accounts made with Google may have no password; they confirm with a fresh Google sign-in instead
+export const deleteAccountSchema = z
+  .object({
+    password: z.string().min(1, 'Password is required.').optional(),
+    googleIdToken: z.string().min(1).optional(),
+  })
+  .refine((data) => data.password || data.googleIdToken, {
+    message: 'Password is required.',
+    path: ['password'],
+  });
+
+export const googleSignInSchema = z.object({
+  idToken: z.string({ message: 'Google sign-in token is required.' }).min(1).max(4096),
+  acceptedTerms: z.boolean().optional(),
+  termsVersion: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Terms version must be a date (YYYY-MM-DD).')
+    .optional(),
+  deviceType: z.enum(['ANDROID', 'IOS', 'WEB']).optional(),
+  deviceName: z.string().max(100).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+  accuracy: z.number().min(0).max(100_000).optional(),
+  mocked: z.boolean().optional(),
 });
 
 export const verifyResetOtpSchema = z.object({

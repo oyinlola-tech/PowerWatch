@@ -58,6 +58,12 @@ model User {
   lastName            String
   email               String         @unique
   passwordHash        String
+  /** False for accounts created with Google or Apple until the person sets a password */
+  passwordSet         Boolean        @default(true) @map("password_set")
+  /** Stable account IDs from Sign in with Google / Apple (the token's "sub"). Kept unique by
+      the sign-in code: a unique constraint would stop the start-up schema sync. */
+  googleId            String?        @map("google_id") @db.VarChar(64)
+  appleId             String?        @map("apple_id") @db.VarChar(64)
   role                Role           @default(USER)
   emailVerified       Boolean        @default(false)
   notificationEnabled Boolean        @default(true)
@@ -105,6 +111,8 @@ model User {
   updatedAt           DateTime       @updatedAt
 
   @@index([deletedAt])
+  @@index([googleId])
+  @@index([appleId])
   @@map("users")
 }
 

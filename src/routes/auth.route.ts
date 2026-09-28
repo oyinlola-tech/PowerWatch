@@ -106,6 +106,52 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
     },
   }, authController.register);
 
+  app.post('/google', {
+    config: { rateLimit: authIpRateLimit },
+    schema: {
+      description:
+        'Sign in or sign up with a Google ID token (from Google Sign-In on the device). Existing accounts are ' +
+        'matched by Google account, then by verified email. For a new account, send acceptedTerms: true; ' +
+        'without it the API answers 409 with message TERMS_REQUIRED so the app can ask. Returns 201 and ' +
+        'isNewUser: true when an account was created.',
+      tags: ['Auth'],
+      summary: 'Sign in with Google',
+      body: {
+        type: 'object',
+        required: ['idToken'],
+        properties: {
+          idToken: { type: 'string' },
+          acceptedTerms: { type: 'boolean' },
+          termsVersion: { type: 'string', example: '2026-09-27' },
+          deviceType: { type: 'string', enum: ['ANDROID', 'IOS', 'WEB'] },
+          deviceName: { type: 'string' },
+          latitude: { type: 'number' },
+          longitude: { type: 'number' },
+          accuracy: { type: 'number' },
+          mocked: { type: 'boolean' },
+        },
+      },
+      response: {
+        '2xx': {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                user: { type: 'object', additionalProperties: true },
+                accessToken: { type: 'string' },
+                refreshToken: { type: 'string' },
+                isNewUser: { type: 'boolean' },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, authController.googleSignIn);
+
   app.post('/login', {
     config: { rateLimit: loginRateLimit },
     schema: {
@@ -745,15 +791,20 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
   app.delete('/delete-account', {
     preHandler: [authMiddleware],
     schema: {
-      description: 'Permanently delete the authenticated user account. Requires password confirmation.',
+      description:
+        'Permanently delete the authenticated user account. Confirm with the password, or with a fresh Google ' +
+        'ID token for accounts made with Google that have no password.',
       tags: ['Auth'],
       summary: 'Delete account',
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['password'],
         properties: {
           password: { type: 'string', example: 'StrongPassword@123' },
+          googleIdToken: {
+            type: 'string',
+            description: 'For accounts made with Google that have no password: a fresh Google ID token instead.',
+          },
         },
       },
       response: {

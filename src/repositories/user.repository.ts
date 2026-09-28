@@ -81,6 +81,10 @@ export class UserRepository {
         city: { select: { id: true, name: true } },
         town: { select: { id: true, name: true } },
         neighborhood: { select: { id: true, name: true } },
+        street: { select: { id: true, name: true } },
+        passwordSet: true,
+        googleId: true,
+        appleId: true,
       },
     });
   }
@@ -98,14 +102,14 @@ export class UserRepository {
   async updatePassword(email: string, passwordHash: string) {
     return prisma.user.update({
       where: { email, deletedAt: null },
-      data: { passwordHash, passwordChangedAt: new Date() },
+      data: { passwordHash, passwordSet: true, passwordChangedAt: new Date() },
     });
   }
 
   async updatePasswordById(id: string, passwordHash: string) {
     return prisma.user.update({
       where: { id },
-      data: { passwordHash, passwordChangedAt: new Date() },
+      data: { passwordHash, passwordSet: true, passwordChangedAt: new Date() },
     });
   }
 
@@ -221,6 +225,8 @@ export class UserRepository {
           townId: null,
           neighborhoodId: null,
           streetId: null,
+          googleId: null,
+          appleId: null,
           deletedAt: new Date(),
         },
       }),

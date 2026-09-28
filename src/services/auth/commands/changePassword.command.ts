@@ -25,6 +25,13 @@ export class ChangePasswordCommand {
       throw new AppError(404, MESSAGES.NOT_FOUND);
     }
 
+    if (!user.passwordSet) {
+      throw new AppError(
+        400,
+        'This account signs in with Google and has no password yet. Use "Forgot password" to set one.',
+      );
+    }
+
     const valid = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!valid) {
       throw new AppError(400, 'Current password is incorrect.');
