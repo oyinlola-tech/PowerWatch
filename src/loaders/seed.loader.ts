@@ -19,10 +19,10 @@ export async function seedAdmin(): Promise<void> {
     return;
   }
 
-  const passwordCheck = passwordSchema.safeParse(env.admin.password);
-  if (!passwordCheck.success) {
+  // Fixed text only: nothing derived from the password reaches the start-up error log
+  if (!passwordSchema.safeParse(env.admin.password).success) {
     throw new Error(
-      `ADMIN_EMAIL is set but ADMIN_PASSWORD is not strong enough: ${passwordCheck.error.issues[0]?.message}`,
+      'ADMIN_EMAIL is set but ADMIN_PASSWORD is not strong enough. Use 8+ characters with upper and lower case letters, a number and a symbol.',
     );
   }
 
