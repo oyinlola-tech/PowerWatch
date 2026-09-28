@@ -27,6 +27,10 @@ export interface User {
   city: Named | null;
   town: Named | null;
   neighborhood: Named | null;
+  street: Named | null;
+  /** False for accounts created via Google that never set a PowerWatch password. */
+  passwordSet: boolean;
+  signInMethods: { google: boolean; apple: boolean };
   createdAt: string;
 }
 
@@ -35,6 +39,11 @@ export interface AuthResult {
   accessToken: string;
   refreshToken: string;
   verificationEmailSent?: boolean;
+}
+
+export interface GoogleAuthResult extends AuthResult {
+  /** True when this Google sign-in created a new PowerWatch account (HTTP 201). */
+  isNewUser: boolean;
 }
 
 export interface NotificationPreferences {

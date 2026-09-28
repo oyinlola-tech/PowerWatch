@@ -7,6 +7,7 @@ import Icon from "../components/icons/Icon";
 import Button from "../components/ui/Button";
 import { FormError } from "../components/ui/StateViews";
 import TextField from "../components/ui/TextField";
+import { useAuth } from "../context/AuthContext";
 import { ApiError, authApi } from "../services/api";
 import { goBack } from "../services/navigation";
 import { fonts, type } from "../theme";
@@ -21,8 +22,12 @@ type FieldErrors = Partial<Record<Field, string>>;
 
 // Reset Password (no Figma frame; styled like the Login screen)
 const ResetPassword = () => {
-  const params = useLocalSearchParams<{ email?: string }>();
+  const params = useLocalSearchParams<{ email?: string; returnTo?: string }>();
   const email = typeof params.email === "string" ? params.email : "";
+  // Set when opened from Profile Settings' "Set a password" (a Google account with no
+  // PowerWatch password yet), rather than the signed-out "forgot password" flow.
+  const returnTo = typeof params.returnTo === "string" ? params.returnTo : undefined;
+  const { refreshUser } = useAuth();
   const { colors } = useTheme();
   const styles = useStyles();
 
@@ -68,8 +73,14 @@ const ResetPassword = () => {
     setLoading(true);
     try {
       await authApi.resetPassword(email, code, password);
-      Alert.alert("Password updated", "You can now log in with your new password.");
-      router.dismissTo("/login");
+      if (returnTo) {
+        await refreshUser();
+        Alert.alert("Password set", "You can now also sign in with your email and this password.");
+        router.dismissTo(returnTo);
+      } else {
+        Alert.alert("Password updated", "You can now log in with your new password.");
+        router.dismissTo("/login");
+      }
     } catch (error) {
       if (!(error instanceof ApiError)) {
         setFormError("Something went wrong. Please try again.");
@@ -122,11 +133,11 @@ const ResetPassword = () => {
       <View>
         {/* Heading */}
         <Text accessibilityRole="header" style={[type.h1, styles.title]}>
-          Reset Password
+          {returnTo ? "Set a Password" : "Reset Password"}
         </Text>
         <Text style={styles.subtitle}>
           {email
-            ? `If an account exists for ${email}, a 6-digit code is on its way. Enter it below with your new password.`
+            ? `If an account exists for ${email}, a 6-digit code is on its way. Enter it below with your ${returnTo ? "" : "new "}password.`
             : "Enter the 6-digit code from your email and choose a new password."}
         </Text>
 

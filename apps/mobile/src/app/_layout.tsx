@@ -105,13 +105,15 @@ const RootStack = () => {
       <Stack.Screen name="privacy" />
       <Stack.Screen name="help" />
       <Stack.Screen name="about" />
+      {/* Email-based, not auth-gated: also reachable signed in, from Profile Settings'
+          "Set a password" (accounts created with Google that never set one). */}
+      <Stack.Screen name="forgot-password" />
+      <Stack.Screen name="reset-password" />
 
       <Stack.Protected guard={status === "signedOut"}>
         <Stack.Screen name="onboarding" options={{ animation: "none" }} />
         <Stack.Screen name="login" />
         <Stack.Screen name="register" />
-        <Stack.Screen name="forgot-password" />
-        <Stack.Screen name="reset-password" />
       </Stack.Protected>
 
       <Stack.Protected guard={signedIn}>

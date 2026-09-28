@@ -3,6 +3,7 @@ import type {
   ActivityItem,
   AuthResult,
   DeviceType,
+  GoogleAuthResult,
   HistorySummary,
   InboxNotification,
   SignInSession,
@@ -40,6 +41,23 @@ export const authApi = {
     request<AuthResult>("/auth/register", { method: "POST", body, auth: false }),
   login: (email: string, password: string) =>
     request<AuthResult>("/auth/login", { method: "POST", body: { email, password }, auth: false }),
+  /**
+   * When the Google account has no PowerWatch account yet and `acceptedTerms` wasn't
+   * sent, this rejects with a 409 ApiError whose message is "TERMS_REQUIRED" — show the
+   * agreement and retry with `acceptedTerms: true`. Location fields are only meaningful
+   * on that create-account retry, same as `register`.
+   */
+  googleSignIn: (body: {
+    idToken: string;
+    acceptedTerms?: true;
+    termsVersion?: string;
+    deviceType?: DeviceType;
+    deviceName?: string;
+    latitude?: number;
+    longitude?: number;
+    accuracy?: number;
+    mocked?: boolean;
+  }) => request<GoogleAuthResult>("/auth/google", { method: "POST", body, auth: false }),
   logout: (refreshToken: string) =>
     request<unknown>("/auth/logout", { method: "POST", body: { refreshToken }, auth: false }),
   me: () => request<User>("/auth/me"),
@@ -66,8 +84,9 @@ export const authApi = {
       method: "PATCH",
       body: { currentPassword, newPassword, confirmNewPassword: newPassword },
     }),
-  deleteAccount: (password: string) =>
-    request<unknown>("/auth/delete-account", { method: "DELETE", body: { password } }),
+  /** Accounts with `passwordSet: false` confirm deletion with a fresh Google ID token instead. */
+  deleteAccount: (body: { password: string } | { googleIdToken: string }) =>
+    request<unknown>("/auth/delete-account", { method: "DELETE", body }),
   getNotificationPreferences: () => request<NotificationPreferences>("/auth/notification-preferences"),
   updateNotificationPreferences: (body: Partial<NotificationPreferences>) =>
     request<NotificationPreferences>("/auth/notification-preferences", { method: "PATCH", body }),

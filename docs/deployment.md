@@ -80,6 +80,7 @@ dotenv never overrides a variable that is already set:
 | `APP_WEB_URL` | `https://powerwatch.oyinlola.site` |
 | `LOG_STREAM` | `stderr` (the host keeps only stderr, in `stderr.log`) |
 | `LOG_LEVEL` | `warn` (keeps `stderr.log` to warnings and errors) |
+| `GOOGLE_CLIENT_IDS` | The three Google OAuth client IDs, comma-separated (see Google sign-in) |
 
 Background problems (emails that failed, failed jobs, push errors, server errors) are also
 recorded in the database and shown in the admin dashboard under System problems.
@@ -106,6 +107,25 @@ verification codes invalid.
 ### Logs
 
 Errors written by the app are in `/home/telente/powerwatch-api/stderr.log`.
+
+## Google sign-in
+
+Configured in Google Cloud project `powerwatch141` (the Firebase project), under Google Auth
+Platform. Publishing status: In production, external users; only name, email and profile are
+requested, so no Google review is needed. Adding a logo on the Branding page would start one.
+
+| Client | ID |
+| --- | --- |
+| Web (the ID tokens are issued to this one) | `387458458442-70qgjv004ffo2bkhh1nu6arshdn7l2r4.apps.googleusercontent.com` |
+| Android (`com.powerwatch.app`, EAS upload key SHA-1 `11:B5:E9:99:DA:CE:F8:80:00:F8:36:82:0C:10:D9:BD:A4:C1:07:0A`) | `387458458442-ofglme8elijkon89dm3qqbkoo20lsok4.apps.googleusercontent.com` |
+| iOS (`com.powerwatch.app`) | `387458458442-8d0voqu3u6os7pf6139bf7n9u6ervqu8.apps.googleusercontent.com` |
+
+The API accepts ID tokens for all three through `GOOGLE_CLIENT_IDS` (Application Manager).
+When the app is on Google Play, add the Play app-signing SHA-1 (Play Console → App integrity)
+as another Android client, or Google sign-in will fail for store installs.
+
+Sign in with Apple needs an Apple Developer Program membership; until then the app shows a
+"coming soon" message on that button.
 
 ## Email
 

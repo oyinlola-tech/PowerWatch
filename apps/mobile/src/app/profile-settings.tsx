@@ -11,6 +11,7 @@ import TextField from "../components/ui/TextField";
 import Toggle from "../components/ui/Toggle";
 import { useAuth, useUser } from "../context/AuthContext";
 import { ApiError, authApi } from "../services/api";
+import { signInWithGoogle as googleNativeSignIn, isGoogleSignInAvailable } from "../services/googleAuth";
 import mixpanel from "../services/mixpanel";
 import { fullName, initials } from "../utils/format";
 import { alpha, fonts, type } from "../theme";
@@ -115,6 +116,44 @@ const PersonalInfo = () => {
           disabled={!changed || !trimmed}
           onPress={() => void handleSave()}
         />
+      </View>
+    </Section>
+  );
+};
+
+// Shown instead of ChangePassword for accounts created with Google that never set a
+// PowerWatch password (`passwordSet: false`). Reuses the forgot/reset-password flow:
+// sends a code straight away (the email is already known) and comes back here after.
+const SetPassword = () => {
+  const user = useUser();
+  const styles = useStyles();
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handlePress = async () => {
+    setError(null);
+    setSending(true);
+    try {
+      await authApi.forgotPassword(user.email);
+      router.push({
+        pathname: "/reset-password",
+        params: { email: user.email, returnTo: "/profile-settings" },
+      });
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Couldn't send a code. Please try again.");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Section title="PASSWORD">
+      <View style={styles.form}>
+        <Text style={styles.setPasswordText}>
+          {"You signed up with Google, so there's no PowerWatch password yet. Set one to also be able to sign in with your email and password."}
+        </Text>
+        <FormError message={error} />
+        <Button label="Set a Password" height={48} loading={sending} onPress={() => void handlePress()} />
       </View>
     </Section>
   );

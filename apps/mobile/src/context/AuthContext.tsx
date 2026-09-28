@@ -5,6 +5,7 @@ import { ApiError, authApi, setSessionExpiredHandler } from "../services/api";
 import type { User } from "../services/api";
 import { tokenStore, userCache } from "../services/api/storage";
 import { LEGAL_VERSION } from "../content/legal";
+import { signOutOfGoogle } from "../services/googleAuth";
 import mixpanel from "../services/mixpanel";
 import { unregisterPushNotifications } from "../services/notifications";
 
@@ -20,6 +21,19 @@ interface AuthContextValue {
     password: string,
     location?: { latitude: number; longitude: number; accuracy: number },
   ) => Promise<{ user: User; verificationEmailSent: boolean }>;
+  /**
+   * `idToken` comes from `services/googleAuth`. Pass `acceptedTerms` only after the
+   * person has agreed, retrying the same idToken — see `TERMS_REQUIRED` handling in
+   * `authApi.googleSignIn`.
+   */
+  signInWithGoogle: (
+    idToken: string,
+    options?: {
+      acceptedTerms?: true;
+      termsVersion?: string;
+      location?: { latitude: number; longitude: number; accuracy: number };
+    },
+  ) => Promise<{ user: User; isNewUser: boolean }>;
   signOut: () => Promise<void>;
   /** Re-fetch the profile (after changing location, name, preferences...) */
   refreshUser: () => Promise<User | null>;
@@ -124,11 +138,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     [startSession],
   );
 
+  const signInWithGoogle = useCallback(
+    async (
+      idToken: string,
+      options?: {
+        acceptedTerms?: true;
+        termsVersion?: string;
+        location?: { latitude: number; longitude: number; accuracy: number };
+      },
+    ) => {
+      const result = await authApi.googleSignIn({
+        idToken,
+        deviceType,
+        ...(options?.acceptedTerms
+          ? { acceptedTerms: options.acceptedTerms, termsVersion: options.termsVersion ?? LEGAL_VERSION }
+          : {}),
+        ...(options?.location ?? {}),
+      });
+      const me = await startSession(result);
+      return { user: me, isNewUser: result.isNewUser };
+    },
+    [startSession],
+  );
+
   const signOut = useCallback(async () => {
-    // Best effort: stop this phone's alerts and revoke the session server-side
+    // Best effort: stop this phone's alerts, revoke the session server-side, and clear
+    // any cached Google account so the next sign-in offers the account picker again
     await unregisterPushNotifications().catch(() => {});
     const refreshToken = await tokenStore.getRefresh();
     if (refreshToken) await authApi.logout(refreshToken).catch(() => {});
+    await signOutOfGoogle();
     await endSession();
   }, [endSession]);
 
@@ -143,8 +182,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, [setUser]);
 
   const value = useMemo(
-    () => ({ status, user, signIn, signUp, signOut, refreshUser, setUser }),
-    [status, user, signIn, signUp, signOut, refreshUser, setUser],
+    () => ({ status, user, signIn, signUp, signInWithGoogle, signOut, refreshUser, setUser }),
+    [status, user, signIn, signUp, signInWithGoogle, signOut, refreshUser, setUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
