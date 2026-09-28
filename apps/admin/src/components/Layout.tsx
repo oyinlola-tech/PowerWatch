@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { NavLink, Outlet, useLocation } from "react-router";
+import { Link, NavLink, Outlet, useLocation } from "react-router";
+import { request } from "../lib/api";
 import { useAuth } from "../lib/authContext";
 import { TIME_ZONE_LABEL, fullName } from "../lib/format";
+import type { HealthReport, SessionUser } from "../lib/types";
+import { useApi } from "../lib/useApi";
+import Footer from "./Footer";
 import Icon, { type IconName } from "./Icon";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
@@ -10,39 +14,41 @@ interface NavItem {
   to: string;
   label: string;
   icon: IconName;
+  /** Short line shown under the page title in the top bar. */
+  context: string;
 }
 
 const NAV_GROUPS: { label: string; items: NavItem[] }[] = [
   {
     label: "Monitor",
     items: [
-      { to: "/", label: "Overview", icon: "overview" },
-      { to: "/analytics", label: "Analytics", icon: "chart" },
-      { to: "/neighborhood-stats", label: "Neighborhood stats", icon: "stats" },
-      { to: "/status", label: "Live status", icon: "status" },
+      { to: "/", label: "Overview", icon: "overview", context: "Today's activity across PowerWatch" },
+      { to: "/analytics", label: "Analytics", icon: "chart", context: "Reports, outages and users over time" },
+      { to: "/neighborhood-stats", label: "Neighborhood stats", icon: "stats", context: "Activity by neighborhood" },
+      { to: "/status", label: "Live status", icon: "status", context: "Power status by state and LGA" },
     ],
   },
   {
     label: "Moderate",
     items: [
-      { to: "/users", label: "Users", icon: "users" },
-      { to: "/reports", label: "Reports", icon: "report" },
-      { to: "/outages", label: "Outages", icon: "outage" },
+      { to: "/users", label: "Users", icon: "users", context: "Suspend, unsuspend or delete accounts" },
+      { to: "/reports", label: "Reports", icon: "report", context: "Power reports submitted by users" },
+      { to: "/outages", label: "Outages", icon: "outage", context: "Tracked outages, active and resolved" },
     ],
   },
   {
     label: "Manage",
     items: [
-      { to: "/locations", label: "Locations", icon: "locations" },
-      { to: "/broadcast", label: "Broadcast", icon: "broadcast" },
-      { to: "/summaries", label: "Summaries", icon: "jobs" },
+      { to: "/locations", label: "Locations", icon: "locations", context: "The state-to-neighborhood hierarchy" },
+      { to: "/broadcast", label: "Broadcast", icon: "broadcast", context: "Send a push notification to users" },
+      { to: "/summaries", label: "Summaries", icon: "jobs", context: "Run daily, weekly and monthly rollups" },
     ],
   },
   {
     label: "System",
     items: [
-      { to: "/health", label: "System health", icon: "health" },
-      { to: "/account", label: "Account", icon: "account" },
+      { to: "/health", label: "System health", icon: "health", context: "API, database and Firebase status" },
+      { to: "/account", label: "Account", icon: "account", context: "Your profile and signed-in sessions" },
     ],
   },
 ];

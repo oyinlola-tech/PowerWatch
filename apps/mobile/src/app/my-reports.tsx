@@ -102,7 +102,7 @@ const MyReports = () => {
   };
 
   const confirmRemove = (report: MyReport) =>
-    Alert.alert("Delete this report?", "It will no longer count towards your neighborhood's status.", [
+    Alert.alert("Delete this report?", "It will no longer count towards that area's status.", [
       { text: "Cancel", style: "cancel" },
       { text: "Delete", style: "destructive", onPress: () => void remove(report) },
     ]);

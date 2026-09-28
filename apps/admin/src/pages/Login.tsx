@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { Button, Field, Notice } from "../components/ui";
+import Footer from "../components/Footer";
+import LoginPanel from "../components/LoginPanel";
 import Logo from "../components/Logo";
 import ThemeToggle from "../components/ThemeToggle";
+import { Button, Field, Notice } from "../components/ui";
 import { ApiError, errorMessage } from "../lib/api";
 import { useAuth } from "../lib/authContext";
 
@@ -37,65 +39,78 @@ export default function Login() {
 
   return (
     <div className="flex min-h-dvh flex-col bg-screen">
-      <div className="flex justify-end p-4">
-        <ThemeToggle />
-      </div>
-      <main className="flex flex-1 items-start justify-center px-4 pb-16 sm:items-center">
-        <div className="w-full max-w-md">
-          <div className="mb-8 flex flex-col items-center gap-3 text-center">
-            <Logo height={34} />
-            <p className="rounded-md bg-info-soft px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-accent">Admin dashboard</p>
-          </div>
-          <div className="rounded-2xl border border-line bg-card p-6 shadow-sm sm:p-8">
-            <h1 className="text-xl font-bold text-ink">Sign in</h1>
-            <p className="mt-1 text-sm text-body">Use your PowerWatch administrator account.</p>
-
-            <div className="mt-5 space-y-3" aria-live="polite">
-              {notice && !error && <Notice tone="info">{notice}</Notice>}
-              {error && <Notice tone="error">{error}</Notice>}
-            </div>
-
-            <form onSubmit={submit} noValidate className="mt-5 space-y-4">
-              <Field label="Email" error={fieldErrors.email}>
-                {(p) => (
-                  <input
-                    id={p.id}
-                    type="email"
-                    autoComplete="username"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    aria-invalid={p.invalid || undefined}
-                    aria-describedby={p.describedBy}
-                    className={p.className}
-                    required
-                  />
-                )}
-              </Field>
-              <Field label="Password" error={fieldErrors.password}>
-                {(p) => (
-                  <input
-                    id={p.id}
-                    type="password"
-                    autoComplete="current-password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    aria-invalid={p.invalid || undefined}
-                    aria-describedby={p.describedBy}
-                    className={p.className}
-                    required
-                  />
-                )}
-              </Field>
-              <Button type="submit" busy={busy} className="w-full">
-                {busy ? "Signing in…" : "Sign in"}
-              </Button>
-            </form>
-          </div>
-          <p className="mt-6 text-center text-xs text-muted">
-            Your session ends when you close this browser tab or window.
-          </p>
+      {/* Split layout from lg up: brand panel + form side by side, full height. Below lg, the
+          panel collapses to a compact header (see LoginPanel) and the form follows straight after. */}
+      <div className="flex flex-1 flex-col lg:flex-row">
+        <div className="lg:w-1/2">
+          <LoginPanel />
         </div>
-      </main>
+
+        <div className="flex flex-1 flex-col lg:w-1/2">
+          <div className="flex justify-end px-4 py-4 sm:px-6 lg:px-10">
+            <ThemeToggle />
+          </div>
+          <main className="flex flex-1 items-start justify-center px-4 pb-10 sm:items-center">
+            <div className="w-full max-w-md">
+              <div className="mb-8 flex flex-col items-center gap-3 text-center lg:hidden">
+                <Logo height={34} />
+                <p className="rounded-md bg-info-soft px-2 py-0.5 text-xs font-bold uppercase tracking-wide text-accent">Admin dashboard</p>
+              </div>
+
+              <div className="rounded-2xl border border-line bg-card p-6 shadow-sm sm:p-8">
+                <h1 className="text-xl font-bold text-ink">Sign in</h1>
+                <p className="mt-1 text-sm text-body">Use your PowerWatch administrator account.</p>
+
+                <div className="mt-5 space-y-3" aria-live="polite">
+                  {notice && !error && <Notice tone="info">{notice}</Notice>}
+                  {error && <Notice tone="error">{error}</Notice>}
+                </div>
+
+                <form onSubmit={submit} noValidate className="mt-5 space-y-4">
+                  <Field label="Email" error={fieldErrors.email}>
+                    {(p) => (
+                      <input
+                        id={p.id}
+                        type="email"
+                        autoComplete="username"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        aria-invalid={p.invalid || undefined}
+                        aria-describedby={p.describedBy}
+                        className={p.className}
+                        required
+                      />
+                    )}
+                  </Field>
+                  <Field label="Password" error={fieldErrors.password}>
+                    {(p) => (
+                      <input
+                        id={p.id}
+                        type="password"
+                        autoComplete="current-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        aria-invalid={p.invalid || undefined}
+                        aria-describedby={p.describedBy}
+                        className={p.className}
+                        required
+                      />
+                    )}
+                  </Field>
+                  <Button type="submit" busy={busy} className="w-full">
+                    {busy ? "Signing in…" : "Sign in"}
+                  </Button>
+                </form>
+              </div>
+              <p className="mt-6 text-center text-xs text-muted">
+                Your session ends when you close this browser tab or window.
+              </p>
+            </div>
+          </main>
+        </div>
+      </div>
+
+      <Footer compact />
     </div>
   );
 }

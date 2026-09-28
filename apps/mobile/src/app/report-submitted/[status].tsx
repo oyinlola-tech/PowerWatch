@@ -81,8 +81,8 @@ const ReportSubmitted = () => {
           </View>
           <Text style={styles.nextText}>
             {statusChanged === "1"
-              ? `Your report updated your neighborhood's status to Power ${isOn ? "ON" : "OFF"}. Neighbors who follow this area are being notified.`
-              : "Your report has been shared. Community members in your area will verify this report shortly to ensure live accuracy."}
+              ? `Your report updated this area's status to Power ${isOn ? "ON" : "OFF"}. Neighbors who follow it are being notified.`
+              : "Your report has been shared. Community members in this area will verify this report shortly to ensure live accuracy."}
           </Text>
         </View>
       </View>
