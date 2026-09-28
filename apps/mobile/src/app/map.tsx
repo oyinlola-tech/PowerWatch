@@ -1,19 +1,20 @@
-import { useCallback, useMemo, useState } from "react";
-import { Pressable, StyleSheet, Text, View } from "react-native";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
 import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import MapView from "../components/map/MapView";
 import type { MapMarker } from "../components/map/mapHtml";
+import RecentStreets from "../components/ui/RecentStreets";
 import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
 import { useUser } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
-import { locationsApi } from "../services/api";
-import type { ApiPowerStatus, StatusMapByLga, StatusMapByState } from "../services/api";
+import { ApiError, locationsApi, reportsApi } from "../services/api";
+import type { ApiPowerStatus, LiveStatus, LocationSearchItem, StatusMapByLga, StatusMapByState } from "../services/api";
 import { changeNeighborhood } from "../services/navigation";
 import { timeAgo } from "../utils/format";
-import { alpha, fonts, type } from "../theme";
+import { alpha, fonts, shadows, type } from "../theme";
 import type { Palette } from "../theme";
 import { makeStyles, useTheme } from "../theme/ThemeContext";
 
@@ -149,6 +150,158 @@ const HeatmapView = ({ data }: { data: StatusMapByState }) => {
   );
 };
 
+/** "Power ON" / "Power OFF" / "No reports yet" pill, matching Saved Neighborhoods' status pill. */
+const StatusPill = ({ status }: { status: ApiPowerStatus }) => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const color = statusColors(colors)[status];
+  const label = status === "UNKNOWN" ? "No reports yet" : `Power ${status}`;
+  return (
+    <View style={[styles.checkPill, { backgroundColor: alpha(color, 0.1) }]}>
+      <Text style={[styles.checkPillText, { color }]} numberOfLines={1}>
+        {label}
+      </Text>
+    </View>
+  );
+};
+
+/**
+ * Look up any neighborhood — anywhere in Nigeria, not just around the person — and see
+ * its live power status. Reporting always stays tied to "here" (GPS); this is view-only
+ * and never changes the person's home neighborhood. No Figma frame; reuses the search
+ * pattern from "select location" and the status pill from Saved Neighborhoods.
+ */
+const CheckAnotherArea = () => {
+  const { colors } = useTheme();
+  const styles = useStyles();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<LocationSearchItem[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [checking, setChecking] = useState(false);
+  const [checkError, setCheckError] = useState<string | null>(null);
+  const [checked, setChecked] = useState<{ item: LocationSearchItem; status: LiveStatus } | null>(null);
+
+  const searchId = useRef(0);
+  const term = query.trim();
+  const chosenName = checked?.item.neighborhood ?? checked?.item.name;
+  const active = term.length >= 2 && term !== chosenName;
+
+  useEffect(() => {
+    if (!active) {
+      setResults([]);
+      return;
+    }
+    const id = ++searchId.current;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        const found = await locationsApi.search(term, 20);
+        if (id === searchId.current) setResults(found.filter((r) => r.type === "neighborhood" && r.neighborhoodId));
+      } catch {
+        if (id === searchId.current) setResults([]);
+      } finally {
+        if (id === searchId.current) setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [term, active]);
+
+  const check = useCallback(async (item: LocationSearchItem) => {
+    if (!item.neighborhoodId) return;
+    setResults([]);
+    setChecking(true);
+    setCheckError(null);
+    try {
+      const status = await reportsApi.status(item.neighborhoodId);
+      setChecked({ item, status });
+    } catch (e) {
+      setChecked(null);
+      setCheckError(e instanceof ApiError ? e.message : "Couldn't check that area. Please try again.");
+    } finally {
+      setChecking(false);
+    }
+  }, []);
+
+  const select = (item: LocationSearchItem) => {
+    setQuery(item.neighborhood ?? item.name);
+    void check(item);
+  };
+
+  return (
+    <View style={styles.checkSection}>
+      <Text style={[type.buttonText, styles.checkLabel]}>Check Another Area</Text>
+      <Text style={styles.checkHint}>See the live power status anywhere in Nigeria, wherever you are.</Text>
+
+      <View style={styles.checkSearchBox}>
+        <Icon name="search" color={colors.gray400} />
+        <TextInput
+          value={query}
+          onChangeText={(text) => {
+            setQuery(text);
+            if (checked) setChecked(null);
+            setCheckError(null);
+          }}
+          placeholder="Search any neighborhood, town or LGA..."
+          placeholderTextColor={colors.gray400}
+          accessibilityLabel="Search any area to check its power status"
+          returnKeyType="search"
+          style={styles.checkInput}
+        />
+        {searching && <ActivityIndicator size="small" color={colors.gray400} />}
+      </View>
+
+      {active && !searching && results.length > 0 && (
+        <View style={styles.checkResults}>
+          {results.slice(0, 6).map((item) => (
+            <Pressable
+              key={item.neighborhoodId}
+              accessibilityRole="button"
+              onPress={() => select(item)}
+              style={({ pressed }) => [styles.checkResultRow, pressed && { backgroundColor: colors.surface }]}
+            >
+              <Text style={[type.boldText, { color: colors.ink }]} numberOfLines={1}>
+                {item.neighborhood ?? item.name}
+              </Text>
+              <Text style={styles.listSub} numberOfLines={1}>
+                {[item.town, item.lga, item.state].filter(Boolean).join(", ")}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+      {active && !searching && results.length === 0 && (
+        <Text style={styles.checkNoResults}>{`No neighborhoods match "${term}".`}</Text>
+      )}
+
+      {checking && <LoadingView label="Checking power status…" />}
+      {checkError && <ErrorView message={checkError} />}
+
+      {checked && !checking && (
+        <View style={styles.checkedCard}>
+          <View style={styles.rowBetween}>
+            <View style={{ flex: 1 }}>
+              <Text style={[type.boldText, { color: colors.ink }]} numberOfLines={1}>
+                {checked.item.neighborhood ?? checked.item.name}
+              </Text>
+              <Text style={styles.listSub} numberOfLines={1}>
+                {[checked.item.town, checked.item.lga, checked.item.state].filter(Boolean).join(", ")}
+              </Text>
+            </View>
+            <StatusPill status={checked.status.status} />
+          </View>
+          <Text style={styles.checkMeta}>
+            {checked.status.recentReporters > 0
+              ? `${checked.status.confidence}% confidence · Confirmed by ${checked.status.confirmedBy}`
+              : "No recent reports"}
+            {checked.status.lastReportAt ? ` · Updated ${timeAgo(checked.status.lastReportAt)}` : ""}
+          </Text>
+          <RecentStreets streets={checked.status.recentStreets} />
+        </View>
+      )}
+    </View>
+  );
+};
+
 // Map tab. No HI-FI frame exists; follows the Home screen layout and the
 // "Map Screen" reference in docs/figma-export/extras (Light ON / Light OFF cards).
 const PowerMap = () => {
@@ -223,6 +376,8 @@ const PowerMap = () => {
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
 
+      <CheckAnotherArea />
+
       {/* View switch */}
       <View style={styles.segment} accessibilityRole="tablist">
         {(["area", "heatmap"] as const).map((id) => {
@@ -247,7 +402,7 @@ const PowerMap = () => {
         <EmptyView
           icon="mapOutline"
           title="No neighborhood selected"
-          message="Set your monitoring area to see power status around you."
+          message="Set your monitoring area to see power status around you, or search any area above."
         />
       ) : (
         <>

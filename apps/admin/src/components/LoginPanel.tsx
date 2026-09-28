@@ -13,7 +13,7 @@ const FACTS: { icon: IconName; text: string }[] = [
  */
 export default function LoginPanel() {
   return (
-    <div className="relative isolate flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0663EA] to-[#1B3A4B] px-5 py-5 text-white dark:from-[#043064] dark:to-[#0a1830] sm:px-8 sm:py-6 lg:px-12 lg:py-10">
+    <div className="relative isolate flex h-full flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0663EA] to-[#1B3A4B] px-5 py-5 text-white dark:from-[#043064] dark:to-[#0a1830] sm:px-8 sm:py-6 lg:px-12 lg:py-10">
       {/* Subtle grid texture, pure CSS so nothing here needs a network image */}
       <div
         aria-hidden

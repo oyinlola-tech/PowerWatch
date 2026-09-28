@@ -456,3 +456,23 @@ model RateLimit {
   @@index([key, endpoint, windowStart])
   @@map("rate_limits")
 }
+
+/// Something that went wrong in the background (an email that did not send, a failed job,
+/// a push error, a server error), shown to admins. Repeats of an open event are counted on
+/// the same row instead of adding new ones.
+model SystemEvent {
+  id          String    @id @default(uuid())
+  level       String    @db.VarChar(10)
+  source      String    @db.VarChar(50)
+  message     String    @db.VarChar(500)
+  details     Json?     @db.Json
+  count       Int       @default(1)
+  firstSeenAt DateTime  @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime  @default(now()) @map("last_seen_at")
+  resolvedAt  DateTime? @map("resolved_at")
+  resolvedBy  String?   @map("resolved_by") @db.VarChar(36)
+
+  @@index([resolvedAt, lastSeenAt])
+  @@index([source, message(length: 191), resolvedAt])
+  @@map("system_events")
+}

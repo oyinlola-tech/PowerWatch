@@ -5,6 +5,7 @@ import { router } from "expo-router";
 import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
+import RecentStreets from "../components/ui/RecentStreets";
 import { ErrorView, LoadingView } from "../components/ui/StateViews";
 import { useUser } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
@@ -148,6 +149,8 @@ const Dashboard = () => {
                   <Text style={[type.buttonText, styles.statValue]}>{timeAgo(live?.lastReportAt)}</Text>
                 </View>
               </View>
+
+              <RecentStreets streets={live?.recentStreets ?? []} />
             </>
           )}
         </View>
