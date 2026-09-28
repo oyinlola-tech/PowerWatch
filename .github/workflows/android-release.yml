@@ -33,6 +33,9 @@ on:
       notes:
         description: 'What changed, shown to users in the update prompt'
         required: false
+      apk_url:
+        description: 'Optional: publish an APK that EAS already built (its download link) instead of building again'
+        required: false
 
 permissions:
   contents: read
@@ -100,15 +103,18 @@ jobs:
         shell: bash
 
       - uses: actions/setup-node@v7
+        if: ${{ !inputs.apk_url }}
         with:
           node-version: 24
           cache: npm
           cache-dependency-path: apps/mobile/package-lock.json
 
       - name: Install dependencies
+        if: ${{ !inputs.apk_url }}
         run: npm ci
 
       - name: Set the app version to ${{ steps.version.outputs.version }}
+        if: ${{ !inputs.apk_url }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -120,11 +126,13 @@ jobs:
           '
 
       - uses: expo/expo-github-action@v9
+        if: ${{ !inputs.apk_url }}
         with:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Build the APK on EAS
+        if: ${{ !inputs.apk_url }}
         run: |
           eas build --platform android --profile preview --non-interactive --wait --json > build.json
           url=$(node -e 'const b = JSON.parse(require("fs").readFileSync("build.json", "utf8")); const build = Array.isArray(b) ? b[0] : b; console.log(build.artifacts?.buildUrl ?? build.artifacts?.applicationArchiveUrl ?? "")')
@@ -134,6 +142,17 @@ jobs:
             exit 1
           fi
           curl -fsSL "$url" -o "PowerWatch-${{ steps.version.outputs.version }}.apk"
+
+      - name: Download the APK that was already built
+        if: ${{ inputs.apk_url }}
+        env:
+          APK_URL: ${{ inputs.apk_url }}
+        run: |
+          case "$APK_URL" in
+            https://expo.dev/artifacts/*|https://api.expo.dev/*) ;;
+            *) echo "::error::apk_url must be an EAS artifact link (https://expo.dev/artifacts/...)"; exit 1 ;;
+          esac
+          curl -fsSL "$APK_URL" -o "PowerWatch-${{ steps.version.outputs.version }}.apk"
 
       - uses: actions/upload-artifact@v7
         with:
