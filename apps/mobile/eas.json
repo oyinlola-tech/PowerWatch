@@ -16,6 +16,7 @@
     "preview": {
       "extends": "base",
       "distribution": "internal",
+      "autoIncrement": true,
       "android": {
         "buildType": "apk"
       }

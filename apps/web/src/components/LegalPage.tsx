@@ -1,3 +1,4 @@
+import AndroidAppBanner from "./AndroidAppBanner";
 import Footer from "./Footer";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
@@ -25,6 +26,7 @@ const LegalPage = ({ document, related }: LegalPageProps) => {
 
   return (
     <>
+      <AndroidAppBanner />
       <header className="sticky top-0 z-50 border-b border-line-light bg-card/85 backdrop-blur-md">
         <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
           <a href="/" aria-label="PowerWatch home">

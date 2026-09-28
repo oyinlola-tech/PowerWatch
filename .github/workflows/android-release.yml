@@ -1,0 +1,116 @@
+# Builds the Android app (APK) with EAS and publishes it as a GitHub Release.
+#
+# Release a new version:  git tag -a v1.0.2 -m "What changed, in a sentence or two" && git push origin v1.0.2
+# (or run this workflow by hand from the Actions tab and type the version and notes).
+# The notes are shown to people in the app's update prompt, so write them for users.
+#
+# The tag sets the app's version, so app.json does not need editing. Once the release is
+# published, the API (GET /api/v1/app/latest), the landing page download button and the
+# in-app update prompt pick it up within about 5 minutes.
+#
+# Needs one repository secret: EXPO_TOKEN (an Expo access token for the oyinlola141 account).
+name: Android release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, e.g. 1.0.2 (creates the tag v1.0.2)'
+        required: true
+      notes:
+        description: 'What changed, shown to users in the update prompt'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-tags: true
+
+      - name: Work out the version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          version="${INPUT_VERSION:-$REF_NAME}"
+          version="${version#v}"
+          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$version' is not a version like 1.0.2"
+            exit 1
+          fi
+          if gh release view "v$version" >/dev/null 2>&1; then
+            echo "::error::Release v$version already exists"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+        shell: bash
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/mobile/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Set the app version to ${{ steps.version.outputs.version }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const config = JSON.parse(fs.readFileSync("app.json", "utf8"));
+            config.expo.version = process.env.VERSION;
+            fs.writeFileSync("app.json", JSON.stringify(config, null, 2) + "\n");
+          '
+
+      - uses: expo/expo-github-action@v9
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build the APK on EAS
+        run: |
+          eas build --platform android --profile preview --non-interactive --wait --json > build.json
+          url=$(node -e 'const b = JSON.parse(require("fs").readFileSync("build.json", "utf8")); const build = Array.isArray(b) ? b[0] : b; console.log(build.artifacts?.buildUrl ?? build.artifacts?.applicationArchiveUrl ?? "")')
+          if [ -z "$url" ]; then
+            echo "::error::EAS did not return an APK download link"
+            cat build.json
+            exit 1
+          fi
+          curl -fsSL "$url" -o "PowerWatch-${{ steps.version.outputs.version }}.apk"
+
+      - name: Publish the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.version.outputs.version }}
+          INPUT_NOTES: ${{ inputs.notes }}
+        run: |
+          # Notes: the ones typed in the Actions tab, else the annotated tag's message, else a default
+          notes="$INPUT_NOTES"
+          if [ -z "$notes" ] && [ "$(git cat-file -t "v$VERSION" 2>/dev/null)" = "tag" ]; then
+            notes=$(git tag -l --format='%(contents)' "v$VERSION")
+          fi
+          notes="${notes:-Improvements and fixes.}"
+          gh release create "v$VERSION" "PowerWatch-$VERSION.apk" \
+            --title "PowerWatch $VERSION" \
+            --notes "$notes" \
+            --target "$GITHUB_SHA"

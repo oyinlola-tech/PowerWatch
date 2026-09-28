@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/brand/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0663EA" />
+    <script>
+      // Apply the saved or system theme before first paint to avoid a flash
+      (function () {
+        var theme;
+        try {
+          theme = localStorage.getItem("theme");
+        } catch (e) {}
+        if (theme !== "light" && theme !== "dark") {
+          theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <title>Terms &amp; Conditions | PowerWatch</title>
+    <meta name="description" content="The rules for using PowerWatch, the community power-outage tracker: honest reporting, acceptable use and your account." />
+    <meta property="og:type" content="article" />
+    <meta property="og:site_name" content="PowerWatch" />
+    <meta property="og:title" content="Terms &amp; Conditions | PowerWatch" />
+    <meta property="og:description" content="The rules for using PowerWatch, the community power-outage tracker: honest reporting, acceptable use and your account." />
+    <script type="module" crossorigin src="/assets/ErrorScreen-CYZTl1Xe.js"></script>
+    <script type="module" crossorigin src="/assets/ErrorBoundary-ff9ySYmZ.js"></script>
+    <script type="module" crossorigin src="/assets/legal-CdToADLe.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/ErrorScreen-DZiXjQz4.css">
+  </head>
+  <body>
+    <div id="root" data-document="terms"></div>
+  </body>
+</html>

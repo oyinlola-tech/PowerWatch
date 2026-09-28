@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.powerwatch.app",
+      "sha256_cert_fingerprints": [
+        "EC:AC:26:CB:59:80:64:4A:69:6D:C5:86:CC:6A:2C:BE:09:CE:74:95:36:CF:C6:EE:72:32:56:2A:D3:F1:DD:13"
+      ]
+    }
+  }
+]

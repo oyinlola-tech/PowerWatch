@@ -14,6 +14,7 @@ import {
   HankenGrotesk_500Medium,
   HankenGrotesk_600SemiBold,
 } from "@expo-google-fonts/hanken-grotesk";
+import AppUpdatePrompt from "../components/ui/AppUpdatePrompt";
 import { AuthProvider, useAuth } from "../context/AuthContext";
 import mixpanel from "../services/mixpanel";
 import { configureNotifications, registerForPushNotifications } from "../services/notifications";
@@ -50,7 +51,7 @@ const RootLayout = () => {
       <ThemeProvider>
         <ThemedStatusBar />
         <AuthProvider>
-          <RootStack />
+          <RootLayoutContent />
         </AuthProvider>
       </ThemeProvider>
     </SafeAreaProvider>
@@ -110,6 +111,11 @@ const RootStack = () => {
       <Stack.Screen name="forgot-password" />
       <Stack.Screen name="reset-password" />
 
+      {/* Android App Link target (pathPrefix "/open" in app.json's intentFilters).
+          Nothing to show here: just bounce to a normal app start. */}
+      <Stack.Screen name="open/index" options={{ animation: "none" }} />
+      <Stack.Screen name="open/[...rest]" options={{ animation: "none" }} />
+
       <Stack.Protected guard={status === "signedOut"}>
         <Stack.Screen name="onboarding" options={{ animation: "none" }} />
         <Stack.Screen name="login" />
@@ -137,5 +143,13 @@ const RootStack = () => {
     </Stack>
   );
 };
+
+const RootLayoutContent = () => (
+  <>
+    <RootStack />
+    {/* No-op on iOS/web; Android only (see services/appUpdate.ts) */}
+    <AppUpdatePrompt />
+  </>
+);
 
 export default RootLayout;

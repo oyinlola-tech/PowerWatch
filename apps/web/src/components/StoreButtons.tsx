@@ -1,9 +1,10 @@
 import type { ReactNode } from "react";
 import Icon from "./Icon";
 import { APP_STORE_URL, PLAY_STORE_URL } from "../config/links";
+import { useLatestRelease } from "../hooks/useLatestRelease";
 import { track } from "../services/mixpanel";
 
-const GooglePlayIcon = ({ size }: { size: number }) => (
+export const GooglePlayIcon = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 512 512" aria-hidden="true">
     <path
       fill="#00A0FF"
@@ -18,15 +19,29 @@ const GooglePlayIcon = ({ size }: { size: number }) => (
   </svg>
 );
 
+// Simplified Android bot mark, for the direct-APK download button.
+export const AndroidIcon = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">
+    <path
+      fill="#3DDC84"
+      d="M17.6 9.48l1.84-3.18a.5.5 0 10-.87-.5l-1.86 3.22a11.07 11.07 0 00-8.42 0L6.43 5.8a.5.5 0 10-.87.5l1.84 3.18A9.3 9.3 0 002.5 17h19a9.3 9.3 0 00-3.9-7.52zM8 14.5a1 1 0 110-2 1 1 0 010 2zm8 0a1 1 0 110-2 1 1 0 010 2z"
+    />
+  </svg>
+);
+
 interface StoreButtonProps {
-  platform: "ios" | "android";
+  platform: "ios" | "android" | "android-play";
   url?: string;
+  /** File name to suggest for a direct download link (e.g. the APK). */
+  download?: string;
   icon: ReactNode;
   caption: string;
   store: string;
 }
 
-const StoreButton = ({ platform, url, icon, caption, store }: StoreButtonProps) => {
+// Shared "app store" style pill: an icon plus a two-line label. With no `url`
+// it renders as an inert "Coming soon" placeholder instead of a link.
+export const StoreButton = ({ platform, url, download, icon, caption, store }: StoreButtonProps) => {
   const className =
     "inline-flex h-14 min-w-[160px] items-center gap-3 rounded-3xl bg-[#1B1C1C] px-5 sm:min-w-[180px] sm:px-6 text-left text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition";
 
@@ -53,8 +68,7 @@ const StoreButton = ({ platform, url, icon, caption, store }: StoreButtonProps) 
   return (
     <a
       href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      {...(download ? { download } : { target: "_blank", rel: "noopener noreferrer" })}
       onClick={() => track("download_clicked", { platform })}
       className={`${className} hover:opacity-85`}
       aria-label={`${caption} ${store}`}
@@ -68,23 +82,43 @@ interface StoreButtonsProps {
   className?: string;
 }
 
-const StoreButtons = ({ className = "" }: StoreButtonsProps) => (
-  <div className={`flex flex-wrap gap-3 ${className}`}>
-    <StoreButton
-      platform="ios"
-      url={APP_STORE_URL}
-      icon={<Icon name="apple" color="#FFFFFF" width={22} />}
-      caption="Download on the"
-      store="App Store"
-    />
-    <StoreButton
-      platform="android"
-      url={PLAY_STORE_URL}
-      icon={<GooglePlayIcon size={24} />}
-      caption="Get it on"
-      store="Google Play"
-    />
-  </div>
-);
+// Compact pair (or trio) of store buttons for the hero, header and footer.
+// Android becomes a direct APK download the moment a release is published;
+// Google Play stays available too once `VITE_PLAY_STORE_URL` is set.
+const StoreButtons = ({ className = "" }: StoreButtonsProps) => {
+  const release = useLatestRelease();
+  const androidReady = release.status === "ready";
+
+  return (
+    <div className={`flex flex-wrap gap-3 ${className}`}>
+      <StoreButton
+        platform="ios"
+        url={APP_STORE_URL}
+        icon={<Icon name="apple" color="#FFFFFF" width={22} />}
+        caption="Download on the"
+        store="App Store"
+      />
+      {androidReady && (
+        <StoreButton
+          platform="android"
+          url={release.release.downloadUrl}
+          download={release.release.fileName}
+          icon={<AndroidIcon size={24} />}
+          caption="Download for"
+          store="Android (APK)"
+        />
+      )}
+      {(!androidReady || PLAY_STORE_URL) && (
+        <StoreButton
+          platform="android-play"
+          url={PLAY_STORE_URL}
+          icon={<GooglePlayIcon size={24} />}
+          caption="Get it on"
+          store="Google Play"
+        />
+      )}
+    </div>
+  );
+};
 
 export default StoreButtons;

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import AndroidAppBanner from "./components/AndroidAppBanner";
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
 import About from "./components/About";
@@ -14,8 +15,20 @@ function App() {
     track("landing_viewed");
   }, []);
 
+  // The browser tries to scroll to the URL fragment (e.g. the owner's
+  // "https://powerwatch.oyinlola.site/#download" app-update link) once, when
+  // the document first loads -- before this client-rendered page has mounted
+  // the target section. Retry it once mounted so a direct link to `#download`
+  // (or any other section) still lands correctly.
+  useEffect(() => {
+    const hash = window.location.hash.slice(1);
+    if (!hash) return;
+    document.getElementById(hash)?.scrollIntoView({ behavior: "instant", block: "start" });
+  }, []);
+
   return (
     <>
+      <AndroidAppBanner />
       <Navbar />
       <main>
         <Hero />

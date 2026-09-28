@@ -7,6 +7,7 @@ import type {
   HistorySummary,
   InboxNotification,
   SignInSession,
+  LatestRelease,
   LiveStatus,
   LocationSearchItem,
   MyReport,
@@ -148,4 +149,9 @@ export const locationsApi = {
   save: (neighborhoodId: number, label?: string) =>
     request<unknown>("/locations/saved", { method: "POST", body: { neighborhoodId, ...(label ? { label } : {}) } }),
   unsave: (neighborhoodId: number) => request<unknown>(`/locations/saved/${neighborhoodId}`, { method: "DELETE" }),
+};
+
+export const appApi = {
+  /** 404s until the first Android release is published; callers should treat that as "no update". */
+  latestRelease: () => request<LatestRelease>("/app/latest", { auth: false }),
 };

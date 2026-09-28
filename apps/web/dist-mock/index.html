@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/brand/favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0663EA" />
+    <script>
+      // Apply the saved or system theme before first paint to avoid a flash
+      (function () {
+        var theme;
+        try {
+          theme = localStorage.getItem("theme");
+        } catch (e) {}
+        if (theme !== "light" && theme !== "dark") {
+          theme = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+        }
+        document.documentElement.dataset.theme = theme;
+      })();
+    </script>
+    <title>PowerWatch | Real-time power outage tracking for your neighborhood</title>
+    <meta
+      name="description"
+      content="PowerWatch helps your community track real-time power status, report outages and get alerts the moment electricity goes out or is restored. Download for Android and iPhone."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PowerWatch" />
+    <meta
+      property="og:title"
+      content="PowerWatch | Real-time power outage tracking for your neighborhood"
+    />
+    <meta
+      property="og:description"
+      content="Track real-time power status, report outages and get alerts the moment electricity goes out or is restored."
+    />
+    <meta property="og:image" content="/mockups/phone-b.webp" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <script type="module" crossorigin src="/assets/main-BN476mt3.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/ErrorScreen-CYZTl1Xe.js">
+    <link rel="modulepreload" crossorigin href="/assets/ErrorBoundary-ff9ySYmZ.js">
+    <link rel="stylesheet" crossorigin href="/assets/ErrorScreen-DZiXjQz4.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

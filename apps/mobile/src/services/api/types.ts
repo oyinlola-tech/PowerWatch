@@ -207,6 +207,20 @@ export interface InboxNotification {
   createdAt: string;
 }
 
+/** The newest Android build published on GitHub Releases (GET /app/latest). */
+export interface LatestRelease {
+  platform: "android";
+  version: string;
+  downloadUrl: string;
+  fileName: string;
+  sizeBytes: number;
+  publishedAt: string;
+  notes: string;
+  releasePage: string;
+  /** Versions older than this must update before using the app (null when not enforced) */
+  minimumVersion: string | null;
+}
+
 export interface SignInSession {
   id: string;
   isCurrent: boolean;
