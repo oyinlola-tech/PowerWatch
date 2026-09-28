@@ -8,6 +8,7 @@ import { consensusStatus, tallyRecentReports } from '../consensus.js';
 import { NotifyStatusChangeCommand } from '../../notifications/commands/notifyStatusChange.command.js';
 import { ReverseGeocodeQuery } from '../../locations/queries/reverseGeocode.query.js';
 import { distanceKm } from '../../../utils/geo.js';
+import { describeError, recordSystemEvent } from '../../systemEvents/recordSystemEvent.js';
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
@@ -129,7 +130,14 @@ export class CreateReportCommand {
       // Push delivery must never fail or slow down the report itself.
       this.notifyStatusChange
         .execute({ neighborhoodId, status: changedTo, triggeredByUserId: dto.userId })
-        .catch((error) => console.error('Status-change notification failed:', error));
+        .catch((error) =>
+          recordSystemEvent({
+            level: 'ERROR',
+            source: 'push',
+            message: 'Power status alerts could not be sent after a status change.',
+            details: { neighborhoodId, status: changedTo, ...describeError(error) },
+          }),
+        );
     }
 
     return {

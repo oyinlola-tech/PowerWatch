@@ -1,5 +1,6 @@
 import type { TokenMessage, TopicMessage, MulticastMessage } from 'firebase-admin/messaging';
 import { getMessenger } from '../messaging.js';
+import { describeError, recordSystemEvent } from '../../systemEvents/recordSystemEvent.js';
 
 const FCM_MULTICAST_LIMIT = 500;
 
@@ -52,7 +53,12 @@ export class SendFirebaseNotificationCommand {
     try {
       messenger = getMessenger();
     } catch (error) {
-      console.error('Firebase multicast failed:', error);
+      await recordSystemEvent({
+        level: 'ERROR',
+        source: 'push',
+        message: 'Firebase is not available for push notifications.',
+        details: describeError(error),
+      });
       return { successCount: 0, failureCount: payload.tokens.length };
     }
 
@@ -73,7 +79,12 @@ export class SendFirebaseNotificationCommand {
         successCount += response.successCount;
         failureCount += response.failureCount;
       } catch (error) {
-        console.error('Firebase multicast failed:', error);
+        await recordSystemEvent({
+          level: 'ERROR',
+          source: 'push',
+          message: 'Firebase push notifications could not be sent.',
+          details: { messages: tokens.length, ...describeError(error) },
+        });
         failureCount += tokens.length;
       }
     }

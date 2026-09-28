@@ -2,6 +2,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../../configs/database.config.js';
 import { env } from '../../../configs/env.config.js';
 import { AppError } from '../../../errors/index.js';
+import { describeError, recordSystemEvent } from '../../systemEvents/recordSystemEvent.js';
 import type { ReverseGeocodeResult } from '../../../interfaces/index.js';
 
 interface NominatimAddress {
@@ -62,6 +63,12 @@ export class ReverseGeocodeQuery {
       result = await this.reverseWithNominatim(latitude, longitude);
     } catch (error) {
       if (error instanceof AppError) throw error;
+      void recordSystemEvent({
+        level: 'WARNING',
+        source: 'geocoding',
+        message: 'OpenStreetMap lookup failed; used the rough LGA-level fallback (no street or neighborhood).',
+        details: describeError(error),
+      });
       result = await this.reverseWithLgaPackage(latitude, longitude);
     }
 

@@ -14,6 +14,7 @@ export class GetDashboardQuery {
       activeOutages,
       totalOutages,
       totalNeighborhoods,
+      openSystemErrors,
     ] = await Promise.all([
       prisma.user.count(),
       prisma.user.count({ where: { createdAt: { gte: todayStart } } }),
@@ -22,6 +23,7 @@ export class GetDashboardQuery {
       prisma.outage.count({ where: { endTime: null } }),
       prisma.outage.count(),
       prisma.neighborhood.count(),
+      prisma.systemEvent.count({ where: { resolvedAt: null, level: 'ERROR' } }),
     ]);
 
     const reportsThisWeek = await prisma.report.count({
@@ -37,6 +39,7 @@ export class GetDashboardQuery {
       activeOutages,
       totalOutages,
       totalNeighborhoods,
+      openSystemErrors,
     };
   }
 }

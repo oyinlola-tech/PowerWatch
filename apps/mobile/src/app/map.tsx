@@ -187,10 +187,7 @@ const CheckAnotherArea = () => {
   const active = term.length >= 2 && term !== chosenName;
 
   useEffect(() => {
-    if (!active) {
-      setResults([]);
-      return;
-    }
+    if (!active) return;
     const id = ++searchId.current;
     const timer = setTimeout(async () => {
       setSearching(true);
@@ -479,6 +476,97 @@ const useStyles = makeStyles((c) => ({
   },
   titleBlock: {
     gap: 8,
+  },
+  rowBetween: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  checkSection: {
+    gap: 4,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 12,
+    backgroundColor: c.card,
+    padding: 16,
+  },
+  checkLabel: {
+    color: c.bg,
+  },
+  checkHint: {
+    marginBottom: 8,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.muted,
+  },
+  checkSearchBox: {
+    height: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: c.borderInput,
+    borderRadius: 8,
+    backgroundColor: c.screenBg,
+    paddingHorizontal: 16,
+    boxShadow: shadows.card,
+  },
+  checkInput: {
+    flex: 1,
+    height: "100%",
+    padding: 0,
+    ...type.boldText,
+    lineHeight: undefined,
+    color: c.black,
+  },
+  checkResults: {
+    marginTop: 8,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: c.borderInput,
+    borderRadius: 8,
+    backgroundColor: c.card,
+  },
+  checkResultRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: c.borderLight,
+    gap: 2,
+  },
+  checkNoResults: {
+    marginTop: 8,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.gray500,
+  },
+  checkedCard: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 8,
+    backgroundColor: c.surface,
+    padding: 12,
+  },
+  checkMeta: {
+    marginTop: 8,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.muted,
+  },
+  checkPill: {
+    flexShrink: 0,
+    borderRadius: 9999,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  checkPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    lineHeight: 16,
   },
   subtitle: {
     fontFamily: fonts.regular,

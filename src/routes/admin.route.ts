@@ -31,6 +31,7 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
                 activeOutages: { type: 'integer' },
                 totalOutages: { type: 'integer' },
                 totalNeighborhoods: { type: 'integer' },
+                openSystemErrors: { type: 'integer', description: 'Unresolved system errors (see GET /admin/system-events)' },
               },
             },
           },
@@ -368,4 +369,83 @@ export const adminRoutes: FastifyPluginAsync = async (app) => {
       },
     },
   }, adminController.materializeMonthly);
+
+  const SYSTEM_EVENT_SOURCES = ['email', 'push', 'job', 'geocoding', 'api', 'startup'];
+  const OK_OBJECT = {
+    200: {
+      type: 'object',
+      properties: {
+        success: { type: 'boolean' },
+        message: { type: 'string' },
+        data: { type: 'object', additionalProperties: true },
+      },
+    },
+  };
+
+  app.get('/system-events', {
+    preHandler: [adminMiddleware],
+    schema: {
+      description:
+        '[ADMIN] Background problems: emails that failed to send, failed jobs, push errors, geocoding ' +
+        'fallbacks and server errors. Repeats of an open problem are counted on one row. Codes and ' +
+        'email addresses are masked.',
+      tags: ['Admin'],
+      security: [{ bearerAuth: [] }],
+      summary: 'System events',
+      querystring: {
+        type: 'object',
+        properties: {
+          page: { type: 'integer', default: 1 },
+          limit: { type: 'integer', default: 20 },
+          status: { type: 'string', enum: ['open', 'resolved', 'all'], default: 'open' },
+          level: { type: 'string', enum: ['ERROR', 'WARNING'] },
+          source: { type: 'string', enum: SYSTEM_EVENT_SOURCES },
+        },
+      },
+      response: {
+        200: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                data: { type: 'array', items: { type: 'object', additionalProperties: true } },
+                pagination: { type: 'object', additionalProperties: true },
+                open: {
+                  type: 'object',
+                  properties: { errors: { type: 'integer' }, warnings: { type: 'integer' } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }, adminController.getSystemEvents);
+
+  app.post('/system-events/:id/resolve', {
+    preHandler: [adminMiddleware],
+    schema: {
+      description: '[ADMIN] Mark a system event as dealt with. If it happens again, a new event is opened.',
+      tags: ['Admin'],
+      security: [{ bearerAuth: [] }],
+      summary: 'Resolve system event',
+      params: { type: 'object', required: ['id'], properties: { id: { type: 'string', format: 'uuid' } } },
+      response: OK_OBJECT,
+    },
+  }, adminController.resolveSystemEvent);
+
+  app.post('/system-events/resolve-all', {
+    preHandler: [adminMiddleware],
+    schema: {
+      description: '[ADMIN] Mark every open system event (optionally only one source) as dealt with.',
+      tags: ['Admin'],
+      security: [{ bearerAuth: [] }],
+      summary: 'Resolve all system events',
+      body: { type: 'object', properties: { source: { type: 'string', enum: SYSTEM_EVENT_SOURCES } } },
+      response: OK_OBJECT,
+    },
+  }, adminController.resolveAllSystemEvents);
 };

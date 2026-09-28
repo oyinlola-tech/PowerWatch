@@ -9,6 +9,8 @@ import { SuspendUserCommand, UnsuspendUserCommand } from '../services/admin/comm
 import { DeleteUserCommand } from '../services/admin/commands/deleteUser.command.js';
 import { DeleteReportCommand } from '../services/reports/commands/deleteReport.command.js';
 import { SendBroadcastCommand } from '../services/admin/commands/sendBroadcast.command.js';
+import { GetSystemEventsQuery } from '../services/admin/queries/getSystemEvents.query.js';
+import { ResolveSystemEventCommand } from '../services/admin/commands/resolveSystemEvent.command.js';
 import { MaterializeDailySummaryCommand } from '../services/analytics/commands/materializeDailySummary.command.js';
 import { MaterializeWeeklySummaryCommand } from '../services/analytics/commands/materializeWeeklySummary.command.js';
 import { MaterializeMonthlySummaryCommand } from '../services/analytics/commands/materializeMonthlySummary.command.js';
@@ -26,6 +28,20 @@ const unsuspendUserCommand = new UnsuspendUserCommand();
 const deleteUserCommand = new DeleteUserCommand();
 const deleteReportCommand = new DeleteReportCommand();
 const sendBroadcastCommand = new SendBroadcastCommand();
+const getSystemEventsQuery = new GetSystemEventsQuery();
+const resolveSystemEventCommand = new ResolveSystemEventCommand();
+
+const systemEventsQuerySchema = z.object({
+  page: z.coerce.number().int().min(1).default(1),
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  status: z.enum(['open', 'resolved', 'all']).default('open'),
+  level: z.enum(['ERROR', 'WARNING']).optional(),
+  source: z.enum(['email', 'push', 'job', 'geocoding', 'api', 'startup']).optional(),
+});
+const systemEventIdSchema = z.object({ id: z.uuid() });
+const resolveAllSchema = z.object({
+  source: z.enum(['email', 'push', 'job', 'geocoding', 'api', 'startup']).optional(),
+});
 const materializeDailyCommand = new MaterializeDailySummaryCommand();
 const materializeWeeklyCommand = new MaterializeWeeklySummaryCommand();
 const materializeMonthlyCommand = new MaterializeMonthlySummaryCommand();
@@ -143,5 +159,27 @@ export const adminController = {
     const parsed = monthStart ? new Date(monthStart) : undefined;
     const result = await materializeMonthlyCommand.execute(parsed && !isNaN(parsed.getTime()) ? parsed : undefined);
     return reply.status(200).send(successResponse(result, 'Monthly summaries materialized.'));
+  },
+
+  async getSystemEvents(request: FastifyRequest, reply: FastifyReply) {
+    const { level, source, ...rest } = systemEventsQuerySchema.parse(request.query);
+    const result = await getSystemEventsQuery.execute({
+      ...rest,
+      ...(level ? { level } : {}),
+      ...(source ? { source } : {}),
+    });
+    return reply.status(200).send(successResponse(result, 'System events fetched.'));
+  },
+
+  async resolveSystemEvent(request: FastifyRequest, reply: FastifyReply) {
+    const { id } = systemEventIdSchema.parse(request.params);
+    const result = await resolveSystemEventCommand.execute(id, getActor(request).userId);
+    return reply.status(200).send(successResponse(result, 'System event marked as resolved.'));
+  },
+
+  async resolveAllSystemEvents(request: FastifyRequest, reply: FastifyReply) {
+    const { source } = resolveAllSchema.parse(request.body ?? {});
+    const result = await resolveSystemEventCommand.resolveAll(getActor(request).userId, source ? { source } : {});
+    return reply.status(200).send(successResponse(result, 'System events marked as resolved.'));
   },
 };

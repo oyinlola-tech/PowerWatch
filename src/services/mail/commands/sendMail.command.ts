@@ -1,5 +1,6 @@
 import nodemailer, { type Transporter } from 'nodemailer';
 import { env } from '../../../configs/env.config.js';
+import { describeError, recordSystemEvent } from '../../systemEvents/recordSystemEvent.js';
 
 export class MailService {
   private transporter: Transporter | null = null;
@@ -47,24 +48,39 @@ export class MailService {
       // NODE_ENV must be set to "development" on purpose: an unset value also reads as
       // development, and a live server started without it must not log codes.
       if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
-        // Never write message bodies (which can contain OTPs) to production logs.
-        console.error(`SMTP is not configured. Email "${subject}" was not sent.`);
+        // Never write message bodies or codes (subjects contain them) to production logs.
+        await recordSystemEvent({
+          level: 'ERROR',
+          source: 'email',
+          message: 'Email not sent: SMTP is not configured.',
+          details: { to, subject },
+        });
         return;
       }
       console.log(`[DEV] SMTP is not configured. Email to ${to} not sent. Subject: ${subject}\n${text}`);
       return;
     }
 
-    await this.transporter.sendMail({
-      from: { name: this.fromName, address: this.fromAddress },
-      // The sender is a no-reply mailbox; a person reading a reply is more useful
-      ...(env.mailBranding.supportEmail ? { replyTo: env.mailBranding.supportEmail } : {}),
-      to,
-      subject,
-      text,
-      html,
-      // Marks the message as automated so out-of-office replies are not sent back
-      headers: { 'Auto-Submitted': 'auto-generated' },
-    });
+    try {
+      await this.transporter.sendMail({
+        from: { name: this.fromName, address: this.fromAddress },
+        // The sender is a no-reply mailbox; a person reading a reply is more useful
+        ...(env.mailBranding.supportEmail ? { replyTo: env.mailBranding.supportEmail } : {}),
+        to,
+        subject,
+        text,
+        html,
+        // Marks the message as automated so out-of-office replies are not sent back
+        headers: { 'Auto-Submitted': 'auto-generated' },
+      });
+    } catch (error) {
+      await recordSystemEvent({
+        level: 'ERROR',
+        source: 'email',
+        message: 'Email could not be sent.',
+        details: { to, subject, ...describeError(error) },
+      });
+      throw error;
+    }
   }
 }

@@ -1,6 +1,7 @@
 import { Expo, type ExpoPushMessage } from 'expo-server-sdk';
 import { prisma } from '../../../configs/database.config.js';
 import { env } from '../../../configs/env.config.js';
+import { describeError, recordSystemEvent } from '../../systemEvents/recordSystemEvent.js';
 
 const expo = new Expo(env.expo.accessToken ? { accessToken: env.expo.accessToken } : {});
 
@@ -22,6 +23,7 @@ export async function sendExpoPush(
   let sent = 0;
   let failed = messages.length - valid.length;
   const deadTokens: string[] = [];
+  const otherErrors = new Set<string>();
 
   for (const chunk of expo.chunkPushNotifications(valid)) {
     try {
@@ -32,6 +34,9 @@ export async function sendExpoPush(
           return;
         }
         failed++;
+        if (ticket.details?.error && ticket.details.error !== 'DeviceNotRegistered') {
+          otherErrors.add(ticket.details.error);
+        }
         if (ticket.details?.error === 'DeviceNotRegistered') {
           const token = chunk[i]?.to;
           if (typeof token === 'string') deadTokens.push(token);
@@ -39,8 +44,23 @@ export async function sendExpoPush(
       });
     } catch (error) {
       failed += chunk.length;
-      console.error('Expo push send failed:', error);
+      await recordSystemEvent({
+        level: 'ERROR',
+        source: 'push',
+        message: 'Push notifications could not be sent through Expo.',
+        details: { messages: chunk.length, ...describeError(error) },
+      });
     }
+  }
+
+  if (otherErrors.size > 0) {
+    // e.g. InvalidCredentials when Android push credentials are missing from the Expo project
+    await recordSystemEvent({
+      level: 'ERROR',
+      source: 'push',
+      message: `Expo rejected push notifications: ${[...otherErrors].sort().join(', ')}.`,
+      details: { failed },
+    });
   }
 
   if (deadTokens.length > 0) {

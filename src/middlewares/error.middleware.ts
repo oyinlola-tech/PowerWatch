@@ -3,6 +3,7 @@ import { ZodError } from 'zod';
 import { AppError } from '../errors/index.js';
 import { errorResponse } from '../utils/response.js';
 import { MESSAGES } from '../constants/message.constant.js';
+import { describeError, recordSystemEvent } from '../services/systemEvents/recordSystemEvent.js';
 
 export function errorHandler(
   error: FastifyError | AppError | ZodError | Error,
@@ -31,5 +32,11 @@ export function errorHandler(
   }
 
   request.log.error({ err: error }, 'Unhandled error');
+  void recordSystemEvent({
+    level: 'ERROR',
+    source: 'api',
+    message: `Server error on ${request.method} ${request.routeOptions.url ?? request.url.split('?')[0]}`,
+    details: { requestId: request.id, ...describeError(error) },
+  });
   return reply.status(500).send(errorResponse(MESSAGES.INTERNAL_ERROR));
 }

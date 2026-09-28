@@ -1,5 +1,6 @@
 import { prisma } from '../configs/database.config.js';
 import { env } from '../configs/env.config.js';
+import { describeError, recordSystemEvent } from '../services/systemEvents/recordSystemEvent.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -30,7 +31,13 @@ export async function purgeExpiredData(now = new Date()) {
     where: { timestamp: { lte: new Date(now.getTime() - env.retention.auditLogDays * DAY_MS) } },
   });
 
+  // Problems admins marked as dealt with are kept for 90 days
+  const systemEvents = await prisma.systemEvent.deleteMany({
+    where: { resolvedAt: { lte: new Date(now.getTime() - 90 * DAY_MS) } },
+  });
+
   return {
+    systemEvents: systemEvents.count,
     sessions: sessions.count,
     refreshTokens: refreshTokens.count,
     otps: otps.count,
@@ -43,7 +50,15 @@ export function startRetentionJob(log: (message: string, error?: unknown) => voi
   const run = () =>
     purgeExpiredData()
       .then((removed) => log(`Retention clean-up removed ${JSON.stringify(removed)}`))
-      .catch((error) => log('Retention clean-up failed', error));
+      .catch((error) => {
+        log('Retention clean-up failed', error);
+        return recordSystemEvent({
+          level: 'ERROR',
+          source: 'job',
+          message: 'Daily data clean-up (retention) failed.',
+          details: describeError(error),
+        });
+      });
 
   void run();
   const timer = setInterval(run, DAY_MS);
