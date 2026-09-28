@@ -67,6 +67,36 @@ export class GetLatestStatusQuery {
       confidence = recentReporters > 0 ? Math.round((agreeing / recentReporters) * 100) : 0;
     }
 
+    // Which streets recent reports came from, most recent first, so people can see how local it is.
+    const streetReports = await prisma.report.groupBy({
+      by: ['streetId', 'reportType'],
+      where: {
+        neighborhoodId,
+        deletedAt: null,
+        streetId: { not: null },
+        timestamp: { gte: new Date(now.getTime() - CONFIDENCE_WINDOW_MINUTES * MINUTE_MS) },
+      },
+      _count: { _all: true },
+      _max: { timestamp: true },
+    });
+    const streetNames = new Map(
+      (
+        await prisma.street.findMany({
+          where: { id: { in: streetReports.map((r) => r.streetId!) } },
+          select: { id: true, name: true },
+        })
+      ).map((street) => [street.id, street.name]),
+    );
+    const recentStreets = streetReports
+      .sort((a, b) => (b._max.timestamp?.getTime() ?? 0) - (a._max.timestamp?.getTime() ?? 0))
+      .map((r) => ({
+        street: streetNames.get(r.streetId!) ?? '',
+        reportType: r.reportType,
+        reports: r._count._all,
+        lastReportAt: r._max.timestamp,
+      }))
+      .filter((r) => r.street);
+
     return {
       neighborhood: { id: neighborhood.id, name: neighborhood.name, town: neighborhood.town.name },
       status,
@@ -75,6 +105,7 @@ export class GetLatestStatusQuery {
       confidence,
       recentReporters,
       lastReportAt: lastReport?.timestamp ?? null,
+      recentStreets,
     };
   }
 }

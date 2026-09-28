@@ -64,6 +64,8 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
           neighborhoodId: { type: 'integer', description: 'Existing neighborhood ID', example: 9012 },
           latitude: { type: 'number', description: 'GPS latitude', example: 6.524379 },
           longitude: { type: 'number', description: 'GPS longitude', example: 3.379206 },
+          accuracy: { type: 'number', description: 'GPS accuracy radius in metres' },
+          mocked: { type: 'boolean', description: 'Android: true if a mock-location app supplied the position (refused)' },
           notificationEnabled: { type: 'boolean', description: 'Push notification preference', default: true },
           deviceName: { type: 'string', description: 'Device model', example: 'iPhone 15 Pro' },
           deviceType: { type: 'string', enum: ['ANDROID', 'IOS', 'WEB'], description: 'Device platform' },

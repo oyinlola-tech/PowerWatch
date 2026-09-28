@@ -6,6 +6,7 @@ import { UserRepository } from '../../../repositories/user.repository.js';
 import { LocationRepository } from '../../../repositories/location.repository.js';
 import { AuthRepository } from '../../../repositories/auth.repository.js';
 import { AuditRepository } from '../../../repositories/audit.repository.js';
+import { POWER_MESSAGES } from '../../../constants/power.constant.js';
 import { AppError } from '../../../errors/index.js';
 import { MESSAGES } from '../../../constants/message.constant.js';
 import { prisma } from '../../../configs/database.config.js';
@@ -49,6 +50,7 @@ export class RegisterCommand {
     let cityId: number | undefined;
     let townId: number | undefined;
     let neighborhoodId: number | undefined;
+    let streetId: number | undefined;
     let latitude: number | undefined;
     let longitude: number | undefined;
 
@@ -110,15 +112,27 @@ export class RegisterCommand {
         ]);
       }
     } else if (dto.latitude !== undefined && dto.longitude !== undefined) {
-      const geo = await this.reverseGeocodeQuery.execute(dto.latitude, dto.longitude);
-      countryId = geo.countryId;
-      stateId = geo.stateId;
-      lgaId = geo.lgaId;
-      cityId = geo.cityId;
-      townId = geo.townId;
-      neighborhoodId = geo.neighborhoodId;
-      latitude = dto.latitude;
-      longitude = dto.longitude;
+      if (dto.mocked) {
+        throw new AppError(422, POWER_MESSAGES.LOCATION_MOCKED, [{ field: 'mocked', message: POWER_MESSAGES.LOCATION_MOCKED }]);
+      }
+      // The GPS point sets the home area. If the lookup service is down, the account is still
+      // created and the app asks for the location again on the next screen.
+      const geo = await this.reverseGeocodeQuery.execute(dto.latitude, dto.longitude).catch((error) => {
+        if (error instanceof AppError) throw error;
+        console.error('Reverse geocoding at registration failed:', error);
+        return null;
+      });
+      if (geo) {
+        countryId = geo.countryId;
+        stateId = geo.stateId;
+        lgaId = geo.lgaId;
+        cityId = geo.cityId;
+        townId = geo.townId;
+        neighborhoodId = geo.neighborhoodId;
+        streetId = (await this.locationRepository.findOrCreateStreet(geo.neighborhoodId, geo.road))?.id;
+        latitude = dto.latitude;
+        longitude = dto.longitude;
+      }
     }
 
     const passwordHash = await bcrypt.hash(dto.password, env.bcrypt.saltRounds);
@@ -146,6 +160,7 @@ export class RegisterCommand {
           cityId: cityId ?? null,
           townId: townId ?? null,
           neighborhoodId: neighborhoodId ?? null,
+          streetId: streetId ?? null,
           latitude: latitude ?? null,
           longitude: longitude ?? null,
           termsAcceptedAt: new Date(),

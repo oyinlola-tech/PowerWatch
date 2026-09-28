@@ -6,32 +6,61 @@ import { POWER_MESSAGES } from '../../../constants/power.constant.js';
 import type { CreateReportDto, ReportResponse } from '../../../interfaces/index.js';
 import { consensusStatus, tallyRecentReports } from '../consensus.js';
 import { NotifyStatusChangeCommand } from '../../notifications/commands/notifyStatusChange.command.js';
+import { ReverseGeocodeQuery } from '../../locations/queries/reverseGeocode.query.js';
+import { distanceKm } from '../../../utils/geo.js';
 
 const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+// GPS drift between two fixes can look like fast travel over short distances; ignore it.
+const TRAVEL_CHECK_MIN_KM = 5;
 
 export class CreateReportCommand {
   constructor(
     private readonly locationRepository: LocationRepository = new LocationRepository(),
     private readonly notifyStatusChange: NotifyStatusChangeCommand = new NotifyStatusChangeCommand(),
+    private readonly reverseGeocodeQuery: ReverseGeocodeQuery = new ReverseGeocodeQuery(),
   ) {}
 
-  async execute(dto: CreateReportDto): Promise<ReportResponse> {
-    const neighborhood = await this.locationRepository.findNeighborhoodById(dto.neighborhoodId);
-    if (!neighborhood) {
-      throw new AppError(422, 'Neighborhood not found.', [
-        { field: 'neighborhoodId', message: `Neighborhood with ID ${dto.neighborhoodId} not found.` },
-      ]);
+  /** Refuses positions that are faked, too vague, or impossibly far from the person's last report. */
+  private async assertTrustworthyLocation(dto: CreateReportDto) {
+    if (dto.mocked) {
+      throw new AppError(422, POWER_MESSAGES.LOCATION_MOCKED, [{ field: 'mocked', message: POWER_MESSAGES.LOCATION_MOCKED }]);
     }
+    if (dto.locationAccuracy > env.reports.maxAccuracyMeters) {
+      throw new AppError(422, POWER_MESSAGES.LOCATION_IMPRECISE, [{ field: 'accuracy', message: POWER_MESSAGES.LOCATION_IMPRECISE }]);
+    }
+
+    const previous = await prisma.report.findFirst({
+      where: { userId: dto.userId, deletedAt: null, latitude: { not: null }, longitude: { not: null } },
+      orderBy: { timestamp: 'desc' },
+      select: { latitude: true, longitude: true, timestamp: true },
+    });
+    if (previous?.latitude != null && previous.longitude != null) {
+      const km = distanceKm({ latitude: previous.latitude, longitude: previous.longitude }, dto);
+      const hours = Math.max(Date.now() - previous.timestamp.getTime(), MINUTE_MS) / HOUR_MS;
+      if (km > TRAVEL_CHECK_MIN_KM && km / hours > env.reports.maxTravelKmh) {
+        throw new AppError(422, POWER_MESSAGES.LOCATION_IMPOSSIBLE_TRAVEL);
+      }
+    }
+  }
+
+  async execute(dto: CreateReportDto): Promise<ReportResponse> {
+    await this.assertTrustworthyLocation(dto);
+
+    // The report counts for the place the person is standing, never a chosen one.
+    const place = await this.reverseGeocodeQuery.execute(dto.latitude, dto.longitude);
+    const neighborhoodId = place.neighborhoodId;
+    const street = await this.locationRepository.findOrCreateStreet(neighborhoodId, place.road);
 
     const { report, status, changedTo } = await prisma.$transaction(async (tx) => {
       // Serialize reports per neighborhood so concurrent reports can't open two outages.
-      await tx.$queryRaw`SELECT id FROM neighborhoods WHERE id = ${dto.neighborhoodId} FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM neighborhoods WHERE id = ${neighborhoodId} FOR UPDATE`;
 
       // Server time only: clients can't backdate or future-date reports.
       const now = new Date();
 
       const lastOwn = await tx.report.findFirst({
-        where: { userId: dto.userId, neighborhoodId: dto.neighborhoodId, deletedAt: null },
+        where: { userId: dto.userId, neighborhoodId, deletedAt: null },
         orderBy: { timestamp: 'desc' },
         select: { timestamp: true },
       });
@@ -43,24 +72,25 @@ export class CreateReportCommand {
       const created = await tx.report.create({
         data: {
           userId: dto.userId,
-          neighborhoodId: dto.neighborhoodId,
+          neighborhoodId,
+          streetId: street?.id ?? null,
           reportType: dto.reportType,
           timestamp: now,
-          latitude: dto.latitude ?? null,
-          longitude: dto.longitude ?? null,
-          locationAccuracy: dto.locationAccuracy ?? null,
+          latitude: dto.latitude,
+          longitude: dto.longitude,
+          locationAccuracy: dto.locationAccuracy,
           deviceType: dto.deviceType ?? null,
         },
       });
 
       const activeOutage = await tx.outage.findFirst({
-        where: { neighborhoodId: dto.neighborhoodId, endTime: null },
+        where: { neighborhoodId, endTime: null },
         orderBy: { startTime: 'desc' },
       });
       const current = activeOutage ? 'OFF' : 'ON';
 
       const since = new Date(now.getTime() - env.reports.consensusWindowMinutes * MINUTE_MS);
-      const tally = await tallyRecentReports(tx, dto.neighborhoodId, since);
+      const tally = await tallyRecentReports(tx, neighborhoodId, since);
       const next = consensusStatus(tally, current);
 
       let outageId = activeOutage?.id ?? null;
@@ -69,7 +99,7 @@ export class CreateReportCommand {
       if (next === 'OFF' && !activeOutage) {
         const outage = await tx.outage.create({
           data: {
-            neighborhoodId: dto.neighborhoodId,
+            neighborhoodId,
             startTime: tally.earliestOff ?? now,
           },
         });
@@ -98,7 +128,7 @@ export class CreateReportCommand {
     if (changedTo) {
       // Push delivery must never fail or slow down the report itself.
       this.notifyStatusChange
-        .execute({ neighborhoodId: dto.neighborhoodId, status: changedTo, triggeredByUserId: dto.userId })
+        .execute({ neighborhoodId, status: changedTo, triggeredByUserId: dto.userId })
         .catch((error) => console.error('Status-change notification failed:', error));
     }
 
@@ -106,6 +136,13 @@ export class CreateReportCommand {
       id: report.id,
       userId: report.userId,
       neighborhoodId: report.neighborhoodId,
+      place: {
+        neighborhood: place.neighborhood,
+        street: street?.name ?? null,
+        town: place.town,
+        lga: place.lga,
+        state: place.state,
+      },
       reportType: report.reportType,
       timestamp: report.timestamp,
       latitude: report.latitude,

@@ -72,6 +72,8 @@ model User {
   cityId              Int?
   townId              Int?
   neighborhoodId      Int?
+  /** Street the person set up their account on, when GPS gave one */
+  streetId            Int?           @map("street_id")
   lastLoginAt         DateTime?      @map("last_login_at")
   passwordChangedAt   DateTime?      @map("password_changed_at")
   suspendedAt         DateTime?      @map("suspended_at")
@@ -91,6 +93,7 @@ model User {
   city                City?          @relation(fields: [cityId], references: [id])
   town                Town?          @relation(fields: [townId], references: [id])
   neighborhood        Neighborhood?  @relation(fields: [neighborhoodId], references: [id])
+  street              Street?        @relation(fields: [streetId], references: [id])
   refreshTokens       RefreshToken[]
   devices             Device[]
   sessions            Session[]
@@ -256,8 +259,24 @@ model Neighborhood {
   weeklySummaries WeeklyOutageSummary[]
   monthlyStats    MonthlyStatistic[]
   savedBy         SavedNeighborhood[]
+  streets         Street[]
 
   @@map("neighborhoods")
+}
+
+/// The lowest place unit, taken from the road name at a GPS point. Status is still
+/// decided per neighborhood; streets show where within it reports came from.
+model Street {
+  id             Int          @id @default(autoincrement())
+  neighborhoodId Int          @map("neighborhood_id")
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id])
+  name           String       @db.VarChar(150)
+  reports        Report[]
+  users          User[]
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@unique([neighborhoodId, name])
+  @@map("streets")
 }
 
 model SavedNeighborhood {
@@ -279,6 +298,8 @@ model Report {
   user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   neighborhoodId Int           @map("neighborhood_id")
   neighborhood   Neighborhood  @relation(fields: [neighborhoodId], references: [id])
+  streetId       Int?          @map("street_id")
+  street         Street?       @relation(fields: [streetId], references: [id])
   reportType     ReportType    @map("report_type")
   timestamp      DateTime      @default(now())
   latitude       Float?

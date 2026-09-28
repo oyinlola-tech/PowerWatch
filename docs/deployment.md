@@ -3,6 +3,7 @@
 | Part | Where | Address |
 | --- | --- | --- |
 | Landing page (`apps/web`) | Vercel, project `powerwatch` | https://powerwatch.oyinlola.site |
+| Admin dashboard (`apps/admin`) | Vercel, project `powerwatch-admin` | https://admin-powerwatch.oyinlola.site |
 | API (`src`) | cPanel, Application Manager | https://api-powerwatch.telente.site |
 | Database | MariaDB on the same cPanel account | `telente_powerwatch` |
 | Mobile app (`apps/mobile`) | EAS Build | uses the API address above |
@@ -68,7 +69,19 @@ file is never committed. `src/.env.example` lists every variable. The production
 `APP_TIMEZONE`, `CORS_ORIGIN`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`,
 `SMTP_PASS`, `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME`, `NOMINATIM_CONTACT_EMAIL`.
 
-Application Manager also sets `NODE_OPTIONS=--disable-wasm-trap-handler` for the app (see above).
+Application Manager also sets these variables for the app. They win over `.env`, because
+dotenv never overrides a variable that is already set:
+
+| Variable | Value |
+| --- | --- |
+| `NODE_OPTIONS` | `--disable-wasm-trap-handler` (see above) |
+| `CORS_ORIGIN` | `https://powerwatch.oyinlola.site,https://admin-powerwatch.oyinlola.site` |
+| `SUPPORT_EMAIL` | `help@telente.site` |
+| `APP_WEB_URL` | `https://powerwatch.oyinlola.site` |
+
+The admin dashboard builds on Vercel from `apps/admin` with `VITE_API_URL` set to the API
+address. If the API address changes, also change `connect-src` in `apps/admin/vercel.json` and
+`CORS_ORIGIN` here.
 
 ### Location data
 

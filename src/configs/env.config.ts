@@ -101,6 +101,10 @@ export const env = {
     cooldownMinutes: Number(process.env.REPORT_COOLDOWN_MINUTES) || 5,
     // Reports newer than this decide the neighborhood's status by majority.
     consensusWindowMinutes: Number(process.env.REPORT_CONSENSUS_WINDOW_MINUTES) || 30,
+    // GPS fixes vaguer than this cannot place a report in the right neighborhood.
+    maxAccuracyMeters: Number(process.env.REPORT_MAX_ACCURACY_METERS) || 200,
+    // Two reports from one person implying faster travel than this are refused.
+    maxTravelKmh: Number(process.env.REPORT_MAX_TRAVEL_KMH) || 300,
   },
 
   expo: {

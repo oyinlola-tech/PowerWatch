@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../../../configs/database.config.js';
 import { env } from '../../../configs/env.config.js';
+import { AppError } from '../../../errors/index.js';
 import type { ReverseGeocodeResult } from '../../../interfaces/index.js';
 
 interface NominatimAddress {
@@ -35,13 +36,59 @@ const NOMINATIM_USER_AGENT = env.nominatim.contactEmail
   ? `PowerWatch/1.0 (${env.nominatim.contactEmail})`
   : 'PowerWatch/1.0';
 
+// Nominatim allows at most one request per second from an application.
+const NOMINATIM_MIN_GAP_MS = 1100;
+let nominatimQueue: Promise<unknown> = Promise.resolve();
+
+// Reports repeat from the same few streets, so recent answers are reused. Three decimals is
+// about 110 m, well inside one neighborhood. Kept short so admin renames show up soon.
+const CACHE_TTL_MS = 60 * 60 * 1000;
+const CACHE_MAX_ENTRIES = 5000;
+const cache = new Map<string, { result: ReverseGeocodeResult; expiresAt: number }>();
+
+// The offline fallback snaps to the nearest LGA centre; farther than this is not in Nigeria.
+const FALLBACK_MAX_DISTANCE_KM = 60;
+
+const OUTSIDE_NIGERIA = 'PowerWatch only covers Nigeria. Your location appears to be outside the country.';
+
 export class ReverseGeocodeQuery {
   async execute(latitude: number, longitude: number): Promise<ReverseGeocodeResult> {
+    const key = `${latitude.toFixed(3)},${longitude.toFixed(3)}`;
+    const cached = cache.get(key);
+    if (cached && cached.expiresAt > Date.now()) return cached.result;
+
+    let result: ReverseGeocodeResult;
     try {
-      return await this.reverseWithNominatim(latitude, longitude);
-    } catch {
-      return this.reverseWithLgaPackage(latitude, longitude);
+      result = await this.reverseWithNominatim(latitude, longitude);
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      result = await this.reverseWithLgaPackage(latitude, longitude);
     }
+
+    if (cache.size >= CACHE_MAX_ENTRIES) cache.delete(cache.keys().next().value!);
+    cache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
+    return result;
+  }
+
+  /** Runs Nominatim requests one after another, at least a second apart. */
+  private throttled<T>(request: () => Promise<T>): Promise<T> {
+    const run = nominatimQueue.then(request);
+    nominatimQueue = run
+      .catch(() => {})
+      .then(() => new Promise((resolve) => setTimeout(resolve, NOMINATIM_MIN_GAP_MS)));
+    return run;
+  }
+
+  private async nigeriaCountryId(): Promise<number> {
+    const existing = await prisma.country.findFirst({ where: { name: 'Nigeria' }, select: { id: true } });
+    if (existing) return existing.id;
+    const created = await prisma.country.upsert({
+      where: { id: 1 },
+      update: {},
+      create: { id: 1, name: 'Nigeria' },
+      select: { id: true },
+    });
+    return created.id;
   }
 
   /**
@@ -141,12 +188,14 @@ export class ReverseGeocodeQuery {
     longitude: number,
   ): Promise<ReverseGeocodeResult> {
     const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&addressdetails=1`;
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': NOMINATIM_USER_AGENT,
-      },
-      signal: AbortSignal.timeout(5000),
-    });
+    const res = await this.throttled(() =>
+      fetch(url, {
+        headers: {
+          'User-Agent': NOMINATIM_USER_AGENT,
+        },
+        signal: AbortSignal.timeout(5000),
+      }),
+    );
 
     if (!res.ok) {
       throw new Error(`Nominatim returned ${res.status}`);
@@ -155,12 +204,15 @@ export class ReverseGeocodeQuery {
     const data = (await res.json()) as { address?: NominatimAddress };
     const address = data?.address;
 
+    if (address?.country_code && address.country_code.toLowerCase() !== 'ng') {
+      throw new AppError(422, OUTSIDE_NIGERIA);
+    }
+
     if (!address?.state) {
       throw new Error('Nominatim did not return state');
     }
 
-    const country = await prisma.country.findFirst({ where: { name: 'Nigeria' } });
-    const countryId = country?.id ?? 1;
+    const countryId = await this.nigeriaCountryId();
 
     const state = await this.findOrCreateState(address.state, countryId);
 
@@ -209,9 +261,11 @@ export class ReverseGeocodeQuery {
     const lgaName = result.lga.name;
     const stateName = result.lga.state;
     const distanceKm = result.distanceKm;
+    if (distanceKm > FALLBACK_MAX_DISTANCE_KM) {
+      throw new AppError(422, OUTSIDE_NIGERIA);
+    }
 
-    const country = await prisma.country.findFirst({ where: { name: 'Nigeria' } });
-    const countryId = country?.id ?? 1;
+    const countryId = await this.nigeriaCountryId();
     const state = await this.findOrCreateState(stateName, countryId);
     const lga = await this.findOrCreateLGA(lgaName, state.id);
 

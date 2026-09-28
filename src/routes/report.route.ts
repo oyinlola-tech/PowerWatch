@@ -2,12 +2,17 @@ import type { FastifyPluginAsync } from 'fastify';
 import { reportController } from '../controllers/report.controller.js';
 import { authMiddleware } from '../middlewares/auth.middleware.js';
 
-const REPORT_EXTRA_FIELDS = {
+// The report is filed in the neighborhood (and street) the GPS point is in. neighborhoodId
+// is accepted from older app versions and ignored.
+const REPORT_LOCATION_FIELDS = {
   latitude: { type: 'number', description: 'GPS latitude', example: 6.524379 },
   longitude: { type: 'number', description: 'GPS longitude', example: 3.379206 },
-  accuracy: { type: 'number', description: 'GPS accuracy radius in metres', example: 12 },
+  accuracy: { type: 'number', description: 'GPS accuracy radius in metres (at most 200)', example: 12 },
+  mocked: { type: 'boolean', description: 'Android: true if a mock-location app supplied the position (refused)' },
   deviceType: { type: 'string', enum: ['ANDROID', 'IOS', 'WEB'], description: 'Device platform' },
+  neighborhoodId: { type: 'integer', description: 'Ignored. The GPS point decides the neighborhood.' },
 } as const;
+const REPORT_REQUIRED = ['latitude', 'longitude', 'accuracy'];
 
 const REPORT_CREATED_RESPONSE = {
   description: 'Report accepted',
@@ -21,6 +26,17 @@ const REPORT_CREATED_RESPONSE = {
         id: { type: 'string', format: 'uuid' },
         userId: { type: 'string', format: 'uuid' },
         neighborhoodId: { type: 'integer' },
+        place: {
+          type: 'object',
+          description: 'Where the report was filed, worked out from the GPS point',
+          properties: {
+            neighborhood: { type: 'string' },
+            street: { type: 'string', nullable: true },
+            town: { type: 'string' },
+            lga: { type: 'string' },
+            state: { type: 'string' },
+          },
+        },
         reportType: { type: 'string', enum: ['ON', 'OFF'] },
         timestamp: { type: 'string', format: 'date-time' },
         latitude: { type: 'number', nullable: true },
@@ -48,7 +64,8 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
     config: { rateLimit: REPORT_RATE_LIMIT },
     schema: {
       description:
-        'Submit a power report (ON or OFF) for a neighborhood. The report time is set by the server. ' +
+        'Submit a power report (ON or OFF) for where the reporter is. The GPS point decides the neighborhood and street; ' +
+        'mock, imprecise (over 200 m) or impossibly distant positions are refused (422). The report time is set by the server. ' +
         'The neighborhood status follows the majority of recent reporters, so one report may not change it. ' +
         'Each user can report once per neighborhood every few minutes (429 otherwise).',
       tags: ['Reports'],
@@ -56,11 +73,10 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['neighborhoodId', 'reportType'],
+        required: ['reportType', ...REPORT_REQUIRED],
         properties: {
-          neighborhoodId: { type: 'integer', description: 'Neighborhood ID', example: 9012 },
           reportType: { type: 'string', enum: ['ON', 'OFF'], description: 'Power status' },
-          ...REPORT_EXTRA_FIELDS,
+          ...REPORT_LOCATION_FIELDS,
         },
       },
       response: { 201: REPORT_CREATED_RESPONSE },
@@ -76,8 +92,8 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['neighborhoodId'],
-        properties: { neighborhoodId: { type: 'integer', example: 9012 }, ...REPORT_EXTRA_FIELDS },
+        required: REPORT_REQUIRED,
+        properties: REPORT_LOCATION_FIELDS,
       },
       response: { 201: REPORT_CREATED_RESPONSE },
     },
@@ -92,8 +108,8 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
       security: [{ bearerAuth: [] }],
       body: {
         type: 'object',
-        required: ['neighborhoodId'],
-        properties: { neighborhoodId: { type: 'integer', example: 9012 }, ...REPORT_EXTRA_FIELDS },
+        required: REPORT_REQUIRED,
+        properties: REPORT_LOCATION_FIELDS,
       },
       response: { 201: REPORT_CREATED_RESPONSE },
     },
@@ -285,6 +301,19 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
                 confidence: { type: 'integer', minimum: 0, maximum: 100 },
                 recentReporters: { type: 'integer' },
                 lastReportAt: { type: 'string', format: 'date-time', nullable: true },
+                recentStreets: {
+                  type: 'array',
+                  description: 'Streets reported from in the last 2 hours, per street and ON/OFF, most recent first.',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      street: { type: 'string' },
+                      reportType: { type: 'string', enum: ['ON', 'OFF'] },
+                      reports: { type: 'integer' },
+                      lastReportAt: { type: 'string', format: 'date-time', nullable: true },
+                    },
+                  },
+                },
               },
             },
           },

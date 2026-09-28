@@ -36,4 +36,15 @@ export class LocationRepository {
       include: { town: true },
     });
   }
+
+  /** The street a GPS point is on, created the first time anyone reports from it. */
+  async findOrCreateStreet(neighborhoodId: number, road: string | null | undefined) {
+    const name = road?.trim().slice(0, 150);
+    if (!name) return null;
+    return prisma.street.upsert({
+      where: { neighborhoodId_name: { neighborhoodId, name } },
+      update: {},
+      create: { neighborhoodId, name },
+    });
+  }
 }

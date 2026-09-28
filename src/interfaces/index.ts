@@ -50,11 +50,11 @@ export interface ReverseGeocodeResult {
 
 export interface CreateReportDto {
   userId: string;
-  neighborhoodId: number;
   reportType: 'ON' | 'OFF';
-  latitude?: number | undefined;
-  longitude?: number | undefined;
-  locationAccuracy?: number | undefined;
+  latitude: number;
+  longitude: number;
+  locationAccuracy: number;
+  mocked?: boolean | undefined;
   deviceType?: 'ANDROID' | 'IOS' | 'WEB' | undefined;
 }
 
@@ -62,6 +62,14 @@ export interface ReportResponse {
   id: string;
   userId: string;
   neighborhoodId: number;
+  /** Where the report was filed, as worked out from the reporter's GPS */
+  place: {
+    neighborhood: string;
+    street: string | null;
+    town: string;
+    lga: string;
+    state: string;
+  };
   reportType: string;
   timestamp: Date;
   latitude: number | null;
@@ -85,6 +93,8 @@ export interface LiveStatusResponse {
   /** Distinct people who reported in the confidence window. */
   recentReporters: number;
   lastReportAt: Date | null;
+  /** Streets reported from in the confidence window, per street and ON/OFF, most recent first. */
+  recentStreets: Array<{ street: string; reportType: 'ON' | 'OFF'; reports: number; lastReportAt: Date | null }>;
 }
 
 export interface OutageResponse {

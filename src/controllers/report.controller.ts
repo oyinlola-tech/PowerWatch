@@ -43,12 +43,12 @@ function buildReportDto(request: FastifyRequest, reportType?: 'ON' | 'OFF'): Cre
   const dto = createReportSchema.parse(reportType ? { ...body, reportType } : body);
   const result: CreateReportDto = {
     userId: authRequest.userId,
-    neighborhoodId: dto.neighborhoodId,
     reportType: dto.reportType,
+    latitude: dto.latitude,
+    longitude: dto.longitude,
+    locationAccuracy: dto.accuracy,
   };
-  if (dto.latitude !== undefined) result.latitude = dto.latitude;
-  if (dto.longitude !== undefined) result.longitude = dto.longitude;
-  if (dto.accuracy !== undefined) result.locationAccuracy = dto.accuracy;
+  if (dto.mocked !== undefined) result.mocked = dto.mocked;
   if (dto.deviceType !== undefined) result.deviceType = dto.deviceType;
   return result;
 }

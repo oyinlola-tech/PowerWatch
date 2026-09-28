@@ -106,6 +106,12 @@ export const registerSchema = z
       .max(180, 'Longitude must be between -180 and 180.')
       .optional(),
 
+    /** GPS accuracy radius in metres */
+    accuracy: z.number().min(0).max(100_000).optional(),
+
+    /** Set by Android when the position comes from a mock-location app */
+    mocked: z.boolean().optional(),
+
     notificationEnabled: z.boolean().optional(),
 
     deviceName: z

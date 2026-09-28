@@ -3,28 +3,24 @@ import { z } from 'zod';
 export const reportTypeEnum = z.enum(['ON', 'OFF']);
 export const deviceTypeEnum = z.enum(['ANDROID', 'IOS', 'WEB']);
 
+// A report always counts for the place the reporter's GPS puts them in, so a fresh
+// location is required. Older clients also send neighborhoodId; it is ignored.
 export const createReportSchema = z.object({
-  neighborhoodId: z
-    .number({ message: 'Neighborhood ID is required.' })
-    .int('Neighborhood ID must be an integer.')
-    .positive('Invalid neighborhood.'),
+  neighborhoodId: z.number().int().positive().optional(),
   reportType: reportTypeEnum,
   latitude: z
-    .number()
+    .number({ message: 'Your location is required to report.' })
     .min(-90, 'Latitude must be between -90 and 90.')
-    .max(90, 'Latitude must be between -90 and 90.')
-    .optional(),
+    .max(90, 'Latitude must be between -90 and 90.'),
   longitude: z
-    .number()
+    .number({ message: 'Your location is required to report.' })
     .min(-180, 'Longitude must be between -180 and 180.')
-    .max(180, 'Longitude must be between -180 and 180.')
-    .optional(),
+    .max(180, 'Longitude must be between -180 and 180.'),
   /** GPS accuracy radius in metres */
-  accuracy: z.number().min(0).max(100_000).optional(),
+  accuracy: z.number({ message: 'Location accuracy is required to report.' }).min(0).max(100_000),
+  /** Set by Android when the position comes from a mock-location app */
+  mocked: z.boolean().optional(),
   deviceType: deviceTypeEnum.optional(),
-}).refine((r) => (r.latitude === undefined) === (r.longitude === undefined), {
-  message: 'Provide both latitude and longitude, or neither.',
-  path: ['latitude'],
 });
 
 // Fastify has already coerced query params declared as integers, so accept numbers or strings.

@@ -30,15 +30,7 @@ const LegalPage = ({ document, related }: LegalPageProps) => {
           <a href="/" aria-label="PowerWatch home">
             <Logo />
           </a>
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <a
-              href="/"
-              className="flex h-11 items-center rounded-3xl border border-line px-5 text-sm font-semibold text-ink transition hover:border-accent hover:text-accent sm:h-12"
-            >
-              Back to home
-            </a>
-          </div>
+          <ThemeToggle />
         </div>
       </header>
 
