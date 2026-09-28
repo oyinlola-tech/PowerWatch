@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { forgetSessionState } from '../middlewares/auth.middleware.js';
 import { prisma } from '../configs/database.config.js';
 import { Prisma } from '@prisma/client';
 import type { UserResponse } from '../interfaces/index.js';
@@ -172,10 +173,12 @@ export class UserRepository {
   }
 
   async setSuspended(id: string, suspended: boolean) {
-    return prisma.user.update({
+    const user = await prisma.user.update({
       where: { id },
       data: { suspendedAt: suspended ? new Date() : null },
     });
+    forgetSessionState(id);
+    return user;
   }
 
   /**
@@ -231,6 +234,7 @@ export class UserRepository {
         },
       }),
     ]);
+    forgetSessionState(id);
   }
 
   async softDelete(id: string) {

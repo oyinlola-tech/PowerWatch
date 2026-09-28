@@ -19,6 +19,12 @@ const resolveApiUrl = (): string => {
     return configured.replace(/\/+$/, "");
   }
 
+  if (!__DEV__) {
+    // Release/preview builds must never silently fall back to a dev host or
+    // localhost: fail loudly so a missing build config is caught immediately.
+    throw new Error("EXPO_PUBLIC_API_URL is not set. Release builds must be configured with a production API URL.");
+  }
+
   const devHost = Constants.expoConfig?.hostUri?.split(":")[0];
   if (devHost) return `http://${devHost}:${DEFAULT_PORT}`;
 

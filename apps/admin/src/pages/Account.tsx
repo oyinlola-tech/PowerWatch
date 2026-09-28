@@ -214,7 +214,7 @@ export default function Account() {
       await signOut();
       return;
     }
-    await request(`/auth/sessions/${revoking.id}`, { method: "DELETE" });
+    await request(`/auth/sessions/${encodeURIComponent(revoking.id)}`, { method: "DELETE" });
     notify("That session was signed out.");
     sessions.reload();
   };

@@ -46,6 +46,17 @@ export class CreateReportCommand {
   }
 
   async execute(dto: CreateReportDto): Promise<ReportResponse> {
+    const reporter = await prisma.user.findUnique({
+      where: { id: dto.userId },
+      select: { emailVerified: true, deletedAt: true, suspendedAt: true },
+    });
+    if (!reporter || reporter.deletedAt || reporter.suspendedAt) {
+      throw new AppError(401, 'Your session has ended. Please sign in again.');
+    }
+    if (!reporter.emailVerified) {
+      throw new AppError(403, POWER_MESSAGES.EMAIL_NOT_VERIFIED);
+    }
+
     await this.assertTrustworthyLocation(dto);
 
     // The report counts for the place the person is standing, never a chosen one.

@@ -34,6 +34,15 @@ const authIpRateLimit = {
 };
 
 export const authRoutes: FastifyPluginAsync = async (app) => {
+  // The per-email limits above stop guessing one account's password or flooding one inbox.
+  // This per-IP limit on top stops one address spraying many accounts. It is generous
+  // because many people on Nigerian mobile networks share a carrier IP.
+  const authIpGuard = app.rateLimit({
+    max: 60,
+    timeWindow: 60_000,
+    keyGenerator: (request) => `auth-ip:${request.ip}`,
+  });
+
   // --- Public endpoints ---
   app.post('/register', {
     config: { rateLimit: authIpRateLimit },
@@ -154,6 +163,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/login', {
     config: { rateLimit: loginRateLimit },
+    preHandler: authIpGuard,
     schema: {
       description: 'Authenticate a user with email and password.',
       tags: ['Auth'],
@@ -257,6 +267,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/send-otp', {
     config: { rateLimit: otpSendRateLimit },
+    preHandler: authIpGuard,
     schema: {
       description: 'Send a one-time verification code for email verification or password reset.',
       tags: ['Auth'],
@@ -285,6 +296,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/resend-otp', {
     config: { rateLimit: otpSendRateLimit },
+    preHandler: authIpGuard,
     schema: {
       description: 'Resend a previously requested OTP code.',
       tags: ['Auth'],
@@ -383,6 +395,7 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
 
   app.post('/forgot-password', {
     config: { rateLimit: otpSendRateLimit },
+    preHandler: authIpGuard,
     schema: {
       description: 'Request a password reset OTP for an existing account.',
       tags: ['Auth'],

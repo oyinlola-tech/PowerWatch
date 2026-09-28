@@ -43,10 +43,10 @@ export default function Users() {
     if (!pending) return;
     const { action, user } = pending;
     if (action === "delete") {
-      await request(`/admin/users/${user.id}`, { method: "DELETE" });
+      await request(`/admin/users/${encodeURIComponent(user.id)}`, { method: "DELETE" });
       notify(`${fullName(user)}'s account was deleted.`);
     } else {
-      await request(`/admin/users/${user.id}/${action}`, { method: "POST" });
+      await request(`/admin/users/${encodeURIComponent(user.id)}/${encodeURIComponent(action)}`, { method: "POST" });
       notify(action === "suspend" ? `${fullName(user)} is suspended.` : `${fullName(user)} can sign in again.`);
     }
     users.reload();

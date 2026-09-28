@@ -20,7 +20,14 @@ export async function tallyRecentReports(
   since: Date,
 ): Promise<ReportTally> {
   const reports = await db.report.findMany({
-    where: { neighborhoodId, deletedAt: null, timestamp: { gte: since } },
+    // Only people who confirmed their email and are still active decide the status, so
+    // throwaway accounts can't outvote a neighborhood
+    where: {
+      neighborhoodId,
+      deletedAt: null,
+      timestamp: { gte: since },
+      user: { emailVerified: true, deletedAt: null, suspendedAt: null },
+    },
     orderBy: { timestamp: 'desc' },
     select: { userId: true, reportType: true, timestamp: true },
   });

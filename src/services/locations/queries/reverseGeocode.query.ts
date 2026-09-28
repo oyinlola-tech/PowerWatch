@@ -40,6 +40,10 @@ const NOMINATIM_USER_AGENT = env.nominatim.contactEmail
 // Nominatim allows at most one request per second from an application.
 const NOMINATIM_MIN_GAP_MS = 1100;
 let nominatimQueue: Promise<unknown> = Promise.resolve();
+// With a one-per-second limit a long queue means long waits for everyone; beyond this many
+// waiting lookups, new ones use the quick offline LGA-level fallback instead.
+const NOMINATIM_MAX_WAITING = 20;
+let nominatimWaiting = 0;
 
 // Reports repeat from the same few streets, so recent answers are reused. Three decimals is
 // about 110 m, well inside one neighborhood. Kept short so admin renames show up soon.
@@ -79,7 +83,13 @@ export class ReverseGeocodeQuery {
 
   /** Runs Nominatim requests one after another, at least a second apart. */
   private throttled<T>(request: () => Promise<T>): Promise<T> {
-    const run = nominatimQueue.then(request);
+    if (nominatimWaiting >= NOMINATIM_MAX_WAITING) {
+      return Promise.reject(new Error('OpenStreetMap lookup queue is full'));
+    }
+    nominatimWaiting++;
+    const run = nominatimQueue.then(request).finally(() => {
+      nominatimWaiting--;
+    });
     nominatimQueue = run
       .catch(() => {})
       .then(() => new Promise((resolve) => setTimeout(resolve, NOMINATIM_MIN_GAP_MS)));

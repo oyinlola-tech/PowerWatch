@@ -10,6 +10,7 @@ import { LocationRepository } from '../../../repositories/location.repository.js
 import { sendAccountEmail, welcomeEmail } from '../../mail/templates/account.js';
 import { verifyGoogleIdToken } from '../google.js';
 import { issueSession } from '../issueSession.js';
+import { forgetSessionState } from '../../../middlewares/auth.middleware.js';
 
 export const TERMS_REQUIRED = 'TERMS_REQUIRED';
 
@@ -48,12 +49,30 @@ export class GoogleSignInCommand {
     if (user) {
       if (user.deletedAt) throw new AppError(401, MESSAGES.INVALID_CREDENTIALS);
       if (user.suspendedAt) throw new AppError(403, MESSAGES.ACCOUNT_SUSPENDED);
-      if (!user.googleId || !user.emailVerified) {
-        // Google has confirmed this address belongs to the person signing in
-        user = await prisma.user.update({
-          where: { id: user.id },
-          data: { googleId: google.googleId, emailVerified: true },
-        });
+      if (!user.emailVerified) {
+        // Nobody ever proved they own this address, so whoever registered it (and set its
+        // password) may not be the person Google has just verified. Take the account back:
+        // drop that password and sign every existing session out before linking Google.
+        const userId = user.id;
+        const [updated] = await prisma.$transaction([
+          prisma.user.update({
+            where: { id: userId },
+            data: {
+              googleId: google.googleId,
+              emailVerified: true,
+              passwordHash: await bcrypt.hash(crypto.randomBytes(32).toString('hex'), env.bcrypt.saltRounds),
+              passwordSet: false,
+              passwordChangedAt: new Date(),
+            },
+          }),
+          prisma.refreshToken.updateMany({ where: { userId, revokedAt: null }, data: { revokedAt: new Date() } }),
+          prisma.session.updateMany({ where: { userId, isActive: true }, data: { isActive: false, deletedAt: new Date() } }),
+        ]);
+        user = updated;
+        forgetSessionState(userId);
+      } else if (!user.googleId) {
+        // The owner verified this address before, and Google confirms it is the same person
+        user = await prisma.user.update({ where: { id: user.id }, data: { googleId: google.googleId } });
       }
     } else {
       if (dto.acceptedTerms !== true) {

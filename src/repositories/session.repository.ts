@@ -1,3 +1,4 @@
+import { forgetSessionState } from '../middlewares/auth.middleware.js';
 import { prisma } from '../configs/database.config.js';
 
 export class SessionRepository {
@@ -73,14 +74,19 @@ export class SessionRepository {
         });
       }
       return session;
+    }).then((session) => {
+      forgetSessionState(session.userId);
+      return session;
     });
   }
 
   async revokeAllByUserId(userId: string) {
-    return prisma.session.updateMany({
+    const result = await prisma.session.updateMany({
       where: { userId, isActive: true, deletedAt: null },
       data: { isActive: false, deletedAt: new Date() },
     });
+    forgetSessionState(userId);
+    return result;
   }
 
   async updateActivity(id: string) {

@@ -99,7 +99,7 @@ export default function SystemProblems() {
 
   const resolveOne = async () => {
     if (!resolving) return;
-    await request(`/admin/system-events/${resolving.id}/resolve`, { method: "POST" });
+    await request(`/admin/system-events/${encodeURIComponent(resolving.id)}/resolve`, { method: "POST" });
     notify("Marked as resolved.");
     events.reload();
     problems.reload();

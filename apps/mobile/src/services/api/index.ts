@@ -100,7 +100,7 @@ export const authApi = {
   unregisterPushToken: (expoPushToken: string) =>
     request<unknown>("/auth/push-token", { method: "DELETE", body: { expoPushToken } }),
   sessions: () => request<SignInSession[]>("/auth/sessions"),
-  revokeSession: (sessionId: string) => request<unknown>(`/auth/sessions/${sessionId}`, { method: "DELETE" }),
+  revokeSession: (sessionId: string) => request<unknown>(`/auth/sessions/${encodeURIComponent(sessionId)}`, { method: "DELETE" }),
   logoutAll: () => request<unknown>("/auth/logout-all", { method: "POST" }),
 };
 
@@ -109,9 +109,9 @@ export const notificationsApi = {
     request<Paginated<InboxNotification>>("/notifications", { query: { page, limit } }),
   unreadCount: () => request<{ unreadCount: number }>("/notifications/unread-count"),
   markRead: (id: string) =>
-    request<unknown>(`/notifications/${id}/read`, { method: "PATCH", body: { opened: true } }),
+    request<unknown>(`/notifications/${encodeURIComponent(id)}/read`, { method: "PATCH", body: { opened: true } }),
   markAllRead: () => request<{ updated: number }>("/notifications/read-all", { method: "PATCH" }),
-  remove: (id: string) => request<unknown>(`/notifications/${id}`, { method: "DELETE" }),
+  remove: (id: string) => request<unknown>(`/notifications/${encodeURIComponent(id)}`, { method: "DELETE" }),
 };
 
 export const reportsApi = {
@@ -133,7 +133,7 @@ export const reportsApi = {
       },
     }),
   mine: (page = 1, limit = 20) => request<Paginated<MyReport>>("/reports/my", { query: { page, limit } }),
-  remove: (id: string) => request<unknown>(`/reports/${id}`, { method: "DELETE" }),
+  remove: (id: string) => request<unknown>(`/reports/${encodeURIComponent(id)}`, { method: "DELETE" }),
   outages: (params: {
     neighborhoodId?: number;
     activeOnly?: boolean;
@@ -153,7 +153,7 @@ export const reportsApi = {
         limit: params.limit ?? 20,
       },
     }),
-  outage: (id: string) => request<OutageDetail>(`/reports/outages/${id}`),
+  outage: (id: string) => request<OutageDetail>(`/reports/outages/${encodeURIComponent(id)}`),
 };
 
 export const analyticsApi = {
@@ -179,7 +179,7 @@ export const locationsApi = {
   saved: () => request<SavedNeighborhood[]>("/locations/saved"),
   save: (neighborhoodId: number, label?: string) =>
     request<unknown>("/locations/saved", { method: "POST", body: { neighborhoodId, ...(label ? { label } : {}) } }),
-  unsave: (neighborhoodId: number) => request<unknown>(`/locations/saved/${neighborhoodId}`, { method: "DELETE" }),
+  unsave: (neighborhoodId: number) => request<unknown>(`/locations/saved/${encodeURIComponent(neighborhoodId)}`, { method: "DELETE" }),
 };
 
 export const appApi = {

@@ -22,6 +22,8 @@ interface LoginResult {
   refreshToken: string;
 }
 
+const DUMMY_HASH = bcrypt.hashSync('powerwatch-timing-equaliser', 12);
+
 export class LoginCommand {
   constructor(private readonly userRepository: UserRepository = new UserRepository()) {}
 
@@ -34,6 +36,8 @@ export class LoginCommand {
 
     const user = await this.userRepository.findByEmailWithPassword(normalizedEmail);
     if (!user) {
+      // Same work as a real check, so the response time doesn't reveal which emails exist
+      await bcrypt.compare(dto.password, DUMMY_HASH);
       throw new AppError(401, MESSAGES.INVALID_CREDENTIALS);
     }
 

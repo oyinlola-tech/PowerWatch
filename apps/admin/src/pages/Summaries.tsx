@@ -68,7 +68,7 @@ function JobCard({ config }: { config: JobConfig }) {
     }
     setBusy(true);
     try {
-      const data = await request<{ neighborhoodsProcessed: number }>(`/admin/materialize/${config.job}`, {
+      const data = await request<{ neighborhoodsProcessed: number }>(`/admin/materialize/${encodeURIComponent(config.job)}`, {
         method: "POST",
         query: { [config.param]: param || undefined },
       });

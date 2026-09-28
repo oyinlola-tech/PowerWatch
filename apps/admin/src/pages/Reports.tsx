@@ -50,11 +50,11 @@ export default function Reports() {
       }),
   );
 
-  const detail = useApi(viewId ? `report:${viewId}` : null, (signal) => request<ReportDetail>(`/reports/${viewId}`, { signal }));
+  const detail = useApi(viewId ? `report:${viewId}` : null, (signal) => request<ReportDetail>(`/reports/${encodeURIComponent(viewId!)}`, { signal }));
 
   const deleteReport = async () => {
     if (!toDelete) return;
-    await request(`/admin/reports/${toDelete.id}`, { method: "DELETE" });
+    await request(`/admin/reports/${encodeURIComponent(toDelete.id)}`, { method: "DELETE" });
     notify("The report was deleted.");
     if (viewId === toDelete.id) update({ view: null });
     reports.reload();

@@ -53,7 +53,13 @@ export class GetLatestStatusQuery {
       const confirmFrom = since && since > lookback ? since : lookback;
       const confirmers = await prisma.report.groupBy({
         by: ['userId'],
-        where: { neighborhoodId, deletedAt: null, reportType: status, timestamp: { gte: confirmFrom } },
+        where: {
+          neighborhoodId,
+          deletedAt: null,
+          reportType: status,
+          timestamp: { gte: confirmFrom },
+          user: { emailVerified: true, deletedAt: null, suspendedAt: null },
+        },
       });
       confirmedBy = confirmers.length;
 

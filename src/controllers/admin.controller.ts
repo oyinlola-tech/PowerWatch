@@ -17,6 +17,7 @@ import { MaterializeMonthlySummaryCommand } from '../services/analytics/commands
 import type { AdminActor } from '../services/admin/commands/adminActor.js';
 import type { AuthenticatedRequest } from '../middlewares/auth.middleware.js';
 import { successResponse } from '../utils/response.js';
+import { AppError } from '../errors/index.js';
 
 const getDashboardQuery = new GetDashboardQuery();
 const getAnalyticsQuery = new GetAnalyticsQuery();
@@ -97,7 +98,10 @@ export const adminController = {
       limit: Math.min(100, Math.max(1, Number(limit) || 20)),
     };
     if (search !== undefined) params.search = search;
-    if (role !== undefined) params.role = role;
+    if (role !== undefined) {
+      if (role !== 'USER' && role !== 'ADMIN') throw new AppError(400, 'role must be USER or ADMIN.');
+      params.role = role;
+    }
     const result = await getUsersQuery.execute(params);
     return reply.status(200).send(successResponse(result, 'Users fetched.'));
   },

@@ -26,6 +26,7 @@ export const POWER_MESSAGES = {
   ACTIVITY_FETCHED: 'Neighborhood activity fetched successfully.',
   REPORT_COOLDOWN: 'You reported for this neighborhood recently. Please wait a few minutes before reporting again.',
   NO_NEIGHBORHOOD: 'No neighborhood selected. Pass neighborhoodId or set a primary location first.',
+  EMAIL_NOT_VERIFIED: 'Please confirm your email address before reporting. We sent you a 6-digit code.',
   LOCATION_MOCKED: 'Your phone says its location is being simulated. Turn off any mock location app and try again.',
   LOCATION_IMPRECISE: "Your location isn't precise enough to report. Move to an open spot or turn on high-accuracy location, then try again.",
   LOCATION_IMPOSSIBLE_TRAVEL: "This report is too far from your last one for the time that has passed, so it can't be counted.",

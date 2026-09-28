@@ -1,5 +1,14 @@
 import { useEffect, useState } from "react";
 import { API_URL } from "../config/api";
+import { GITHUB_RELEASES_URL } from "../config/links";
+
+// Only GitHub Releases URLs for this repo are trusted for download/release
+// links coming from the API. Anything else (a compromised or misconfigured
+// API response) falls back to the known-safe GitHub releases page.
+const TRUSTED_RELEASE_URL_PREFIX = "https://github.com/oyinlola-tech/PowerWatch/releases/";
+
+const sanitizeReleaseUrl = (url: unknown): string | undefined =>
+  typeof url === "string" && url.startsWith(TRUSTED_RELEASE_URL_PREFIX) ? url : undefined;
 
 export interface LatestRelease {
   platform: "android";
@@ -43,7 +52,15 @@ const load = async () => {
     }
     const body = await response.json();
     if (body?.success && body?.data?.platform === "android" && body.data.downloadUrl) {
-      state = { status: "ready", release: body.data as LatestRelease };
+      const data = body.data as LatestRelease;
+      // Never trust the API's downloadUrl/releasePage blindly: only allow
+      // links into this repo's GitHub releases, otherwise fall back to the
+      // known-safe releases page.
+      const downloadUrl = sanitizeReleaseUrl(data.downloadUrl) ?? GITHUB_RELEASES_URL;
+      const releasePage = data.releasePage
+        ? (sanitizeReleaseUrl(data.releasePage) ?? GITHUB_RELEASES_URL)
+        : data.releasePage;
+      state = { status: "ready", release: { ...data, downloadUrl, releasePage } };
     } else {
       state = { status: "none" };
     }

@@ -43,11 +43,11 @@ export default function Outages() {
       signal,
     }).then((result) => ({ ...result, fetchedAt: Date.now() })),
   );
-  const detail = useApi(viewId ? `outage:${viewId}` : null, (signal) => request<OutageDetail>(`/reports/outages/${viewId}`, { signal }));
+  const detail = useApi(viewId ? `outage:${viewId}` : null, (signal) => request<OutageDetail>(`/reports/outages/${encodeURIComponent(viewId!)}`, { signal }));
 
   const deleteReport = async () => {
     if (!toDelete) return;
-    await request(`/admin/reports/${toDelete.id}`, { method: "DELETE" });
+    await request(`/admin/reports/${encodeURIComponent(toDelete.id)}`, { method: "DELETE" });
     notify("The report was deleted.");
     detail.reload();
     outages.reload();

@@ -45,6 +45,32 @@ npx expo run:android    # or: npx expo run:ios
 npx eas-cli@latest build --profile development --platform android
 ```
 
+## Local dev against a LAN API over HTTP
+
+Release and preview builds never allow cleartext (plain `http://`) traffic — Android 9+
+already blocks it by default, and the app's config intentionally does not re-enable it
+(see `app.json`, no `expo-build-properties`/`usesCleartextTraffic` override).
+
+- **Expo Go**: works out of the box. Expo Go is a separate host app with its own
+  permissive network config, so `http://<your-machine-ip>:3000` (what
+  `src/services/api/config.ts` derives automatically in `__DEV__`) just works — no
+  changes needed.
+- **A custom development build** (`npx expo run:android`, or
+  `eas build --profile development`) uses the app's *own* manifest, so on Android 9+ it
+  blocks cleartext the same as a release build unless you opt in for that build only:
+  1. `npx expo install expo-build-properties`
+  2. Temporarily add to `app.json` under `expo.plugins`:
+     ```json
+     ["expo-build-properties", { "android": { "usesCleartextTraffic": true } }]
+     ```
+  3. Rebuild the dev client (`npx expo run:android`).
+  4. **Revert step 2 before building anything with the `preview` or `production` EAS
+     profile** (and before committing, unless you're only working locally) — those
+     builds must never ship with cleartext enabled.
+- Prefer not to touch `app.json` at all? Point `EXPO_PUBLIC_API_URL` at an HTTPS tunnel
+  to your local API instead (e.g. `ngrok http 3000` or `cloudflared tunnel --url
+  http://localhost:3000`) and skip the cleartext toggle entirely.
+
 ## Build for the stores
 
 ```bash

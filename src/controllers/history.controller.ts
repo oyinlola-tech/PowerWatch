@@ -28,11 +28,11 @@ export const historyController = {
     const { neighborhoodId, year, month } = request.query as {
       neighborhoodId?: string; year?: string; month?: string;
     };
-    const params: { neighborhoodId?: number; year?: number; month?: number } = {};
-    if (neighborhoodId !== undefined) {
-      const parsed = Number(neighborhoodId);
-      if (!isNaN(parsed)) params.neighborhoodId = parsed;
-    }
+    const explicit = neighborhoodId !== undefined && !isNaN(Number(neighborhoodId)) ? Number(neighborhoodId) : undefined;
+    // Always one neighborhood: without it the query would load every report in the country
+    const params: { neighborhoodId?: number; year?: number; month?: number } = {
+      neighborhoodId: await resolveNeighborhoodId((request as AuthenticatedRequest).userId, explicit),
+    };
     if (year !== undefined) params.year = Number(year);
     if (month !== undefined) params.month = Number(month);
     const result = await getWeeklyHistoryQuery.execute(params);
@@ -43,11 +43,11 @@ export const historyController = {
     const { neighborhoodId, year } = request.query as {
       neighborhoodId?: string; year?: string;
     };
-    const params: { neighborhoodId?: number; year?: number } = {};
-    if (neighborhoodId !== undefined) {
-      const parsed = Number(neighborhoodId);
-      if (!isNaN(parsed)) params.neighborhoodId = parsed;
-    }
+    const explicit = neighborhoodId !== undefined && !isNaN(Number(neighborhoodId)) ? Number(neighborhoodId) : undefined;
+    // Always one neighborhood: without it the query would load every report in the country
+    const params: { neighborhoodId?: number; year?: number } = {
+      neighborhoodId: await resolveNeighborhoodId((request as AuthenticatedRequest).userId, explicit),
+    };
     if (year !== undefined) params.year = Number(year);
     const result = await getMonthlyHistoryQuery.execute(params);
     return reply.status(200).send(successResponse(result, 'Monthly history fetched.'));

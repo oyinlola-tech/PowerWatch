@@ -1,6 +1,15 @@
 const MAPLIBRE_VERSION = "6.11.2";
 const MAPLIBRE_CDN = `https://unpkg.com/maplibre-gl@${MAPLIBRE_VERSION}/dist`;
 
+// Subresource Integrity hashes for the exact MapLibre files loaded from unpkg above,
+// so a compromised or MITM'd CDN response can't silently execute different code.
+// Recompute if MAPLIBRE_VERSION changes:
+//   curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A
+const MAPLIBRE_CSS_INTEGRITY = "sha384-ntw3zEt6rcVML7jDK0ULmHa5hxLB23afsPqzqfY+gLgMfAkbFCnCgPpkZvV5mmZX";
+const MAPLIBRE_JS_INTEGRITY = "sha384-KQzExYlfg1SnYNpLaXHTnaCTjr5wmiZ6X3sasvPb94caZfH+3+T1Sl4eJziXUtmN";
+// maplibre-gl.mjs statically imports this chunk, so it needs its own integrity entry too.
+const MAPLIBRE_SHARED_JS_INTEGRITY = "sha384-V59ofCEPEqpSk5Mswc19DtDYbZWJtne210dFzS328Il6O31eLwTV7v57+Z3NjW/7";
+
 // OpenStreetMap-based street style, the closest free match to the map in the design
 export const MAP_STYLE = "https://tiles.openfreemap.org/styles/liberty";
 // Used in dark mode (Figma has no dark map; this is OpenFreeMap's own dark style)
@@ -65,7 +74,12 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = fa
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <link rel="stylesheet" href="${MAPLIBRE_CDN}/maplibre-gl.css" />
+    <link
+      rel="stylesheet"
+      href="${MAPLIBRE_CDN}/maplibre-gl.css"
+      integrity="${MAPLIBRE_CSS_INTEGRITY}"
+      crossorigin="anonymous"
+    />
     <style>
       html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; }
       body { background: transparent; overflow: hidden; }
@@ -73,6 +87,14 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = fa
   </head>
   <body>
     <div id="map"></div>
+    <script type="importmap">
+      ${JSON.stringify({
+        integrity: {
+          [`${MAPLIBRE_CDN}/maplibre-gl.mjs`]: MAPLIBRE_JS_INTEGRITY,
+          [`${MAPLIBRE_CDN}/maplibre-gl-shared.mjs`]: MAPLIBRE_SHARED_JS_INTEGRITY,
+        },
+      })}
+    </script>
     <script type="module">
       import * as maplibre from "${MAPLIBRE_CDN}/maplibre-gl.mjs";
 
