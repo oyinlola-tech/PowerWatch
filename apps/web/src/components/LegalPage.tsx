@@ -1,7 +1,6 @@
 import AndroidAppBanner from "./AndroidAppBanner";
 import Footer from "./Footer";
-import Logo from "./Logo";
-import ThemeToggle from "./ThemeToggle";
+import SiteHeader from "./SiteHeader";
 import { contactSection, LEGAL_LAST_UPDATED } from "../content/legal";
 import type { LegalContact, LegalDocument } from "../content/legal";
 
@@ -27,14 +26,7 @@ const LegalPage = ({ document, related }: LegalPageProps) => {
   return (
     <>
       <AndroidAppBanner />
-      <header className="sticky top-0 z-50 border-b border-line-light bg-card/85 backdrop-blur-md">
-        <div className="mx-auto flex h-[72px] max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-          <a href="/" aria-label="PowerWatch home">
-            <Logo />
-          </a>
-          <ThemeToggle />
-        </div>
-      </header>
+      <SiteHeader variant="legal" />
 
       <main id="top" className="px-4 pb-24 pt-12 sm:px-6 sm:pt-16">
         <article className="mx-auto max-w-3xl">

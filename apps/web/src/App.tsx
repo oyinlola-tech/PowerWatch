@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import AndroidAppBanner from "./components/AndroidAppBanner";
-import Navbar from "./components/Navbar";
+import SiteHeader from "./components/SiteHeader";
 import Hero from "./components/Hero";
 import About from "./components/About";
 import HowItWorks from "./components/HowItWorks";
@@ -29,7 +29,7 @@ function App() {
   return (
     <>
       <AndroidAppBanner />
-      <Navbar />
+      <SiteHeader variant="home" />
       <main>
         <Hero />
         <About />

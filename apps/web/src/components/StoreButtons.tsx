@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Icon from "./Icon";
-import { APP_STORE_URL, PLAY_STORE_URL } from "../config/links";
+import { APP_STORE_URL, GITHUB_RELEASES_URL, PLAY_STORE_URL } from "../config/links";
 import { useLatestRelease } from "../hooks/useLatestRelease";
 import { track } from "../services/mixpanel";
 
@@ -37,13 +37,30 @@ interface StoreButtonProps {
   icon: ReactNode;
   caption: string;
   store: string;
+  /** Renders a pulsing placeholder the same size as the real button, in place of "Coming soon". */
+  loading?: boolean;
 }
 
 // Shared "app store" style pill: an icon plus a two-line label. With no `url`
 // it renders as an inert "Coming soon" placeholder instead of a link.
-export const StoreButton = ({ platform, url, download, icon, caption, store }: StoreButtonProps) => {
+export const StoreButton = ({ platform, url, download, icon, caption, store, loading }: StoreButtonProps) => {
   const className =
     "inline-flex h-14 min-w-[160px] items-center gap-3 rounded-3xl bg-[#1B1C1C] px-5 sm:min-w-[180px] sm:px-6 text-left text-white shadow-[0_1px_2px_rgba(0,0,0,0.05)] ring-1 ring-white/10 transition";
+
+  if (loading) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`${className} cursor-default animate-pulse justify-start`}
+      >
+        <span className="h-6 w-6 flex-shrink-0 rounded-full bg-white/20" />
+        <span className="flex-1">
+          <span className="block h-2.5 w-20 rounded-full bg-white/20" />
+          <span className="mt-2 block h-3 w-24 rounded-full bg-white/20" />
+        </span>
+      </span>
+    );
+  }
 
   const content = (
     <>
@@ -78,47 +95,68 @@ export const StoreButton = ({ platform, url, download, icon, caption, store }: S
   );
 };
 
+// Android never shows "Coming soon" or points at Google Play: it always links
+// straight to an APK. Once the API has a published release, that's
+// `downloadUrl`; until then (404, or the request failing) it falls back to
+// GitHub's "latest release" page, which always resolves to the newest tag.
+export const AndroidDownloadButton = () => {
+  const release = useLatestRelease();
+
+  if (release.status === "loading") {
+    return <StoreButton platform="android" icon={<AndroidIcon size={24} />} caption="" store="" loading />;
+  }
+
+  if (release.status === "ready") {
+    return (
+      <StoreButton
+        platform="android"
+        url={release.release.downloadUrl}
+        download={release.release.fileName}
+        icon={<AndroidIcon size={24} />}
+        caption="Download for"
+        store="Android (APK)"
+      />
+    );
+  }
+
+  return (
+    <StoreButton
+      platform="android"
+      url={GITHUB_RELEASES_URL}
+      icon={<AndroidIcon size={24} />}
+      caption="Download for"
+      store="Android"
+    />
+  );
+};
+
 interface StoreButtonsProps {
   className?: string;
 }
 
-// Compact pair (or trio) of store buttons for the hero, header and footer.
-// Android becomes a direct APK download the moment a release is published;
-// Google Play stays available too once `VITE_PLAY_STORE_URL` is set.
-const StoreButtons = ({ className = "" }: StoreButtonsProps) => {
-  const release = useLatestRelease();
-  const androidReady = release.status === "ready";
-
-  return (
-    <div className={`flex flex-wrap gap-3 ${className}`}>
+// Compact set of store buttons for the hero, footer and download section:
+// iOS ("Coming soon" until VITE_APP_STORE_URL is set), Android (always a real
+// download), and Google Play as an optional extra once VITE_PLAY_STORE_URL is set.
+const StoreButtons = ({ className = "" }: StoreButtonsProps) => (
+  <div className={`flex flex-wrap gap-3 ${className}`}>
+    <StoreButton
+      platform="ios"
+      url={APP_STORE_URL}
+      icon={<Icon name="apple" color="#FFFFFF" width={22} />}
+      caption="Download on the"
+      store="App Store"
+    />
+    <AndroidDownloadButton />
+    {PLAY_STORE_URL && (
       <StoreButton
-        platform="ios"
-        url={APP_STORE_URL}
-        icon={<Icon name="apple" color="#FFFFFF" width={22} />}
-        caption="Download on the"
-        store="App Store"
+        platform="android-play"
+        url={PLAY_STORE_URL}
+        icon={<GooglePlayIcon size={24} />}
+        caption="Get it on"
+        store="Google Play"
       />
-      {androidReady && (
-        <StoreButton
-          platform="android"
-          url={release.release.downloadUrl}
-          download={release.release.fileName}
-          icon={<AndroidIcon size={24} />}
-          caption="Download for"
-          store="Android (APK)"
-        />
-      )}
-      {(!androidReady || PLAY_STORE_URL) && (
-        <StoreButton
-          platform="android-play"
-          url={PLAY_STORE_URL}
-          icon={<GooglePlayIcon size={24} />}
-          caption="Get it on"
-          store="Google Play"
-        />
-      )}
-    </div>
-  );
-};
+    )}
+  </div>
+);
 
 export default StoreButtons;

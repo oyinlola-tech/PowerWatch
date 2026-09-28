@@ -26,19 +26,25 @@ Copy `.env.example` to `.env` and fill in what you have:
 The Download section (`#download`) and every store-button group on the page
 (`src/components/StoreButtons.tsx`) call `GET {VITE_API_URL}/api/v1/app/latest`
 once per page load (`src/hooks/useLatestRelease.ts`), shared by every component
-that renders a download control:
+that renders a download control. Unlike iOS, the Android button never reads
+"Coming soon" and never points at Google Play by default — it always offers a
+real download:
 
-- **No release published yet** (the API returns 404, or the request fails):
-  the Android button reads "Coming soon on Google Play", same as before this
-  feature existed.
-- **A release exists**: the Android button becomes a direct "Download for
-  Android (APK)" link straight to `downloadUrl` (with a `download` attribute).
-  The Download section additionally shows the version, file size and release
-  date, a link to `releasePage` when present, and a short "How to install"
-  note for sideloading the APK. If `VITE_PLAY_STORE_URL` is also set, the Play
-  Store button is shown alongside the APK button rather than replacing it.
-- While the request is in flight, the Download section shows a skeleton
-  instead of flashing between states.
+- **A release exists**: the Android button reads "Download for Android (APK)"
+  and links straight to `downloadUrl` (with a `download` attribute). The
+  Download section additionally shows the version, file size and release
+  date, and a link to `releasePage` when present.
+- **No release published yet** (the API returns 404), or the request fails:
+  the Android button still reads "Download for Android" and links to GitHub's
+  "latest release" page (`https://github.com/oyinlola-tech/PowerWatch/releases/latest`),
+  just without the version/size/date line.
+- While the request is in flight, the button shows a loading placeholder
+  (not "Coming soon").
+- A short "How to install" note for sideloading the APK is always shown next
+  to the Android button in the Download section.
+- If `VITE_PLAY_STORE_URL` is set, a "Get it on Google Play" button is shown
+  as an *extra* button alongside the Android APK download, never in place of
+  it.
 
 A slim, dismissible "Open in app" banner (`src/components/AndroidAppBanner.tsx`)
 is shown above the navbar to Android visitors only (detected from

@@ -113,10 +113,16 @@ Errors written by the app are in `/home/telente/powerwatch-api/stderr.log`.
 Android builds are published as GitHub Releases in `oyinlola-tech/PowerWatch`, and everything
 else follows from the newest release:
 
-1. Push a tag: `git tag -a v1.0.2 -m "What changed, for users" && git push origin v1.0.2` (or run **Android release** from the
-   repository's Actions tab and type `1.0.2`).
-2. `.github/workflows/android-release.yml` sets the app version from the tag, builds the APK on
-   EAS (`preview` profile), and publishes the GitHub Release `v1.0.2` with the APK attached.
+1. Push app changes (anything in `apps/mobile`) to `main`. The **Android release** workflow
+   (`.github/workflows/android-release.yml`) picks the next version by itself: the latest release
+   plus one patch (1.0.2 → 1.0.3), or `version` in `app.json` if that is higher, so raise it there
+   for a bigger jump such as 1.1.0. Add `[skip release]` to a commit message to push app changes
+   without releasing. A specific version can still be released with a tag
+   (`git tag -a v1.0.2 -m "What changed, for users" && git push origin v1.0.2`) or from the
+   Actions tab.
+2. The workflow sets that version, builds the APK on EAS (`preview` profile), and publishes the
+   GitHub Release with the APK attached. Release notes come from the tag message, the
+   Actions-tab box, or the app's commit messages, and people see them in the update prompt.
 3. `GET /api/v1/app/latest` reads the newest release (cached 5 minutes). The landing page's
    Android download button and the app's update prompt both use it.
 

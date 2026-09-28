@@ -56,18 +56,18 @@ npx eas-cli@latest build --platform ios
 
 The landing page's download button and the in-app update prompt (`src/services/appUpdate.ts`)
 both read the latest release from `GET /api/v1/app/latest`, which the API builds from
-GitHub Releases on `oyinlola-tech/PowerWatch`. To ship a new APK, push a version tag:
+GitHub Releases on `oyinlola-tech/PowerWatch`, and releases happen by themselves: every push
+to `main` that changes this app runs the **Android release** workflow
+(`.github/workflows/android-release.yml`). It picks the version (latest release plus one patch,
+or `version` in `app.json` if higher), builds the APK on EAS with the `preview` profile, and
+publishes the GitHub Release with the APK attached. `versionCode` goes up automatically
+(`autoIncrement`), so each APK installs over the last one.
 
-```bash
-git tag -a v1.0.2 -m "What changed, for users" && git push origin v1.0.2
-```
-
-The **Android release** GitHub Actions workflow (`.github/workflows/android-release.yml`) then
-sets the app `version` from the tag (no need to edit `app.json`), builds the APK on EAS with
-the `preview` profile, and publishes the GitHub Release `v1.0.2` with the APK attached. You can
-also start it from the Actions tab and type the version. It needs the repository secret
-`EXPO_TOKEN`. `versionCode` goes up automatically (`autoIncrement` on the `preview` profile),
-so each APK installs over the last one.
+- Bigger version jump: raise `version` in `app.json` (e.g. `1.1.0`) before pushing.
+- Push without releasing: put `[skip release]` in the commit message.
+- Release a specific version by hand: `git tag -a v1.0.2 -m "What changed, for users" && git push origin v1.0.2`,
+  or run the workflow from the Actions tab.
+- The workflow needs the repository secret `EXPO_TOKEN`.
 
 The landing page and the in-app update prompt pick up the new release within about 5
 minutes (the API caches GitHub's response for 5 minutes). The release notes in the

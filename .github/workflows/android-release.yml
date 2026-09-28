@@ -1,10 +1,16 @@
 # Builds the Android app (APK) with EAS and publishes it as a GitHub Release.
 #
-# Release a new version:  git tag -a v1.0.2 -m "What changed, in a sentence or two" && git push origin v1.0.2
-# (or run this workflow by hand from the Actions tab and type the version and notes).
-# The notes are shown to people in the app's update prompt, so write them for users.
+# Runs by itself whenever app changes (apps/mobile) are pushed to main: the version is the
+# latest release plus one patch (1.0.2 -> 1.0.3), or app.json's version if that is higher
+# (raise it there for a bigger jump such as 1.1.0). Put [skip release] in the commit message
+# to push app changes without releasing.
 #
-# The tag sets the app's version, so app.json does not need editing. Once the release is
+# A specific version can also be released by pushing a tag
+# (git tag -a v1.0.2 -m "What changed, for users" && git push origin v1.0.2) or from the
+# Actions tab. Release notes come from the tag message, the Actions-tab box, or the commit
+# messages, and are shown to people in the app's update prompt.
+#
+# The version is set when building, so app.json does not need editing. Once the release is
 # published, the API (GET /api/v1/app/latest), the landing page download button and the
 # in-app update prompt pick it up within about 5 minutes.
 #
@@ -13,6 +19,11 @@ name: Android release
 
 on:
   push:
+    branches: [main]
+    paths:
+      - 'apps/mobile/**'
+      - '!apps/mobile/**/*.md'
+      - '!apps/mobile/docs/**'
     tags: ['v*.*.*']
   workflow_dispatch:
     inputs:
@@ -34,12 +45,15 @@ jobs:
   release:
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    if: ${{ !contains(github.event.head_commit.message, '[skip release]') }}
     defaults:
       run:
         working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v7
         with:
+          # Full history and tags, to find the previous release and write notes from commits
+          fetch-depth: 0
           fetch-tags: true
 
       - name: Work out the version
@@ -48,10 +62,28 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           INPUT_VERSION: ${{ inputs.version }}
           REF_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
         run: |
-          version="${INPUT_VERSION:-$REF_NAME}"
-          version="${version#v}"
-          if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          semver='^[0-9]+\.[0-9]+\.[0-9]+$'
+          # Highest existing release tag (v1.2.3), if any
+          latest=$(git tag -l 'v*.*.*' | sed 's/^v//' | grep -E "$semver" | sort -V | tail -n1)
+          if [ -n "$INPUT_VERSION" ]; then
+            version="${INPUT_VERSION#v}"
+          elif [ "$REF_TYPE" = "tag" ]; then
+            version="${REF_NAME#v}"
+          else
+            # Automatic release: next patch after the latest release, or app.json if higher
+            configured=$(node -p 'require("./app.json").expo.version')
+            if [ -n "$latest" ]; then
+              IFS=. read -r major minor patch <<< "$latest"
+              next="$major.$minor.$((patch + 1))"
+            else
+              next="$configured"
+            fi
+            version=$(printf '%s\n%s\n' "$next" "$configured" | sort -V | tail -n1)
+          fi
+          echo "previous=$latest" >> "$GITHUB_OUTPUT"
+          if ! [[ "$version" =~ $semver ]]; then
             echo "::error::'$version' is not a version like 1.0.2"
             exit 1
           fi
@@ -102,12 +134,22 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
+          PREVIOUS: ${{ steps.version.outputs.previous }}
           INPUT_NOTES: ${{ inputs.notes }}
         run: |
-          # Notes: the ones typed in the Actions tab, else the annotated tag's message, else a default
+          # Notes: the Actions-tab box, else the annotated tag's message, else the app's commit
+          # subjects since the last release (without "feat(mobile):" style prefixes), else a default
           notes="$INPUT_NOTES"
           if [ -z "$notes" ] && [ "$(git cat-file -t "v$VERSION" 2>/dev/null)" = "tag" ]; then
             notes=$(git tag -l --format='%(contents)' "v$VERSION")
+          fi
+          if [ -z "$notes" ]; then
+            range="${PREVIOUS:+v$PREVIOUS..}HEAD"
+            notes=$(git log --no-merges --format='%s' $range -- . \
+              | grep -viE '^(docs|chore|test|ci|build|style)(\(|:)|\[skip release\]' \
+              | sed -E 's/^[a-z]+(\([^)]*\))?!?: *//' \
+              | awk 'NF { print "- " toupper(substr($0,1,1)) substr($0,2) }' \
+              | head -n 8)
           fi
           notes="${notes:-Improvements and fixes.}"
           gh release create "v$VERSION" "PowerWatch-$VERSION.apk" \
