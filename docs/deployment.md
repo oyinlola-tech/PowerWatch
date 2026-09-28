@@ -108,6 +108,32 @@ verification codes invalid.
 
 Errors written by the app are in `/home/telente/powerwatch-api/stderr.log`.
 
+## Android releases (APK)
+
+Android builds are published as GitHub Releases in `oyinlola-tech/PowerWatch`, and everything
+else follows from the newest release:
+
+1. Push a tag: `git tag -a v1.0.2 -m "What changed, for users" && git push origin v1.0.2` (or run **Android release** from the
+   repository's Actions tab and type `1.0.2`).
+2. `.github/workflows/android-release.yml` sets the app version from the tag, builds the APK on
+   EAS (`preview` profile), and publishes the GitHub Release `v1.0.2` with the APK attached.
+3. `GET /api/v1/app/latest` reads the newest release (cached 5 minutes). The landing page's
+   Android download button and the app's update prompt both use it.
+
+The workflow needs the repository secret `EXPO_TOKEN` (an Expo access token for the
+`oyinlola141` account, created at expo.dev → Account settings → Access tokens).
+
+To force everyone on an older version to update, set `ANDROID_MIN_VERSION` (e.g. `1.0.2`) in
+Application Manager. Each APK gets a higher Android version code automatically, so it installs
+over the previous one.
+
+### Opening links in the app
+
+`https://powerwatch.oyinlola.site/.well-known/assetlinks.json` tells Android that links to the
+site may open the app (package `com.powerwatch.app`, signed with the EAS upload key, SHA-256
+`EC:AC:26:CB:59:80:64:4A:69:6D:C5:86:CC:6A:2C:BE:09:CE:74:95:36:CF:C6:EE:72:32:56:2A:D3:F1:DD:13`).
+If the app is ever distributed through Google Play, add Play's app-signing SHA-256 to that file.
+
 ## Google sign-in
 
 Configured in Google Cloud project `powerwatch141` (the Firebase project), under Google Auth

@@ -19,6 +19,7 @@ import { adminRoutes } from './routes/admin.route.js';
 import { analyticsRoutes } from './routes/analytics.route.js';
 import { historyRoutes } from './routes/history.route.js';
 import { healthRoutes } from './routes/health.route.js';
+import { appRoutes } from './routes/app.route.js';
 
 export async function buildApp() {
   const docsEnabled = env.nodeEnv !== 'production';
@@ -77,6 +78,7 @@ export async function buildApp() {
   await app.register(analyticsRoutes, { prefix: '/api/v1/analytics' });
   await app.register(historyRoutes, { prefix: '/api/v1/history' });
   await app.register(healthRoutes, { prefix: '/api/v1/health' });
+  await app.register(appRoutes, { prefix: '/api/v1/app' });
 
   app.get('/health', async () => ({
     success: true,

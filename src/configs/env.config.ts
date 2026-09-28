@@ -165,6 +165,13 @@ export const env = {
     fromName: process.env.SMTP_FROM_NAME ?? 'PowerWatch',
   },
 
+  releases: {
+    // Android builds (APKs) are published as GitHub Releases tagged v1.2.3 in this repository
+    githubRepo: process.env.RELEASES_GITHUB_REPO || 'oyinlola-tech/PowerWatch',
+    // Optional: versions older than this are told they must update
+    androidMinVersion: process.env.ANDROID_MIN_VERSION ?? '',
+  },
+
   google: {
     // OAuth client IDs whose Google ID tokens are accepted (web, Android and iOS clients).
     clientIds: (process.env.GOOGLE_CLIENT_IDS ?? '').split(',').map((id) => id.trim()).filter(Boolean),
