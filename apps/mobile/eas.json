@@ -8,7 +8,9 @@
       "env": {
         "EXPO_PUBLIC_API_URL": "https://api-powerwatch.telente.site",
         "EXPO_PUBLIC_SUPPORT_EMAIL": "help@telente.site",
-        "EXPO_PUBLIC_DATA_PROTECTION_EMAIL": "privacy@telente.site"
+        "EXPO_PUBLIC_DATA_PROTECTION_EMAIL": "privacy@telente.site",
+        "EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID": "387458458442-70qgjv004ffo2bkhh1nu6arshdn7l2r4.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "387458458442-8d0voqu3u6os7pf6139bf7n9u6ervqu8.apps.googleusercontent.com"
       }
     },
     "preview": {

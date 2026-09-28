@@ -62,6 +62,12 @@
             "usesCleartextTraffic": true
           }
         }
+      ],
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.387458458442-8d0voqu3u6os7pf6139bf7n9u6ervqu8"
+        }
       ]
     ],
     "experiments": {
