@@ -1,13 +1,18 @@
 import { Pressable, Text, View } from "react-native";
 import { router } from "expo-router";
-import BackHeader from "../layout/BackHeader";
+import AppHeader from "../layout/AppHeader";
 import Screen from "../layout/Screen";
 import { contactSection, LEGAL_LAST_UPDATED } from "../../content/legal";
-import type { LegalDocument } from "../../content/legal";
+import type { LegalContact, LegalDocument } from "../../content/legal";
 import { alpha, fonts, type } from "../../theme";
 import { makeStyles } from "../../theme/ThemeContext";
 
-const SUPPORT_EMAIL = process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim() || undefined;
+const CONTACT: LegalContact = {
+  name: process.env.EXPO_PUBLIC_LEGAL_NAME?.trim() || undefined,
+  address: process.env.EXPO_PUBLIC_LEGAL_ADDRESS?.trim() || undefined,
+  email: process.env.EXPO_PUBLIC_SUPPORT_EMAIL?.trim() || undefined,
+  dataProtectionEmail: process.env.EXPO_PUBLIC_DATA_PROTECTION_EMAIL?.trim() || undefined,
+};
 
 interface Props {
   document: LegalDocument;
@@ -19,12 +24,10 @@ interface Props {
 // The wording lives in content/legal.ts, shared with the website.
 const LegalDocumentView = ({ document, related }: Props) => {
   const styles = useStyles();
-  const sections = [...document.sections, contactSection(SUPPORT_EMAIL)];
+  const sections = [...document.sections, contactSection(CONTACT)];
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings">
       <View style={styles.main}>
         <View style={styles.intro}>
           <Text accessibilityRole="header" style={styles.title}>
@@ -68,8 +71,6 @@ const LegalDocumentView = ({ document, related }: Props) => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   intro: {
     gap: 8,
@@ -103,7 +104,7 @@ const useStyles = makeStyles((c) => ({
   card: {
     gap: 12,
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
     padding: 16,

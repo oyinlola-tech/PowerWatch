@@ -236,10 +236,7 @@ export const authController = {
   async deleteAccount(request: FastifyRequest, reply: FastifyReply) {
     const authReq = request as AuthenticatedRequest;
     const { password } = deleteAccountSchema.parse(request.body);
-    const result = await deleteAccountCommand.execute(
-      authReq.userId, password,
-      request.ip, request.headers['user-agent'],
-    );
+    const result = await deleteAccountCommand.execute(authReq.userId, password);
     return reply.status(200).send(successResponse(result, 'Account deleted successfully.'));
   },
 

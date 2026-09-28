@@ -3,7 +3,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 import { Image } from "expo-image";
 import * as Location from "expo-location";
 import { router, useLocalSearchParams } from "expo-router";
-import LogoHeader from "../components/layout/LogoHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import MapView from "../components/map/MapView";
@@ -201,8 +201,8 @@ const SetMonitoringArea = () => {
         await authApi.updateProfile({ neighborhoodId, ...(selection.point ?? {}) });
         await refreshUser();
       }
+      // Which neighborhood was chosen is personal, so it is not sent to analytics
       mixpanel.track("neighborhood_selected", {
-        neighborhoodId,
         mode: mode ?? "primary",
         source: selection.source,
         exact: Boolean(selection.point),
@@ -218,9 +218,7 @@ const SetMonitoringArea = () => {
   };
 
   return (
-    <Screen top={65} bottom={24} contentStyle={styles.content}>
-      <LogoHeader style={styles.header} />
-
+    <Screen header={<AppHeader back={returnTo === "back"} />}>
       {/* Title */}
       <View style={styles.titleBlock}>
         <Text accessibilityRole="header" style={[type.h1, { color: colors.bg }]}>
@@ -228,8 +226,8 @@ const SetMonitoringArea = () => {
         </Text>
         <Text style={styles.subtitle}>
           {isSaveMode
-            ? "Choose another neighborhood to follow.\nYou'll get its outage alerts too."
-            : "Choose the primary neighborhood you want\nto track for outages."}
+            ? "Choose another neighborhood to follow. You'll get its outage alerts too."
+            : "Choose the primary neighborhood you want to track for outages."}
         </Text>
       </View>
 
@@ -386,7 +384,7 @@ const SetMonitoringArea = () => {
         </View>
         <Text style={styles.noteText}>
           {
-            "You'll receive notifications specifically for\nthis selected area. You can change this\nlater in settings."
+            "You'll receive notifications specifically for this selected area. You can change this later in settings."
           }
         </Text>
       </View>
@@ -404,26 +402,19 @@ const SetMonitoringArea = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  content: {
-    paddingHorizontal: 24,
-  },
-  header: {
-    width: 343,
-    maxWidth: "100%",
-  },
   titleBlock: {
-    marginTop: 44,
+    marginTop: 8,
     gap: 8,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
-    lineHeight: 17,
+    lineHeight: 20,
     color: c.bg,
     opacity: 0.7,
   },
   map: {
-    marginTop: 44,
+    marginTop: 24,
     height: 320,
     overflow: "hidden",
     borderWidth: 1,
@@ -531,19 +522,19 @@ const useStyles = makeStyles((c) => ({
     color: c.danger,
   },
   note: {
-    marginTop: 44,
+    marginTop: 24,
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
     borderWidth: 1,
-    borderColor: c.borderLight,
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.surface,
     // Figma draws the 1px border inside the 16px padding
     padding: 15,
   },
   noteIcon: {
-    paddingTop: 7,
+    paddingTop: 2,
   },
   noteText: {
     flex: 1,
@@ -597,7 +588,7 @@ const useStyles = makeStyles((c) => ({
     marginTop: 24,
   },
   confirm: {
-    marginTop: 44,
+    marginTop: 24,
   },
 }));
 

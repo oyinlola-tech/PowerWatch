@@ -2,10 +2,10 @@ import { Text, View } from "react-native";
 import Constants from "expo-constants";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import { Chevron, Divider, Row, Section } from "../components/ui/ListSection";
-import { alpha, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
 import { makeStyles } from "../theme/ThemeContext";
 
 const version = Constants.expoConfig?.version;
@@ -15,9 +15,7 @@ const About = () => {
   const styles = useStyles();
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings">
       <View style={styles.main}>
         <View style={styles.hero}>
           <View style={styles.logoTile}>
@@ -64,8 +62,6 @@ const About = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   hero: {
     alignItems: "center",
@@ -102,7 +98,7 @@ const useStyles = makeStyles((c) => ({
   card: {
     gap: 12,
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
     padding: 16,

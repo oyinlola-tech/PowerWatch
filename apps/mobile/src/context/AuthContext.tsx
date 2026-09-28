@@ -4,6 +4,8 @@ import { Platform } from "react-native";
 import { ApiError, authApi, setSessionExpiredHandler } from "../services/api";
 import type { User } from "../services/api";
 import { tokenStore, userCache } from "../services/api/storage";
+import { LEGAL_VERSION } from "../content/legal";
+import mixpanel from "../services/mixpanel";
 import { unregisterPushNotifications } from "../services/notifications";
 
 type Status = "loading" | "signedOut" | "signedIn";
@@ -80,6 +82,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const me = await authApi.me();
       setUser(me);
       setStatus("signedIn");
+      // Account holders have agreed to the Privacy Policy; they can opt out in Profile Settings
+      void mixpanel.allow();
       return me;
     },
     [setUser],
@@ -92,7 +96,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = useCallback(
     async (fullName: string, email: string, password: string) => {
-      const result = await authApi.register({ fullName, email, password, deviceType });
+      // The sign-up form cannot be submitted without ticking the agreement box
+      const result = await authApi.register({
+        fullName,
+        email,
+        password,
+        deviceType,
+        acceptedTerms: true,
+        termsVersion: LEGAL_VERSION,
+      });
       const me = await startSession(result);
       return { user: me, verificationEmailSent: result.verificationEmailSent !== false };
     },

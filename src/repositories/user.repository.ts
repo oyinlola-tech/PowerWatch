@@ -1,6 +1,6 @@
 import crypto from 'node:crypto';
 import { prisma } from '../configs/database.config.js';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import type { UserResponse } from '../interfaces/index.js';
 
 export class UserRepository {
@@ -178,8 +178,9 @@ export class UserRepository {
    * Deletes an account for privacy: removes everything that identifies the person
    * (name, email, password, home location, devices, sessions, saved places,
    * notifications, codes) and strips the GPS point from their reports. Their
-   * ON/OFF reports stay, anonymously, so neighborhood history remains accurate.
-   * The row itself is kept (soft-deleted) so the audit trail stays linked.
+   * ON/OFF reports stay, so neighborhood history remains accurate, tied only to
+   * an emptied row. Security log entries keep the action and time but lose the
+   * IP address, device details and any email held in their metadata.
    */
   async anonymizeAndDelete(id: string) {
     const user = await prisma.user.findUnique({ where: { id }, select: { email: true } });
@@ -196,6 +197,10 @@ export class UserRepository {
       prisma.refreshToken.deleteMany({ where: { userId: id } }),
       prisma.device.deleteMany({ where: { userId: id } }),
       prisma.otp.deleteMany({ where: { email: user.email } }),
+      prisma.auditLog.updateMany({
+        where: { OR: [{ userId: id }, { entityType: 'User', entityId: id }] },
+        data: { ipAddress: null, userAgent: null, metadata: Prisma.DbNull },
+      }),
       prisma.user.update({
         where: { id },
         data: {

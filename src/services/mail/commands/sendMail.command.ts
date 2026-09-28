@@ -44,7 +44,9 @@ export class MailService {
     html?: string;
   }) {
     if (!this.canSend() || !this.transporter) {
-      if (env.nodeEnv === 'production') {
+      // NODE_ENV must be set to "development" on purpose: an unset value also reads as
+      // development, and a live server started without it must not log codes.
+      if (process.env.NODE_ENV !== 'development' && process.env.NODE_ENV !== 'test') {
         // Never write message bodies (which can contain OTPs) to production logs.
         console.error(`SMTP is not configured. Email "${subject}" was not sent.`);
         return;

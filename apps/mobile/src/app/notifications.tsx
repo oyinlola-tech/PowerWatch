@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Platform, Text, View } from "react-native";
-import LogoHeader from "../components/layout/LogoHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import type { GlyphName } from "../components/icons/glyphs";
@@ -112,16 +112,14 @@ const NotificationSetup = () => {
   };
 
   return (
-    <Screen top={40} bottom={24} contentStyle={styles.content}>
-      <LogoHeader />
-
+    <Screen header={<AppHeader />}>
       {/* Title */}
       <View style={styles.titleBlock}>
         <Text accessibilityRole="header" style={[type.h1, { color: colors.bg }]}>
           Stay updated
         </Text>
         <Text style={[type.boldText, styles.subtitle]}>
-          {"Get notified immediately when there is a\nchange in your neighborhood's power status."}
+          {"Get notified immediately when there is a change in your neighborhood's power status."}
         </Text>
       </View>
 
@@ -150,7 +148,7 @@ const NotificationSetup = () => {
         <Option
           icon="mapLocation"
           title="Community Reports"
-          description={"See real-time updates from your\nneighbors."}
+          description="See real-time updates from your neighbors."
           enabled={prefs.communityReports}
           onChange={updatePref("communityReports")}
         />
@@ -167,11 +165,8 @@ const useStyles = makeStyles((c) => ({
   error: {
     marginTop: 16,
   },
-  content: {
-    paddingHorizontal: 24,
-  },
   titleBlock: {
-    marginTop: 28,
+    marginTop: 8,
     gap: 8,
   },
   subtitle: {
@@ -186,7 +181,7 @@ const useStyles = makeStyles((c) => ({
     gap: 13.5,
     borderWidth: 1,
     borderColor: c.border,
-    borderRadius: 16,
+    borderRadius: 12,
     backgroundColor: c.borderLight,
   },
   previewLabel: {
@@ -233,7 +228,7 @@ const useStyles = makeStyles((c) => ({
     color: c.gray500,
   },
   finish: {
-    marginTop: 85,
+    marginTop: 40,
   },
 }));
 

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ActivityIndicator, Platform, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import BackHeader from "../../components/layout/BackHeader";
+import AppHeader from "../../components/layout/AppHeader";
 import Screen from "../../components/layout/Screen";
 import Icon from "../../components/icons/Icon";
 import { FormError } from "../../components/ui/StateViews";
@@ -107,9 +107,7 @@ const ConfirmPowerStatus = () => {
   };
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={72} />
-
+    <Screen header={<AppHeader back />} bottom={40}>
       <View style={styles.card}>
         <View style={[styles.tile, { backgroundColor: config.tileColor }]}>
           <Icon name="plugOffLarge" color={config.iconColor} />
@@ -183,17 +181,12 @@ const useStyles = makeStyles((c) => ({
     gap: 8,
   },
   card: {
-    marginTop: 60,
-    width: 327,
-    maxWidth: "100%",
-    alignSelf: "center",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: c.borderSoft,
+    borderColor: c.border,
     borderRadius: 24,
     backgroundColor: c.card,
-    // Figma draws the 1px border inside the 32px padding
-    padding: 31,
+    padding: 23,
     boxShadow: shadows.sheet,
   },
   tile: {
@@ -209,11 +202,11 @@ const useStyles = makeStyles((c) => ({
     color: c.bg,
   },
   prompt: {
-    marginTop: 11.75,
-    width: 229,
+    marginTop: 12,
+    maxWidth: 280,
     fontFamily: fonts.regular,
     fontSize: 14,
-    lineHeight: 17,
+    lineHeight: 20,
     textAlign: "center",
     color: c.bg,
   },
@@ -250,7 +243,7 @@ const useStyles = makeStyles((c) => ({
     alignItems: "flex-start",
     gap: 12,
     borderWidth: 1,
-    borderColor: c.borderSoft,
+    borderColor: c.border,
     borderRadius: 12,
     backgroundColor: c.surfaceNote,
     padding: 15,
@@ -263,7 +256,6 @@ const useStyles = makeStyles((c) => ({
     gap: 4,
   },
   noteBody: {
-    width: 190,
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 17,
@@ -272,7 +264,6 @@ const useStyles = makeStyles((c) => ({
     opacity: 0.7,
   },
   noteWarning: {
-    width: 196,
     fontFamily: fonts.medium,
     fontSize: 12,
     lineHeight: 15,

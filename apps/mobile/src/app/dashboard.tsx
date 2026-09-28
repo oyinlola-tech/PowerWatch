@@ -2,8 +2,7 @@ import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import LogoHeader from "../components/layout/LogoHeader";
-import NavBar from "../components/layout/NavBar";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { ErrorView, LoadingView } from "../components/ui/StateViews";
@@ -63,41 +62,40 @@ const Dashboard = () => {
 
   return (
     <Screen
-      top={41}
-      bottom={112}
+      nav="dashboard"
       contentStyle={styles.main}
-      overlay={<NavBar active="dashboard" />}
       onRefresh={refresh}
       refreshing={status.refreshing || activity.refreshing}
+      header={
+        <AppHeader
+          right={
+            <View style={styles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+                hitSlop={8}
+                onPress={() => router.push("/inbox")}
+              >
+                <Icon name="bell" width={16} color={colors.accent} />
+                {unreadCount > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                  </View>
+                )}
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open map"
+                hitSlop={8}
+                onPress={() => router.navigate("/map")}
+              >
+                <Icon name="locationPin" color={colors.accent} />
+              </Pressable>
+            </View>
+          }
+        />
+      }
     >
-      <LogoHeader
-        right={
-          <View style={styles.headerActions}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
-              hitSlop={8}
-              onPress={() => router.push("/inbox")}
-            >
-              <Icon name="bell" width={16} color={colors.accent} />
-              {unreadCount > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
-                </View>
-              )}
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Open map"
-              hitSlop={8}
-              onPress={() => router.navigate("/map")}
-            >
-              <Icon name="locationPin" color={colors.accent} />
-            </Pressable>
-          </View>
-        }
-      />
-
       {/* Neighborhood status card */}
       <View style={styles.statusSection}>
         <View style={styles.rowBetween}>
@@ -126,7 +124,14 @@ const Dashboard = () => {
             <>
               <View style={styles.badge}>
                 <View style={styles.badgeDot} />
-                <Text style={styles.badgeLabel}>Electricity Status: {hero.badge}</Text>
+                <Text
+                  style={[styles.badgeLabel, hero.badge.length > 3 && styles.badgeLabelLong]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.85}
+                >
+                  Electricity Status: {hero.badge}
+                </Text>
               </View>
 
               <View style={styles.bulb}>
@@ -291,7 +296,6 @@ const useStyles = makeStyles((c) => ({
   },
   main: {
     gap: 24,
-    paddingHorizontal: 16,
   },
   rowBetween: {
     flexDirection: "row",
@@ -323,7 +327,7 @@ const useStyles = makeStyles((c) => ({
     borderRadius: 8,
     backgroundColor: c.card,
     paddingTop: 32,
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingBottom: 24,
   },
   badge: {
@@ -334,7 +338,8 @@ const useStyles = makeStyles((c) => ({
     borderColor: c === lightColors ? "#99B3D5" : alpha(c.accent, 0.4),
     borderRadius: 12,
     backgroundColor: c === lightColors ? "#D3E2ED" : c.tintBlue,
-    paddingHorizontal: 16,
+    maxWidth: "100%",
+    paddingHorizontal: 12,
     paddingVertical: 6,
   },
   badgeDot: {
@@ -350,6 +355,12 @@ const useStyles = makeStyles((c) => ({
     letterSpacing: 0.7,
     textTransform: "uppercase",
     color: c.accent,
+    flexShrink: 1,
+  },
+  // "Unknown" is longer than the design's ON/OFF and has to fit a 320pt phone
+  badgeLabelLong: {
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   bulb: {
     marginTop: 16,
@@ -373,13 +384,12 @@ const useStyles = makeStyles((c) => ({
     marginTop: 24,
     alignSelf: "stretch",
     flexDirection: "row",
-    justifyContent: "center",
-    gap: 75,
     borderTopWidth: 1,
-    borderTopColor: c.stroke,
+    borderTopColor: c.border,
     paddingTop: 24,
   },
   stat: {
+    flex: 1,
     alignItems: "center",
   },
   statLabel: {
@@ -417,9 +427,9 @@ const useStyles = makeStyles((c) => ({
     gap: 1,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.3),
+    borderColor: c.border,
     borderRadius: 8,
-    backgroundColor: alpha(c.stroke, 0.3),
+    backgroundColor: c.border,
   },
   listRow: {
     flexDirection: "row",
@@ -462,7 +472,7 @@ const useStyles = makeStyles((c) => ({
     height: 192,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.3),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.mapBg,
   },

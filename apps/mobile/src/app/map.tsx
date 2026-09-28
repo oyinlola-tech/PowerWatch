@@ -1,8 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { useLocalSearchParams } from "expo-router";
-import LogoHeader from "../components/layout/LogoHeader";
-import NavBar from "../components/layout/NavBar";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import MapView from "../components/map/MapView";
@@ -14,7 +13,7 @@ import { locationsApi } from "../services/api";
 import type { ApiPowerStatus, StatusMapByLga, StatusMapByState } from "../services/api";
 import { changeNeighborhood } from "../services/navigation";
 import { timeAgo } from "../utils/format";
-import { alpha, fonts, shadows, type } from "../theme";
+import { alpha, fonts, type } from "../theme";
 import type { Palette } from "../theme";
 import { makeStyles, useTheme } from "../theme/ThemeContext";
 
@@ -211,15 +210,12 @@ const PowerMap = () => {
 
   return (
     <Screen
-      top={41}
-      bottom={112}
+      header={<AppHeader />}
+      nav="map"
       contentStyle={styles.main}
-      overlay={<NavBar active="map" />}
       onRefresh={current.refresh}
       refreshing={current.refreshing}
     >
-      <LogoHeader />
-
       <View style={styles.titleBlock}>
         <Text accessibilityRole="header" style={[type.h1, { color: colors.bg }]}>
           Power Map
@@ -325,7 +321,6 @@ const Legend = ({ color, label }: { color: string; label: string }) => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 20,
-    paddingHorizontal: 16,
   },
   titleBlock: {
     gap: 8,
@@ -360,8 +355,8 @@ const useStyles = makeStyles((c) => ({
     overflow: "hidden",
     borderWidth: 1,
     borderColor: c.border,
-    borderRadius: 12,
-    backgroundColor: c.borderLight,
+    borderRadius: 8,
+    backgroundColor: c.mapBg,
   },
   mapOverlay: {
     ...StyleSheet.absoluteFill,
@@ -399,8 +394,8 @@ const useStyles = makeStyles((c) => ({
     flex: 1,
     alignItems: "center",
     gap: 4,
-    borderWidth: 2,
-    borderRadius: 16,
+    borderWidth: 1,
+    borderRadius: 8,
     backgroundColor: c.card,
     paddingVertical: 16,
   },
@@ -434,10 +429,9 @@ const useStyles = makeStyles((c) => ({
     gap: 1,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.3),
+    borderColor: c.border,
     borderRadius: 8,
-    backgroundColor: alpha(c.stroke, 0.3),
-    boxShadow: shadows.card,
+    backgroundColor: c.border,
   },
   listRow: {
     flexDirection: "row",

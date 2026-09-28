@@ -8,6 +8,7 @@ import { prisma } from './configs/database.config.js';
 import { ensureDatabaseExists } from './loaders/database.loader.js';
 import { seedAdmin } from './loaders/seed.loader.js';
 import { backfillLocationCoordinates } from './loaders/locationCoordinates.loader.js';
+import { startRetentionJob } from './loaders/retention.loader.js';
 
 const SHUTDOWN_TIMEOUT_MS = 10_000;
 
@@ -66,6 +67,7 @@ async function main() {
 
   await seedAdmin();
   await backfillLocationCoordinates();
+  startRetentionJob();
 
   const app = await buildApp();
   registerShutdownHandlers(app);

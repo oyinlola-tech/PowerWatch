@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import Button from "../components/ui/Button";
@@ -78,9 +78,7 @@ const Devices = () => {
     );
 
   return (
-    <Screen top={23} bottom={40} onRefresh={sessions.refresh} refreshing={sessions.refreshing}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings" onRefresh={sessions.refresh} refreshing={sessions.refreshing}>
       <View style={styles.main}>
         <View style={styles.titleBlock}>
           <Text accessibilityRole="header" style={[type.h1, { color: colors.bg }]}>
@@ -159,8 +157,6 @@ const Devices = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   titleBlock: {
     gap: 8,

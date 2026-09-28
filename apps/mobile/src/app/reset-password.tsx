@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import LogoHeader from "../components/layout/LogoHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import Button from "../components/ui/Button";
@@ -118,10 +118,8 @@ const ResetPassword = () => {
   const canResend = !!email && cooldown <= 0 && !resending;
 
   return (
-    <Screen top={37} bottom={40}>
-      <LogoHeader style={styles.header} />
-
-      <View style={styles.content}>
+    <Screen header={<AppHeader back />} bottom={40}>
+      <View>
         {/* Heading */}
         <Text accessibilityRole="header" style={[type.h1, styles.title]}>
           Reset Password
@@ -225,15 +223,8 @@ const ResetPassword = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  header: {
-    marginLeft: 19,
-    marginRight: 13,
-  },
-  content: {
-    paddingHorizontal: 24,
-  },
   title: {
-    marginTop: 48,
+    marginTop: 8,
     color: c.bg,
   },
   subtitle: {

@@ -1,14 +1,17 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import { router } from "expo-router";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
-import { Divider, Row, Section } from "../components/ui/ListSection";
+import { Chevron, Divider, Row, Section } from "../components/ui/ListSection";
 import Button from "../components/ui/Button";
 import { FormError } from "../components/ui/StateViews";
 import TextField from "../components/ui/TextField";
+import Toggle from "../components/ui/Toggle";
 import { useAuth, useUser } from "../context/AuthContext";
 import { ApiError, authApi } from "../services/api";
+import mixpanel from "../services/mixpanel";
 import { fullName, initials } from "../utils/format";
 import { alpha, fonts, type } from "../theme";
 import { makeStyles, useTheme } from "../theme/ThemeContext";
@@ -308,6 +311,38 @@ const DeleteAccount = () => {
   );
 };
 
+// Privacy choices and the documents the person agreed to
+const Privacy = () => {
+  const [analytics, setAnalytics] = useState(false);
+  useEffect(() => {
+    void mixpanel.isEnabled().then(setAnalytics);
+  }, []);
+
+  return (
+    <Section title="PRIVACY">
+      <Row
+        icon="speed"
+        iconWidth={20}
+        title="Usage Statistics"
+        subtitle="Anonymous counts that help us improve the app"
+        right={
+          <Toggle
+            enabled={analytics}
+            onChange={(on) => {
+              setAnalytics(on);
+              void mixpanel.setEnabled(on);
+            }}
+          />
+        }
+      />
+      <Divider />
+      <Row icon="lock" iconWidth={20} title="Privacy Policy" onPress={() => router.push("/privacy")} right={<Chevron />} />
+      <Divider />
+      <Row icon="info" iconWidth={20} title={"Terms & Conditions"} onPress={() => router.push("/terms")} right={<Chevron />} />
+    </Section>
+  );
+};
+
 // Profile Settings (no Figma frame; styled like the Profile screen)
 const ProfileSettings = () => {
   const user = useUser();
@@ -315,16 +350,14 @@ const ProfileSettings = () => {
   const styles = useStyles();
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings">
       <View style={styles.main}>
         {/* Heading */}
         <View style={styles.heading}>
           <Text accessibilityRole="header" style={[type.h1, styles.title]}>
             Profile Settings
           </Text>
-          <Text style={styles.subtitle}>Manage your name, password and account.</Text>
+          <Text style={styles.subtitle}>Manage your name, password, privacy and account.</Text>
         </View>
 
         {/* Summary */}
@@ -344,6 +377,7 @@ const ProfileSettings = () => {
 
         <PersonalInfo />
         <ChangePassword />
+        <Privacy />
         <DeleteAccount />
       </View>
     </Screen>
@@ -353,9 +387,6 @@ const ProfileSettings = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   heading: {
     gap: 8,
@@ -375,7 +406,7 @@ const useStyles = makeStyles((c) => ({
     alignItems: "center",
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
     padding: 16,

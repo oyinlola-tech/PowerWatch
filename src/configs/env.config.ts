@@ -142,6 +142,15 @@ export const env = {
     expiryMinutes: Number(process.env.OTP_EXPIRY_MINUTES) || 10,
   },
 
+  // How long personal data is kept. The Privacy Policy states these periods:
+  // change them together.
+  retention: {
+    // Security and activity records (sign-ins, password changes...) with IP address and device
+    auditLogDays: Number(process.env.AUDIT_LOG_RETENTION_DAYS) || 365,
+    // Used or expired verification and reset codes
+    otpHours: Number(process.env.OTP_RETENTION_HOURS) || 24,
+  },
+
   smtp: {
     host: process.env.SMTP_HOST ?? '',
     port: Number(process.env.SMTP_PORT) || 587,

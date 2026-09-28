@@ -146,3 +146,15 @@ export const shadows = {
 /** Width of the design frames; content is centred and capped on larger devices */
 export const DESIGN_WIDTH = 375;
 export const MAX_CONTENT_WIDTH = 512;
+
+// Measurements every screen shares, so headers, cards and the nav bar line up
+export const layout = {
+  /** Space between the screen edge and its content */
+  gutter: 16,
+  /** Header row under the status bar: 16 + logo 31 + 16, plus the 1px border */
+  headerHeight: 64,
+  /** Figma component "nav bar" */
+  navHeight: 80,
+  /** Space between the header and the first element */
+  contentTop: 24,
+} as const;

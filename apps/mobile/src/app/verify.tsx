@@ -97,7 +97,7 @@ const OtpVerification = () => {
   };
 
   return (
-    <Screen top={48} bottom={14} contentStyle={styles.content}>
+    <Screen top={48} bottom={14}>
       {/* Back button */}
       <Pressable
         accessibilityRole="button"
@@ -122,7 +122,7 @@ const OtpVerification = () => {
         <Text style={[type.boldText, styles.description]}>
           {email
             ? `We sent a 6-digit code to ${email}. Enter the code below to confirm your account.`
-            : "We sent a 6-digit code to your email\naddress. Enter the code below to\nconfirm your account."}
+            : "We sent a 6-digit code to your email address. Enter the code below to confirm your account."}
         </Text>
 
         {/* Code */}
@@ -189,9 +189,6 @@ const OtpVerification = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  content: {
-    paddingHorizontal: 24,
-  },
   back: {
     width: 40,
     height: 40,
@@ -204,7 +201,7 @@ const useStyles = makeStyles((c) => ({
   },
   body: {
     alignItems: "center",
-    paddingTop: 81,
+    paddingTop: 40,
   },
   badge: {
     width: 128,
@@ -223,7 +220,7 @@ const useStyles = makeStyles((c) => ({
     backgroundColor: c.primary,
   },
   title: {
-    marginTop: 52,
+    marginTop: 32,
     textAlign: "center",
     color: c.bg,
   },
@@ -234,7 +231,7 @@ const useStyles = makeStyles((c) => ({
     color: c.gray500,
   },
   otp: {
-    marginTop: 62,
+    marginTop: 40,
     width: "100%",
     maxWidth: 320,
     flexDirection: "row",

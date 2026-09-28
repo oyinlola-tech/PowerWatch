@@ -75,6 +75,9 @@ model User {
   lastLoginAt         DateTime?      @map("last_login_at")
   passwordChangedAt   DateTime?      @map("password_changed_at")
   suspendedAt         DateTime?      @map("suspended_at")
+  /** When the person agreed to the Terms and Privacy Policy, and which version */
+  termsAcceptedAt     DateTime?      @map("terms_accepted_at")
+  termsVersion        String?        @map("terms_version") @db.VarChar(20)
   createdBy           String?        @map("created_by")
   createdByUser       User?          @relation("UserCreatedBy", fields: [createdBy], references: [id])
   updatedBy           String?        @map("updated_by")

@@ -1,80 +1,62 @@
 import { Text, View } from "react-native";
-import type { TextStyle } from "react-native";
 import { router } from "expo-router";
-import LogoHeader from "../components/layout/LogoHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import type { GlyphName } from "../components/icons/glyphs";
 import Button from "../components/ui/Button";
 import { fonts, type } from "../theme";
-import { makeStyles, useTheme } from "../theme/ThemeContext";
+import { makeStyles } from "../theme/ThemeContext";
 
 interface Step {
   icon: GlyphName;
   title: string;
   description: string;
-  /** Width the design gives the text column, which sets where lines wrap */
-  textWidth: number;
-  descriptionStyle: TextStyle;
-  marginTop: number;
 }
-
-const medium14: TextStyle = { ...type.boldText };
-const segoe14: TextStyle = { fontFamily: fonts.segoe, fontSize: 14, lineHeight: 20 };
 
 const steps: Step[] = [
   {
     icon: "boltLarge",
     title: "Real-time Updates",
-    description: "Get instant alerts when power\ngoes out or is restored in your\ngrid.",
-    textWidth: 219.2,
-    descriptionStyle: medium14,
-    marginTop: 23,
+    description: "Get instant alerts when power goes out or is restored in your grid.",
   },
   {
     icon: "bullhornLarge",
     title: "Report Outages",
-    description: "Easily log an outage with one tap to\nhelp neighbors stay informed.",
-    textWidth: 221,
-    descriptionStyle: segoe14,
-    marginTop: 15,
+    description: "Easily log an outage with one tap to help neighbors stay informed.",
   },
   {
     icon: "mapLocationLarge",
     title: "Community Map",
-    description: "Visualize outages across the\ncity\nwith our interactive live map.",
-    textWidth: 229,
-    descriptionStyle: medium14,
-    marginTop: 26,
+    description: "Visualize outages across the city with our interactive live map.",
   },
 ];
 
 // Figma "Signup Screen Wireframe" (12:693), the "How it works" screen
 const HowItWorks = () => {
-  const { colors } = useTheme();
   const styles = useStyles();
 
   return (
-    <Screen top={37} bottom={40}>
-      <LogoHeader style={styles.header} />
-
-      <View style={styles.content}>
+    <Screen header={<AppHeader />} bottom={40}>
+      <View>
         <Text accessibilityRole="header" style={[type.h1, styles.title]}>
           How it works
         </Text>
 
-        {steps.map(({ icon, title, description, textWidth, descriptionStyle, marginTop }) => (
-          <View key={title} style={[styles.card, { marginTop }]}>
-            <View style={styles.badge}>
-              <Icon name={icon} />
-            </View>
+        <View style={styles.cards}>
+          {steps.map(({ icon, title, description }) => (
+            <View key={title} style={styles.card}>
+              <View style={styles.badge}>
+                <Icon name={icon} />
+              </View>
 
-            <View style={{ minWidth: textWidth, flexShrink: 1 }}>
-              <Text style={styles.cardTitle}>{title}</Text>
-              <Text style={[descriptionStyle, { color: colors.gray600 }]}>{description}</Text>
+              <View style={styles.cardText}>
+                <Text style={styles.cardTitle}>{title}</Text>
+                <Text style={styles.cardBody}>{description}</Text>
+              </View>
             </View>
-          </View>
-        ))}
+          ))}
+        </View>
 
         <Button label="Next" height={48} onPress={() => router.push("/location")} style={styles.next} />
       </View>
@@ -83,27 +65,32 @@ const HowItWorks = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  header: {
-    marginLeft: 12,
-    marginRight: 20,
-  },
-  content: {
-    paddingHorizontal: 24,
-  },
   title: {
-    marginTop: 50,
-    marginBottom: 8,
+    marginTop: 8,
     color: c.bg,
+  },
+  cards: {
+    marginTop: 24,
+    gap: 16,
   },
   card: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 16,
     borderWidth: 1,
-    borderColor: c.borderLight,
+    borderColor: c.border,
     borderRadius: 8,
+    backgroundColor: c.card,
     // Figma draws the 1px border inside the 16px padding
     padding: 15,
+  },
+  cardText: {
+    flex: 1,
+  },
+  cardBody: {
+    ...type.boldText,
+    lineHeight: 20,
+    color: c.gray600,
   },
   badge: {
     width: 48,
@@ -120,7 +107,7 @@ const useStyles = makeStyles((c) => ({
     color: c.black,
   },
   next: {
-    marginTop: 56.5,
+    marginTop: 40,
   },
 }));
 

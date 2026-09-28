@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import { Pressable, Text, View } from "react-native";
 import Icon from "../icons/Icon";
 import type { GlyphName } from "../icons/glyphs";
-import { alpha, fonts, type } from "../../theme";
+import { fonts, type } from "../../theme";
 import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 // Section/row list from the Figma "Profile" screen (143:217), shared by the
@@ -116,7 +116,7 @@ const useStyles = makeStyles((c) => ({
   },
   sectionCard: {
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
   },
@@ -125,7 +125,9 @@ const useStyles = makeStyles((c) => ({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    padding: 16,
+    paddingVertical: 16,
+    // 16 in the design, where the card's 1px stroke is drawn inside the padding
+    paddingHorizontal: 15,
   },
   rowLeft: {
     flexShrink: 1,
@@ -151,7 +153,7 @@ const useStyles = makeStyles((c) => ({
   },
   divider: {
     height: 1,
-    marginHorizontal: 8.5,
-    backgroundColor: c.stroke,
+    marginHorizontal: 15,
+    backgroundColor: c.border,
   },
 }));

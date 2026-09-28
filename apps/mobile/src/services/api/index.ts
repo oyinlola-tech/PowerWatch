@@ -24,7 +24,15 @@ export { API_URL } from "./config";
 export type * from "./types";
 
 export const authApi = {
-  register: (body: { fullName: string; email: string; password: string; deviceType?: DeviceType }) =>
+  register: (body: {
+    fullName: string;
+    email: string;
+    password: string;
+    deviceType?: DeviceType;
+    /** The person ticked "I agree to the Terms & Conditions and Privacy Policy" */
+    acceptedTerms: true;
+    termsVersion: string;
+  }) =>
     request<AuthResult>("/auth/register", { method: "POST", body, auth: false }),
   login: (email: string, password: string) =>
     request<AuthResult>("/auth/login", { method: "POST", body: { email, password }, auth: false }),

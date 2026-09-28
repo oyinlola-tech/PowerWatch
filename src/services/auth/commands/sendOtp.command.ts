@@ -4,6 +4,7 @@ import { OtpRepository } from '../../../repositories/otp.repository.js';
 import { AppError } from '../../../errors/index.js';
 import { env } from '../../../configs/env.config.js';
 import { MailService } from '../../mail/index.js';
+import { hashOtpCode } from '../../../utils/otp.js';
 
 export type OtpType = 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
 
@@ -39,7 +40,8 @@ export class SendOtpCommand {
     await this.otpRepository.invalidatePreviousOtps(normalizedEmail, type);
     await this.otpRepository.create({
       email: normalizedEmail,
-      code,
+      // Only the hash is kept; the code itself exists in the email alone
+      code: hashOtpCode(normalizedEmail, code),
       type,
       expiresAt,
     });

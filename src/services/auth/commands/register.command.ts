@@ -148,6 +148,8 @@ export class RegisterCommand {
           neighborhoodId: neighborhoodId ?? null,
           latitude: latitude ?? null,
           longitude: longitude ?? null,
+          termsAcceptedAt: new Date(),
+          termsVersion: dto.termsVersion ?? null,
         },
       });
 

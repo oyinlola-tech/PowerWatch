@@ -4,6 +4,7 @@ import { OtpRepository } from '../../../repositories/otp.repository.js';
 import { UserRepository } from '../../../repositories/user.repository.js';
 import { AuditRepository } from '../../../repositories/audit.repository.js';
 import { MESSAGES } from '../../../constants/message.constant.js';
+import { hashOtpCode } from '../../../utils/otp.js';
 
 export type OtpType = 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
 
@@ -33,7 +34,7 @@ export async function assertValidOtp(
     throw new AppError(429, MESSAGES.OTP_ATTEMPTS_EXCEEDED);
   }
 
-  if (!codesMatch(otp.code, code)) {
+  if (!codesMatch(otp.code, hashOtpCode(email, code))) {
     throw new AppError(400, MESSAGES.INVALID_OTP);
   }
 

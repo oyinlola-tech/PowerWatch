@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { useAuth } from "../context/AuthContext";
 import { ApiError } from "../services/api";
 import { FormError } from "../components/ui/StateViews";
-import LogoHeader from "../components/layout/LogoHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import Button from "../components/ui/Button";
@@ -49,10 +49,8 @@ const Login = () => {
   };
 
   return (
-    <Screen top={37} bottom={40}>
-      <LogoHeader style={styles.header} />
-
-      <View style={styles.content}>
+    <Screen header={<AppHeader back />} bottom={40}>
+      <View>
         {/* Heading */}
         <Text accessibilityRole="header" style={[type.h1, styles.title]}>
           Welcome Back
@@ -142,15 +140,8 @@ const Login = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  header: {
-    marginLeft: 19,
-    marginRight: 13,
-  },
-  content: {
-    paddingHorizontal: 24,
-  },
   title: {
-    marginTop: 48,
+    marginTop: 8,
     color: c.bg,
   },
   subtitle: {
@@ -180,19 +171,16 @@ const useStyles = makeStyles((c) => ({
     marginTop: 28,
   },
   footer: {
-    marginTop: 99,
+    marginTop: 48,
     flexDirection: "row",
+    flexWrap: "wrap",
     justifyContent: "center",
     gap: 4,
   },
   footerText: {
-    width: 171.52,
-    textAlign: "center",
     color: c.gray500,
   },
   footerLink: {
-    width: 60.47,
-    textAlign: "center",
     color: c.accent,
   },
 }));

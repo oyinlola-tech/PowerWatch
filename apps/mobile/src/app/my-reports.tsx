@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { Divider } from "../components/ui/ListSection";
@@ -11,7 +11,7 @@ import { reportsApi } from "../services/api";
 import type { MyReport } from "../services/api";
 import { goToDashboard } from "../services/navigation";
 import { formatDateTime } from "../utils/format";
-import { alpha, fonts, type } from "../theme";
+import { fonts, type } from "../theme";
 import { makeStyles, useTheme } from "../theme/ThemeContext";
 import { errorMessage } from "../utils/validation";
 
@@ -150,9 +150,7 @@ const MyReports = () => {
   };
 
   return (
-    <Screen top={23} bottom={40} onRefresh={() => void refresh()} refreshing={refreshing}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings" onRefresh={() => void refresh()} refreshing={refreshing}>
       <View style={styles.main}>
         {/* Heading */}
         <View style={styles.heading}>
@@ -171,9 +169,6 @@ const MyReports = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   heading: {
     gap: 8,
@@ -190,7 +185,7 @@ const useStyles = makeStyles((c) => ({
   },
   card: {
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
   },
@@ -226,7 +221,7 @@ const useStyles = makeStyles((c) => ({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: c.borderSoft,
+    borderColor: c.border,
     borderRadius: 8,
   },
   loadMoreLabel: {

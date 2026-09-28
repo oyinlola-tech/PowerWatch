@@ -1,5 +1,5 @@
 import { Alert, Pressable, Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
@@ -58,9 +58,7 @@ const Inbox = () => {
     ]);
 
   return (
-    <Screen top={23} bottom={40} onRefresh={inbox.refresh} refreshing={inbox.refreshing}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="dashboard" onRefresh={inbox.refresh} refreshing={inbox.refreshing}>
       <View style={styles.main}>
         <View style={styles.titleRow}>
           <View style={{ flex: 1 }}>
@@ -127,8 +125,6 @@ const Inbox = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   titleRow: {
     flexDirection: "row",
@@ -147,9 +143,9 @@ const useStyles = makeStyles((c) => ({
     gap: 1,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
-    backgroundColor: alpha(c.stroke, 0.6),
+    backgroundColor: c.border,
   },
   row: {
     flexDirection: "row",

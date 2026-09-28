@@ -1,10 +1,10 @@
 import { Pressable, Text, View } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
-import BackHeader from "../../components/layout/BackHeader";
+import AppHeader from "../../components/layout/AppHeader";
 import Screen from "../../components/layout/Screen";
 import Icon from "../../components/icons/Icon";
 import type { PowerStatus } from "../../types/power";
-import { alpha, fonts, shadows, type } from "../../theme";
+import { fonts, shadows, type } from "../../theme";
 import { makeStyles, useTheme } from "../../theme/ThemeContext";
 
 const goHome = () => router.dismissTo("/dashboard");
@@ -25,9 +25,7 @@ const ReportSubmitted = () => {
   const isOn = status === "on";
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={72} onBack={goHome} />
-
+    <Screen header={<AppHeader back onBack={goHome} />} nav="dashboard" bottom={40}>
       {/* Success */}
       <View style={styles.success}>
         <View style={styles.circle}>
@@ -37,7 +35,7 @@ const ReportSubmitted = () => {
           Report Submitted{"\n"}Successfully!
         </Text>
         <Text style={[type.boldText, styles.thanks]}>
-          {"Thank you for helping your community stay\ninformed."}
+          Thank you for helping your community stay informed.
         </Text>
       </View>
 
@@ -47,7 +45,7 @@ const ReportSubmitted = () => {
           <View style={styles.locationTile}>
             <Icon name="locationPinOutline" color={colors.navy} />
           </View>
-          <View>
+          <View style={styles.detailText}>
             <Text style={styles.detailLabel}>Reported Location</Text>
             <Text style={[styles.detailValue, { color: colors.ink }]}>
               {streetAddress ?? "Your neighborhood"}
@@ -65,11 +63,11 @@ const ReportSubmitted = () => {
 
         <View style={styles.divider} />
 
-        <View style={[styles.detailRow, styles.statusRow]}>
+        <View style={styles.detailRow}>
           <View style={styles.statusCircle}>
             <Icon name="plugOffSmall" />
           </View>
-          <View>
+          <View style={styles.detailText}>
             <Text style={styles.detailLabel}>Reported Status</Text>
             <Text style={[styles.detailValue, { color: colors.muted }]}>
               {isOn ? "Power is ON" : "Power is OFF"}
@@ -88,7 +86,7 @@ const ReportSubmitted = () => {
           <Text style={styles.nextText}>
             {statusChanged === "1"
               ? `Your report updated your neighborhood's status to Power ${isOn ? "ON" : "OFF"}. Neighbors who follow this area are being notified.`
-              : "Your report has been shared. Community\nmembers in your area will verify this report\nshortly to ensure live accuracy."}
+              : "Your report has been shared. Community members in your area will verify this report shortly to ensure live accuracy."}
           </Text>
         </View>
       </View>
@@ -120,15 +118,13 @@ const ReportSubmitted = () => {
 
 const useStyles = makeStyles((c) => ({
   success: {
-    marginTop: 21,
-    marginHorizontal: 16,
     alignItems: "center",
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.3),
+    borderColor: c.border,
     borderRadius: 12,
     backgroundColor: c.card,
     // Figma draws the 1px border inside the padding
-    paddingTop: 12,
+    paddingTop: 23,
     paddingHorizontal: 23,
     paddingBottom: 31,
   },
@@ -152,24 +148,22 @@ const useStyles = makeStyles((c) => ({
     opacity: 0.9,
   },
   details: {
-    marginTop: 10,
-    marginHorizontal: 16,
-    height: 177,
+    marginTop: 16,
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.3),
+    borderColor: c.border,
     borderRadius: 12,
     backgroundColor: c.card,
     padding: 19,
-    boxShadow: shadows.card,
+  },
+  // Lets long location lines wrap inside the card
+  detailText: {
+    flex: 1,
   },
   detailRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-  },
-  statusRow: {
-    marginTop: 2.5,
   },
   locationTile: {
     width: 40,
@@ -208,12 +202,11 @@ const useStyles = makeStyles((c) => ({
   },
   divider: {
     height: 1,
-    backgroundColor: alpha(c.stroke, 0.3),
+    backgroundColor: c.border,
   },
   nextSteps: {
-    marginTop: 22,
+    marginTop: 24,
     gap: 12,
-    paddingHorizontal: 16,
   },
   nextTitle: {
     fontFamily: fonts.segoeSemibold,
@@ -242,14 +235,10 @@ const useStyles = makeStyles((c) => ({
     color: c.slate,
   },
   actions: {
-    marginTop: 61,
-    alignItems: "center",
+    marginTop: 32,
     gap: 16,
-    paddingHorizontal: 16,
   },
   button: {
-    width: 322,
-    maxWidth: "100%",
     height: 64,
     alignItems: "center",
     justifyContent: "center",
@@ -261,7 +250,7 @@ const useStyles = makeStyles((c) => ({
   },
   secondary: {
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.3),
+    borderColor: c.border,
     backgroundColor: c.gray,
   },
   pressed: {

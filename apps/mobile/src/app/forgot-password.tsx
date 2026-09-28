@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Text, View } from "react-native";
 import { router } from "expo-router";
-import LogoHeader from "../components/layout/LogoHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Button from "../components/ui/Button";
 import { FormError } from "../components/ui/StateViews";
@@ -45,10 +45,8 @@ const ForgotPassword = () => {
   };
 
   return (
-    <Screen top={37} bottom={40}>
-      <LogoHeader style={styles.header} />
-
-      <View style={styles.content}>
+    <Screen header={<AppHeader back />} bottom={40}>
+      <View>
         {/* Heading */}
         <Text accessibilityRole="header" style={[type.h1, styles.title]}>
           Forgot Password
@@ -100,15 +98,8 @@ const ForgotPassword = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  header: {
-    marginLeft: 19,
-    marginRight: 13,
-  },
-  content: {
-    paddingHorizontal: 24,
-  },
   title: {
-    marginTop: 48,
+    marginTop: 8,
     color: c.bg,
   },
   subtitle: {

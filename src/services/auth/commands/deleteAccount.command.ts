@@ -13,8 +13,6 @@ export class DeleteAccountCommand {
   async execute(
     userId: string,
     password: string,
-    ipAddress?: string,
-    userAgent?: string,
   ) {
     const user = await this.userRepository.findByIdWithFull(userId);
     if (!user || user.deletedAt) {
@@ -28,13 +26,12 @@ export class DeleteAccountCommand {
 
     await this.userRepository.anonymizeAndDelete(userId);
 
+    // Records that the deletion happened, without the IP address or device of the person who left
     await this.auditRepository.create({
       userId,
       action: 'ACCOUNT_DELETE',
       entityType: 'User',
       entityId: userId,
-      ipAddress: ipAddress ?? null,
-      userAgent: userAgent ?? null,
     });
 
     return { message: 'Account deleted successfully.' };

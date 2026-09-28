@@ -23,6 +23,8 @@ const FIND_OR_CREATE_MAX_ATTEMPTS = 3;
 
 type GeoPoint = { latitude: number; longitude: number };
 
+const approximate = (coordinate: number) => Math.round(coordinate * 100) / 100;
+
 type LocationTable = 'state' | 'lGA' | 'city' | 'town' | 'neighborhood';
 type MaxIdDelegate = {
   aggregate: (args: { _max: { id: true } }) => Promise<{ _max: { id: number | null } }>;
@@ -118,10 +120,18 @@ export class ReverseGeocodeQuery {
     return this.findOrCreate(
       'neighborhood',
       (tx) => tx.neighborhood.findFirst({ where: { name, townId } }),
-      // A neighborhood first seen via GPS keeps that point, so the status map can place it.
+      // A neighborhood first seen via GPS is placed on the status map near that point.
+      // The point is someone's home or street, and neighborhood coordinates are public,
+      // so only an approximate position (two decimals, about 1 km) is kept.
       (tx, id) =>
         tx.neighborhood.create({
-          data: { id, name, townId, latitude: point?.latitude ?? null, longitude: point?.longitude ?? null },
+          data: {
+            id,
+            name,
+            townId,
+            latitude: point ? approximate(point.latitude) : null,
+            longitude: point ? approximate(point.longitude) : null,
+          },
         }),
     );
   }

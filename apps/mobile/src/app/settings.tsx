@@ -3,8 +3,7 @@ import { Alert, Pressable, Text, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Constants from "expo-constants";
 import { router } from "expo-router";
-import BackHeader from "../components/layout/BackHeader";
-import NavBar from "../components/layout/NavBar";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { Chevron, Divider, Row, Section } from "../components/ui/ListSection";
@@ -74,14 +73,11 @@ const Profile = () => {
 
   return (
     <Screen
-      top={23}
-      bottom={80}
-      overlay={<NavBar active="settings" />}
+      header={<AppHeader back />}
+      nav="settings"
       onRefresh={saved.refresh}
       refreshing={saved.refreshing}
     >
-      <BackHeader height={63} />
-
       <View style={styles.main}>
         {/* Summary */}
         <View style={styles.summary}>
@@ -246,16 +242,13 @@ const Profile = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   summary: {
     flexDirection: "row",
     alignItems: "center",
     gap: 16,
     borderWidth: 1,
-    borderColor: alpha(c.stroke, 0.6),
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
     padding: 16,

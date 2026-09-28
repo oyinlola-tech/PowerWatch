@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { analyticsController } from '../controllers/analytics.controller.js';
-import { authMiddleware } from '../middlewares/auth.middleware.js';
+import { adminMiddleware, authMiddleware } from '../middlewares/auth.middleware.js';
 
 export const analyticsRoutes: FastifyPluginAsync = async (app) => {
   app.addHook('preHandler', authMiddleware);
@@ -57,9 +57,11 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     },
   }, analyticsController.getOutageStatistics);
 
+  // Returns reporters' names and emails, so administrators only
   app.get('/users', {
+    preHandler: adminMiddleware,
     schema: {
-      description: 'Get user statistics (totals, verification rate, top reporters).',
+      description: 'Admin only. Get user statistics (totals, verification rate, top reporters).',
       tags: ['Analytics'],
       summary: 'User statistics',
       response: {
@@ -76,9 +78,11 @@ export const analyticsRoutes: FastifyPluginAsync = async (app) => {
     },
   }, analyticsController.getUserStatistics);
 
+  // Per-neighborhood user counts can single out a household in a small area
   app.get('/locations', {
+    preHandler: adminMiddleware,
     schema: {
-      description: 'Get location statistics (report/outage/user counts per neighborhood).',
+      description: 'Admin only. Get location statistics (report/outage/user counts per neighborhood).',
       tags: ['Analytics'],
       summary: 'Location statistics',
       response: {

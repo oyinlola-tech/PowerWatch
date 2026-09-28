@@ -114,6 +114,18 @@ export const registerSchema = z
       .optional(),
 
     deviceType: deviceTypeEnum.optional(),
+
+    // Accounts are only created with recorded agreement to the Terms and Privacy Policy
+    acceptedTerms: z.literal(true, {
+      message: 'You must agree to the Terms & Conditions and Privacy Policy.',
+    }),
+
+    // Version (date) of the documents the person was shown
+    termsVersion: z
+      .string()
+      .trim()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, 'Terms version must be a date (YYYY-MM-DD).')
+      .optional(),
   })
   .refine((data) => !data.confirmPassword || data.password === data.confirmPassword, {
     message: 'Passwords do not match.',

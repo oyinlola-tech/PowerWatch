@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { Divider, Row, Section } from "../components/ui/ListSection";
@@ -22,9 +22,7 @@ const Language = () => {
   const styles = useStyles();
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings">
       <View style={styles.main}>
         <Text accessibilityRole="header" style={styles.title}>
           Language
@@ -66,8 +64,6 @@ const Language = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   title: {
     ...type.h1,
@@ -98,7 +94,7 @@ const useStyles = makeStyles((c) => ({
     alignItems: "flex-start",
     gap: 12,
     borderWidth: 1,
-    borderColor: c.borderLight,
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.surface,
     padding: 15,

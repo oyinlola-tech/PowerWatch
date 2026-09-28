@@ -2,9 +2,14 @@ import Footer from "./Footer";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import { contactSection, LEGAL_LAST_UPDATED } from "../content/legal";
-import type { LegalDocument } from "../content/legal";
+import type { LegalContact, LegalDocument } from "../content/legal";
 
-const SUPPORT_EMAIL: string | undefined = import.meta.env.VITE_SUPPORT_EMAIL || undefined;
+const CONTACT: LegalContact = {
+  name: import.meta.env.VITE_LEGAL_NAME || undefined,
+  address: import.meta.env.VITE_LEGAL_ADDRESS || undefined,
+  email: import.meta.env.VITE_SUPPORT_EMAIL || undefined,
+  dataProtectionEmail: import.meta.env.VITE_DATA_PROTECTION_EMAIL || undefined,
+};
 
 const slug = (text: string) => text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
@@ -16,7 +21,7 @@ interface LegalPageProps {
 // Public copy of the in-app Privacy Policy / Terms & Conditions (app stores
 // require a web address for these). Wording: src/content/legal.ts.
 const LegalPage = ({ document, related }: LegalPageProps) => {
-  const sections = [...document.sections, contactSection(SUPPORT_EMAIL)];
+  const sections = [...document.sections, contactSection(CONTACT)];
 
   return (
     <>

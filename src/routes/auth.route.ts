@@ -46,8 +46,10 @@ export const authRoutes: FastifyPluginAsync = async (app) => {
       summary: 'Register a new user',
       body: {
         type: 'object',
-        required: ['email', 'password'],
+        required: ['email', 'password', 'acceptedTerms'],
         properties: {
+          acceptedTerms: { type: 'boolean', description: 'Must be true: the person agreed to the Terms & Conditions and Privacy Policy' },
+          termsVersion: { type: 'string', description: 'Version (date) of the documents shown', example: '2026-09-27' },
           fullName: { type: 'string', description: 'Full name; split into first and last name', example: 'Oluwayemi Oyinlola' },
           firstName: { type: 'string', description: "User's first name (if fullName is not sent)", example: 'Oluwayemi' },
           lastName: { type: 'string', description: "User's last name", example: 'Oyinlola' },

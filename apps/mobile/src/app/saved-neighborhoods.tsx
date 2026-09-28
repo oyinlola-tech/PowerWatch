@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Alert, Pressable, Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { Divider, Section } from "../components/ui/ListSection";
@@ -135,9 +135,7 @@ const SavedNeighborhoods = () => {
   };
 
   return (
-    <Screen top={23} bottom={40} onRefresh={() => void refresh()} refreshing={refreshing}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings" onRefresh={() => void refresh()} refreshing={refreshing}>
       <View style={styles.main}>
         {/* Heading */}
         <View style={styles.heading}>
@@ -172,9 +170,6 @@ const SavedNeighborhoods = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
   },
   heading: {
     gap: 8,

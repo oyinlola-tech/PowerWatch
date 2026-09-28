@@ -1,5 +1,5 @@
 import { Text, View } from "react-native";
-import BackHeader from "../components/layout/BackHeader";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Accordion from "../components/ui/Accordion";
 import type { AccordionItem } from "../components/ui/Accordion";
@@ -69,9 +69,7 @@ const Help = () => {
   const styles = useStyles();
 
   return (
-    <Screen top={23} bottom={40}>
-      <BackHeader height={63} />
-
+    <Screen header={<AppHeader back />} nav="settings">
       <View style={styles.main}>
         <View style={styles.intro}>
           <Text accessibilityRole="header" style={styles.title}>
@@ -96,8 +94,6 @@ const Help = () => {
 const useStyles = makeStyles((c) => ({
   main: {
     gap: 24,
-    paddingTop: 24,
-    paddingHorizontal: 16,
   },
   intro: {
     gap: 8,

@@ -9,7 +9,15 @@ const DEFAULT_PORT = 3000;
  */
 const resolveApiUrl = (): string => {
   const configured = process.env.EXPO_PUBLIC_API_URL?.trim();
-  if (configured) return configured.replace(/\/+$/, "");
+  if (configured) {
+    // Store builds must never send passwords, tokens or locations unencrypted
+    // (EXPO_PUBLIC_ALLOW_INSECURE_API=1 is for test builds against a local server)
+    const allowInsecure = process.env.EXPO_PUBLIC_ALLOW_INSECURE_API === "1";
+    if (!__DEV__ && !allowInsecure && !configured.startsWith("https://")) {
+      throw new Error("EXPO_PUBLIC_API_URL must start with https:// in release builds.");
+    }
+    return configured.replace(/\/+$/, "");
+  }
 
   const devHost = Constants.expoConfig?.hostUri?.split(":")[0];
   if (devHost) return `http://${devHost}:${DEFAULT_PORT}`;

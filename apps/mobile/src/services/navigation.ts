@@ -8,12 +8,17 @@ export type NavItem = "dashboard" | "history" | "settings" | "map";
 export const comingSoon = (feature: string) =>
   Alert.alert(feature, `${feature} is coming soon.`);
 
-// The dashboard is the root of the signed-in stack; other tabs sit on top of it
-export const goToTab = (item: NavItem, active: NavItem) => {
-  if (item === active) return;
+// The dashboard is the root of the signed-in stack; other tabs sit on top of it.
+// `onTabRoot` is false on screens opened from a tab (e.g. Profile Settings).
+export const goToTab = (item: NavItem, active: NavItem, onTabRoot = true) => {
+  if (item === active && onTabRoot) return;
 
-  if (item === "dashboard") {
+  if (item === "dashboard" || item === active) {
+    // Back to a tab that is already underneath this screen
+    router.dismissTo(`/${item}`);
+  } else if (!onTabRoot) {
     router.dismissTo("/dashboard");
+    router.push(`/${item}`);
   } else if (active === "dashboard") {
     router.push(`/${item}`);
   } else {

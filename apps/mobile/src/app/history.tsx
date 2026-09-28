@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import BackHeader from "../components/layout/BackHeader";
-import NavBar from "../components/layout/NavBar";
+import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
 import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
@@ -12,7 +10,7 @@ import { historyApi } from "../services/api";
 import type { HistorySummary } from "../services/api";
 import { startReport } from "../services/navigation";
 import { dayFraction, dayLabel, formatDuration, weekdayName } from "../utils/format";
-import { shadows, type } from "../theme";
+import { layout, shadows, type } from "../theme";
 import { makeStyles, useTheme } from "../theme/ThemeContext";
 
 // Older days fade out, as in the design (cards 4 and 5)
@@ -66,7 +64,6 @@ const DayCard = ({ day, index }: { day: HistorySummary["days"][number]; index: n
 };
 
 const FloatingReportButton = () => {
-  const insets = useSafeAreaInsets();
   const styles = useStyles();
 
   return (
@@ -74,7 +71,7 @@ const FloatingReportButton = () => {
       accessibilityRole="button"
       accessibilityLabel="Report power status"
       onPress={startReport}
-      style={[styles.fab, { bottom: 80 + 21 + insets.bottom }]}
+      style={styles.fab}
     >
       <Icon name="plusCircle" />
     </Pressable>
@@ -92,20 +89,15 @@ const WeeklyHistory = () => {
 
   return (
     <Screen
-      top={23}
-      bottom={80 + 42}
+      header={<AppHeader back />}
+      nav="history"
+      // Leaves room to scroll the last card clear of the floating button
+      bottom={21 + 49 + 21}
       onRefresh={summary.refresh}
       refreshing={summary.refreshing}
-      overlay={
-        <>
-          <FloatingReportButton />
-          <NavBar active="history" />
-        </>
-      }
+      overlay={<FloatingReportButton />}
     >
-      <BackHeader height={63} />
-
-      <View style={styles.content}>
+      <View>
         {/* Weekly summary */}
         <View style={styles.titleRow}>
           <Text accessibilityRole="header" style={[type.h1, { color: colors.ink }]}>
@@ -134,13 +126,13 @@ const WeeklyHistory = () => {
           <>
             <View style={styles.bento}>
               <View style={styles.bentoRow}>
-                <View style={[styles.card, { height: 73 }]}>
+                <View style={styles.card}>
                   <Text style={[type.lightText, { color: colors.slate }]}>Total Outage Time</Text>
                   <Text style={[type.buttonText, styles.value, { color: colors.danger }]}>
                     {formatDuration(data.totalOutageMinutes)}
                   </Text>
                 </View>
-                <View style={[styles.card, { height: 75 }]}>
+                <View style={styles.card}>
                   <Text style={[type.lightText, { color: colors.slate }]}>Uptime Percentage</Text>
                   <Text style={[type.buttonText, styles.value, { color: colors.accent }]}>
                     {data.uptimePercent}%
@@ -208,25 +200,18 @@ const WeeklyHistory = () => {
 };
 
 const useStyles = makeStyles((c) => ({
-  content: {
-    width: 319,
-    maxWidth: "100%",
-    alignSelf: "center",
-    paddingTop: 42,
-  },
   titleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
   },
   bento: {
     marginTop: 20,
     gap: 8,
   },
   bentoRow: {
-    height: 86,
     flexDirection: "row",
-    alignItems: "flex-start",
     gap: 8,
   },
   card: {
@@ -234,23 +219,21 @@ const useStyles = makeStyles((c) => ({
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 8,
+    backgroundColor: c.card,
     padding: 15,
   },
   value: {
     marginTop: 1,
   },
   longest: {
-    height: 82,
     flexDirection: "row",
-    alignItems: "flex-start",
+    alignItems: "center",
     justifyContent: "space-between",
     borderWidth: 1,
     borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.tintBlueLight,
-    paddingTop: 16,
-    paddingLeft: 15,
-    paddingRight: 12,
+    padding: 15,
   },
   longestValue: {
     marginTop: 9,
@@ -266,11 +249,10 @@ const useStyles = makeStyles((c) => ({
     opacity: 0.7,
   },
   timer: {
-    marginTop: 11,
     opacity: 0.4,
   },
   timelineHeader: {
-    marginTop: 42,
+    marginTop: 32,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -297,7 +279,7 @@ const useStyles = makeStyles((c) => ({
   day_: {
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: c.borderSoft,
+    borderColor: c.border,
     borderRadius: 8,
     backgroundColor: c.card,
   },
@@ -335,8 +317,9 @@ const useStyles = makeStyles((c) => ({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: c.borderSoft,
+    borderColor: c.border,
     borderRadius: 8,
+    backgroundColor: c.card,
   },
   loadMoreLabel: {
     textAlign: "center",
@@ -344,7 +327,8 @@ const useStyles = makeStyles((c) => ({
   },
   fab: {
     position: "absolute",
-    right: 28,
+    right: layout.gutter,
+    bottom: 21,
     width: 49,
     height: 49,
     alignItems: "center",
