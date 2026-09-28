@@ -35,17 +35,22 @@ on:
         required: false
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: android-release
   cancel-in-progress: false
 
 jobs:
-  release:
+  # Builds on EAS. The free EAS queue can take over an hour, so publishing is a separate job
+  # that starts afterwards with a fresh GitHub token (a long-waiting job's token can stop working).
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 240
     if: ${{ !contains(github.event.head_commit.message, '[skip release]') }}
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      previous: ${{ steps.version.outputs.previous }}
     defaults:
       run:
         working-directory: apps/mobile
@@ -130,11 +135,38 @@ jobs:
           fi
           curl -fsSL "$url" -o "PowerWatch-${{ steps.version.outputs.version }}.apk"
 
+      - uses: actions/upload-artifact@v7
+        with:
+          name: apk
+          path: apps/mobile/PowerWatch-${{ steps.version.outputs.version }}.apk
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: apk
+          path: apps/mobile
+
       - name: Publish the GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.version.outputs.version }}
-          PREVIOUS: ${{ steps.version.outputs.previous }}
+          VERSION: ${{ needs.build.outputs.version }}
+          PREVIOUS: ${{ needs.build.outputs.previous }}
           INPUT_NOTES: ${{ inputs.notes }}
         run: |
           # Notes: the Actions-tab box, else the annotated tag's message, else the app's commit
