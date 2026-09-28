@@ -25,8 +25,9 @@ const ResetPassword = () => {
   const params = useLocalSearchParams<{ email?: string; returnTo?: string }>();
   const email = typeof params.email === "string" ? params.email : "";
   // Set when opened from Profile Settings' "Set a password" (a Google account with no
-  // PowerWatch password yet), rather than the signed-out "forgot password" flow.
-  const returnTo = typeof params.returnTo === "string" ? params.returnTo : undefined;
+  // PowerWatch password yet), rather than the signed-out "forgot password" flow. The
+  // only caller today is profile-settings.tsx, hence the narrow literal type.
+  const returnTo = params.returnTo === "/profile-settings" ? "/profile-settings" as const : undefined;
   const { refreshUser } = useAuth();
   const { colors } = useTheme();
   const styles = useStyles();

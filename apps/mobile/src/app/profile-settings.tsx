@@ -272,8 +272,28 @@ const ChangePassword = () => {
 };
 
 const DeleteAccount = () => {
-  const { signOut } = useAuth();
+  const user = useUser();
   const { colors } = useTheme();
+  const styles = useStyles();
+
+  return (
+    <View style={styles.section}>
+      <Text accessibilityRole="header" style={[type.boldText, { color: colors.danger }]}>
+        DELETE ACCOUNT
+      </Text>
+      <View style={[styles.form, styles.danger]}>
+        <Text style={styles.dangerText}>
+          {"Deleting your account signs you out everywhere and removes your profile. This can't be undone."}
+        </Text>
+        {user.passwordSet ? <DeleteWithPassword /> : <DeleteWithGoogle />}
+      </View>
+    </View>
+  );
+};
+
+// Accounts with a PowerWatch password confirm deletion with it.
+const DeleteWithPassword = () => {
+  const { signOut } = useAuth();
   const styles = useStyles();
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -284,7 +304,7 @@ const DeleteAccount = () => {
   const deleteAccount = async () => {
     setDeleting(true);
     try {
-      await authApi.deleteAccount(password);
+      await authApi.deleteAccount({ password });
       await signOut();
     } catch (error) {
       if (error instanceof ApiError && error.fieldErrors.password) {
@@ -313,40 +333,89 @@ const DeleteAccount = () => {
   };
 
   return (
-    <View style={styles.section}>
-      <Text accessibilityRole="header" style={[type.boldText, { color: colors.danger }]}>
-        DELETE ACCOUNT
+    <>
+      <FormError message={formError} />
+      <TextField
+        label="Password"
+        icon="lock"
+        labelGap={6}
+        placeholder="••••••••"
+        secureTextEntry={!showPassword}
+        autoComplete="current-password"
+        textContentType="password"
+        value={password}
+        onChangeText={(text) => {
+          setPassword(text);
+          if (passwordError) setPasswordError(undefined);
+        }}
+        error={passwordError}
+        right={<EyeToggle visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
+      />
+      <Button
+        label="Delete My Account"
+        height={48}
+        loading={deleting}
+        onPress={handlePress}
+        style={styles.deleteButton}
+      />
+    </>
+  );
+};
+
+// Accounts with no PowerWatch password (`passwordSet: false`) confirm deletion by
+// signing in with Google again and sending the fresh ID token.
+const DeleteWithGoogle = () => {
+  const { signOut } = useAuth();
+  const styles = useStyles();
+  const [formError, setFormError] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+
+  const deleteWithToken = async (idToken: string) => {
+    setDeleting(true);
+    try {
+      await authApi.deleteAccount({ googleIdToken: idToken });
+      await signOut();
+    } catch (error) {
+      setFormError(errorMessage(error));
+      setDeleting(false);
+    }
+  };
+
+  const handlePress = async () => {
+    setFormError(null);
+    if (!isGoogleSignInAvailable()) {
+      setFormError("Google sign-in needs the installed app, not Expo Go.");
+      return;
+    }
+    const outcome = await googleNativeSignIn();
+    if (!outcome.ok) {
+      if (outcome.reason !== "cancelled") setFormError(outcome.message);
+      return;
+    }
+    Alert.alert(
+      "Delete your account?",
+      "Your profile will be removed and you'll be signed out everywhere. This can't be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Delete", style: "destructive", onPress: () => void deleteWithToken(outcome.idToken) },
+      ],
+    );
+  };
+
+  return (
+    <>
+      <Text style={styles.dangerText}>
+        {"You signed up with Google. Confirm by signing in with Google again."}
       </Text>
-      <View style={[styles.form, styles.danger]}>
-        <Text style={styles.dangerText}>
-          {"Deleting your account signs you out everywhere and removes your profile. This can't be undone."}
-        </Text>
-        <FormError message={formError} />
-        <TextField
-          label="Password"
-          icon="lock"
-          labelGap={6}
-          placeholder="••••••••"
-          secureTextEntry={!showPassword}
-          autoComplete="current-password"
-          textContentType="password"
-          value={password}
-          onChangeText={(text) => {
-            setPassword(text);
-            if (passwordError) setPasswordError(undefined);
-          }}
-          error={passwordError}
-          right={<EyeToggle visible={showPassword} onToggle={() => setShowPassword((v) => !v)} />}
-        />
-        <Button
-          label="Delete My Account"
-          height={48}
-          loading={deleting}
-          onPress={handlePress}
-          style={styles.deleteButton}
-        />
-      </View>
-    </View>
+      <FormError message={formError} />
+      <Button
+        label="Sign in with Google to Delete"
+        height={48}
+        loading={deleting}
+        onPress={() => void handlePress()}
+        style={styles.deleteButton}
+      />
+    </>
   );
 };
 
@@ -415,7 +484,7 @@ const ProfileSettings = () => {
         </View>
 
         <PersonalInfo />
-        <ChangePassword />
+        {user.passwordSet ? <ChangePassword /> : <SetPassword />}
         <Privacy />
         <DeleteAccount />
       </View>
@@ -486,6 +555,12 @@ const useStyles = makeStyles((c) => ({
   form: {
     gap: 16,
     padding: 16,
+  },
+  setPasswordText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: c.gray600,
   },
   eye: {
     paddingRight: 16,
