@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -373,6 +373,22 @@ const PowerMap = () => {
         <Text style={styles.subtitle}>{subtitle}</Text>
       </View>
 
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Across Nigeria, view national power statistics"
+        onPress={() => router.push("/nigeria-stats")}
+        style={({ pressed }) => [styles.nigeriaCard, pressed && { opacity: 0.85 }]}
+      >
+        <View style={styles.nigeriaIcon}>
+          <Icon name="mapLocation" width={20} color={colors.accent} />
+        </View>
+        <View style={styles.nigeriaText}>
+          <Text style={[type.boldText, { color: colors.ink }]}>Across Nigeria</Text>
+          <Text style={styles.listSub}>Today&apos;s and this week&apos;s national power statistics</Text>
+        </View>
+        <Icon name="chevronRight" color={colors.muted} width={14} />
+      </Pressable>
+
       <CheckAnotherArea />
 
       {/* View switch */}
@@ -481,6 +497,28 @@ const useStyles = makeStyles((c) => ({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+  },
+  nigeriaCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: c.border,
+    borderRadius: 12,
+    backgroundColor: c.card,
+    padding: 16,
+  },
+  nigeriaIcon: {
+    width: 40,
+    height: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: c.tintBlueLight,
+  },
+  nigeriaText: {
+    flex: 1,
+    gap: 2,
   },
   checkSection: {
     gap: 4,

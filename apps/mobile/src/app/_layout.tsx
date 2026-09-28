@@ -130,6 +130,8 @@ const RootStack = () => {
         <Stack.Screen name="dashboard" options={{ animation: "fade" }} />
         <Stack.Screen name="map" options={{ animation: "fade" }} />
         <Stack.Screen name="history" options={{ animation: "fade" }} />
+        <Stack.Screen name="history-day/[date]" />
+        <Stack.Screen name="nigeria-stats" />
         <Stack.Screen name="settings" options={{ animation: "fade" }} />
         <Stack.Screen name="confirm/[status]" />
         <Stack.Screen name="report-submitted/[status]" />

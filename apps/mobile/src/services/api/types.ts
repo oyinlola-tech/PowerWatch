@@ -221,6 +221,64 @@ export interface LatestRelease {
   minimumVersion: string | null;
 }
 
+export interface Outage {
+  id: string;
+  neighborhoodId: number;
+  startTime: string;
+  endTime: string | null;
+  /** Total outage length in minutes; null while still ongoing. */
+  duration: number | null;
+  reportCount: number;
+  createdAt: string;
+  updatedAt: string;
+  neighborhood: Named;
+}
+
+/** A report linked to an outage, with no reporter identity. */
+export interface OutageReportEntry {
+  report: {
+    id: string;
+    reportType: "ON" | "OFF";
+    timestamp: string;
+  };
+}
+
+export interface OutageDetail extends Outage {
+  outageReports: OutageReportEntry[];
+}
+
+export interface NeighborhoodReportStat {
+  neighborhoodId: number;
+  neighborhoodName: string;
+  reportCount: number;
+}
+
+export interface PowerStatistics {
+  totalReports: number;
+  onReports: number;
+  offReports: number;
+  onPercentage: string;
+  offPercentage: string;
+  fromCache: boolean;
+  topNeighborhoods: NeighborhoodReportStat[];
+}
+
+export interface NeighborhoodOutageStat {
+  neighborhoodId: number;
+  neighborhoodName: string;
+  outageCount: number;
+  averageDurationMinutes: number;
+}
+
+export interface OutageStatistics {
+  totalOutages: number;
+  activeOutages: number;
+  completedOutages: number;
+  averageDurationMinutes: number;
+  fromCache: boolean;
+  topNeighborhoods: NeighborhoodOutageStat[];
+}
+
 export interface SignInSession {
   id: string;
   isCurrent: boolean;

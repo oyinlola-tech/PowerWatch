@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
+import { router } from "expo-router";
 import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
@@ -21,12 +22,20 @@ const DayCard = ({ day, index }: { day: HistorySummary["days"][number]; index: n
   const styles = useStyles();
   const hadOutage = day.offMinutes > 0;
   return (
-    <View style={[styles.day_, { opacity: dayOpacity(index) }]}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${dayLabel(day.date, index)}, see outage details`}
+      onPress={() => router.push(`/history-day/${day.date}`)}
+      style={({ pressed }) => [styles.day_, { opacity: pressed ? dayOpacity(index) * 0.8 : dayOpacity(index) }]}
+    >
       <View style={styles.dayHeader}>
         <Text style={[type.boldText, { color: colors.ink }]}>{dayLabel(day.date, index)}</Text>
-        <Text style={[type.boldText, { color: hadOutage ? colors.danger : colors.navy }]}>
-          {formatDuration(day.offMinutes)} Off
-        </Text>
+        <View style={styles.dayHeaderRight}>
+          <Text style={[type.boldText, { color: hadOutage ? colors.danger : colors.navy }]}>
+            {formatDuration(day.offMinutes)} Off
+          </Text>
+          <Icon name="chevronRight" color={colors.muted} width={14} />
+        </View>
       </View>
 
       <View style={styles.dayBody}>
@@ -59,7 +68,7 @@ const DayCard = ({ day, index }: { day: HistorySummary["days"][number]; index: n
           <Text style={[type.boldText, { color: colors.muted }]}>23:59</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 };
 
@@ -290,6 +299,11 @@ const useStyles = makeStyles((c) => ({
     backgroundColor: c.gray,
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  dayHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   dayBody: {
     gap: 8,

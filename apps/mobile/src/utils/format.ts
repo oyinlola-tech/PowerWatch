@@ -39,6 +39,45 @@ export const dayLabel = (date: string, index: number): string => {
   return `${prefix}, ${MONTHS[day.getUTCMonth()]} ${day.getUTCDate()}`;
 };
 
+/** "Monday, June 12" for a YYYY-MM-DD calendar date, no relative "Today"/"Yesterday". */
+export const fullDayLabel = (date: string): string => {
+  const day = parseDay(date);
+  return `${WEEKDAYS[day.getUTCDay()]}, ${MONTHS[day.getUTCMonth()]} ${day.getUTCDate()}`;
+};
+
+// Africa/Lagos is a fixed UTC+1 offset year-round (no daylight saving), so it can be
+// applied as a constant shift instead of pulling in a timezone library.
+const LAGOS_OFFSET_MS = 60 * 60 * 1000;
+
+/** The Africa/Lagos calendar date (YYYY-MM-DD) that an instant falls on. */
+export const lagosDateString = (date: Date = new Date()): string => {
+  const lagos = new Date(date.getTime() + LAGOS_OFFSET_MS);
+  const y = lagos.getUTCFullYear();
+  const m = String(lagos.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(lagos.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+/** Midnight-to-midnight range in Africa/Lagos for a YYYY-MM-DD date, as ISO instants. */
+export const lagosDayRange = (date: string): { from: string; to: string } => {
+  const [y, m, d] = date.split("-").map(Number);
+  const from = new Date(Date.UTC(y!, m! - 1, d!) - LAGOS_OFFSET_MS);
+  const to = new Date(Date.UTC(y!, m! - 1, d! + 1) - LAGOS_OFFSET_MS);
+  return { from: from.toISOString(), to: to.toISOString() };
+};
+
+/** "HH:mm" in Africa/Lagos for an ISO instant. */
+export const lagosTime = (iso: string): string => {
+  const lagos = new Date(new Date(iso).getTime() + LAGOS_OFFSET_MS);
+  return `${String(lagos.getUTCHours()).padStart(2, "0")}:${String(lagos.getUTCMinutes()).padStart(2, "0")}`;
+};
+
+/** "Jun 12, 14:05" in Africa/Lagos for an ISO instant. */
+export const lagosDateTime = (iso: string): string => {
+  const lagos = new Date(new Date(iso).getTime() + LAGOS_OFFSET_MS);
+  return `${MONTHS[lagos.getUTCMonth()]!.slice(0, 3)} ${lagos.getUTCDate()}, ${lagosTime(iso)}`;
+};
+
 /** "Sep 27, 2026, 14:05" in the device's locale-agnostic format */
 export const formatDateTime = (iso: string): string => {
   const d = new Date(iso);

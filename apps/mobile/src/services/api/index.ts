@@ -12,7 +12,11 @@ import type {
   LocationSearchItem,
   MyReport,
   NotificationPreferences,
+  Outage,
+  OutageDetail,
+  OutageStatistics,
   Paginated,
+  PowerStatistics,
   ReportResult,
   ReverseGeocodeResult,
   SavedNeighborhood,
@@ -130,6 +134,33 @@ export const reportsApi = {
     }),
   mine: (page = 1, limit = 20) => request<Paginated<MyReport>>("/reports/my", { query: { page, limit } }),
   remove: (id: string) => request<unknown>(`/reports/${id}`, { method: "DELETE" }),
+  outages: (params: {
+    neighborhoodId?: number;
+    activeOnly?: boolean;
+    /** ISO date-time. Returns outages under way at any point in [from, to). */
+    from?: string;
+    to?: string;
+    page?: number;
+    limit?: number;
+  }) =>
+    request<Paginated<Outage>>("/reports/outages", {
+      query: {
+        neighborhoodId: params.neighborhoodId,
+        activeOnly: params.activeOnly,
+        from: params.from,
+        to: params.to,
+        page: params.page ?? 1,
+        limit: params.limit ?? 20,
+      },
+    }),
+  outage: (id: string) => request<OutageDetail>(`/reports/outages/${id}`),
+};
+
+export const analyticsApi = {
+  power: (params: { startDate?: string; endDate?: string } = {}) =>
+    request<PowerStatistics>("/analytics/power", { query: params }),
+  outages: (params: { startDate?: string; endDate?: string } = {}) =>
+    request<OutageStatistics>("/analytics/outages", { query: params }),
 };
 
 export const historyApi = {

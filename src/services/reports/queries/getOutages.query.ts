@@ -5,6 +5,9 @@ export class GetOutagesQuery {
   async execute(params: {
     neighborhoodId?: number;
     activeOnly?: boolean;
+    /** Only outages that were under way at some point between from and to */
+    from?: Date;
+    to?: Date;
     page: number;
     limit: number;
   }) {
@@ -15,6 +18,12 @@ export class GetOutagesQuery {
     }
     if (params.activeOnly) {
       where.endTime = null;
+    }
+    if (params.to) {
+      where.startTime = { lt: params.to };
+    }
+    if (params.from && !params.activeOnly) {
+      where.OR = [{ endTime: null }, { endTime: { gt: params.from } }];
     }
 
     const skip = (params.page - 1) * params.limit;

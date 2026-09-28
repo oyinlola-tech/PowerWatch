@@ -332,6 +332,8 @@ export const reportRoutes: FastifyPluginAsync = async (app) => {
         properties: {
           neighborhoodId: { type: 'integer' },
           activeOnly: { type: 'boolean', default: false },
+          from: { type: 'string', format: 'date-time', description: 'Only outages under way at some point after this time' },
+          to: { type: 'string', format: 'date-time', description: 'Only outages that started before this time' },
           page: { type: 'integer', default: 1 },
           limit: { type: 'integer', default: 20 },
         },

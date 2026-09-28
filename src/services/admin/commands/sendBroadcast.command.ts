@@ -59,7 +59,7 @@ export class SendBroadcastCommand {
 
   /**
    * Every recipient gets the message in their in-app inbox. Those with notifications switched
-   * on also get a push on each of their devices. With `dryRun` nothing is sent; the counts
+   * on (and, for messages to a place, community updates on) also get a push on each device. With `dryRun` nothing is sent; the counts
    * show who would receive it.
    */
   async execute(
@@ -71,11 +71,15 @@ export class SendBroadcastCommand {
       select: {
         id: true,
         notificationEnabled: true,
+        communityUpdates: true,
         devices: { select: { expoPushToken: true, fcmToken: true } },
       },
     });
 
-    const pushUsers = users.filter((u) => u.notificationEnabled);
+    // A message to a place is a community update, so it also respects that setting.
+    // Messages to everyone or to chosen people are announcements and only need notifications on.
+    const isCommunityUpdate = params.audience.type === 'neighborhood' || params.audience.type === 'lga' || params.audience.type === 'state';
+    const pushUsers = users.filter((u) => u.notificationEnabled && (!isCommunityUpdate || u.communityUpdates));
     const expoTokens = [...new Set(pushUsers.flatMap((u) => u.devices.map((d) => d.expoPushToken)).filter((t): t is string => !!t))];
     const fcmTokens = [...new Set(pushUsers.flatMap((u) => u.devices.map((d) => d.fcmToken)).filter((t): t is string => !!t))];
 

@@ -21,6 +21,7 @@ import { GetLatestStatusQuery } from '../services/reports/queries/getLatestStatu
 import { GetOutagesQuery } from '../services/reports/queries/getOutages.query.js';
 import { GetOutageQuery } from '../services/reports/queries/getOutage.query.js';
 import { successResponse } from '../utils/response.js';
+import { AppError } from '../errors/index.js';
 import { POWER_MESSAGES } from '../constants/power.constant.js';
 import type { CreateReportDto } from '../interfaces/index.js';
 
@@ -140,17 +141,24 @@ export const reportController = {
   },
 
   async getOutages(request: FastifyRequest, reply: FastifyReply) {
-    const { neighborhoodId, activeOnly, page, limit } = request.query as {
-      neighborhoodId?: string; activeOnly?: string; page?: string; limit?: string;
+    const { neighborhoodId, activeOnly, page, limit, from, to } = request.query as {
+      neighborhoodId?: string; activeOnly?: string | boolean; page?: string; limit?: string; from?: string; to?: string;
     };
-    const params: { neighborhoodId?: number; activeOnly?: boolean; page: number; limit: number } = {
-      activeOnly: activeOnly === 'true',
+    const params: { neighborhoodId?: number; activeOnly?: boolean; page: number; limit: number; from?: Date; to?: Date } = {
+      // The route schema already turns this into a boolean
+      activeOnly: String(activeOnly) === 'true',
       page: Math.max(1, Number(page) || 1),
       limit: Math.min(100, Math.max(1, Number(limit) || 20)),
     };
     if (neighborhoodId !== undefined) {
       const parsed = Number(neighborhoodId);
       if (!isNaN(parsed)) params.neighborhoodId = parsed;
+    }
+    for (const [key, value] of [['from', from], ['to', to]] as const) {
+      if (value === undefined) continue;
+      const date = new Date(value);
+      if (isNaN(date.getTime())) throw new AppError(400, `${key} must be a date-time.`);
+      params[key] = date;
     }
     const result = await getOutagesQuery.execute(params);
     return reply.status(200).send(successResponse(result, POWER_MESSAGES.OUTAGES_FETCHED));

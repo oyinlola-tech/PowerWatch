@@ -33,6 +33,22 @@ Other changes made along the way:
 
 Still open: A8 (social sign-in), and C7/C8/C9 (outage detail, public statistics, admin panel), which have no screens.
 
+## Status update (September 28, 2026)
+
+| Item | Status |
+|------|--------|
+| A7 Push | Server side done: Expo push for status changes and admin messages. **Not yet delivered to phones**: Android needs `google-services.json` in `apps/mobile` and a Firebase (FCM V1) service account key uploaded to the Expo project; iPhone needs an Apple Developer account (APNs). |
+| A6 Community updates | Done: admin messages sent to a neighborhood, LGA or state are community updates and only push to people with `communityUpdates` on (everyone still gets them in the in-app inbox). |
+| A8 Google sign-in | Done: `POST auth/google` (verifies the Google ID token, links accounts by verified email, `TERMS_REQUIRED` for new accounts); app buttons built. Google Auth Platform published to production. |
+| A8 Apple sign-in | Blocked on an Apple Developer Program membership; the app shows "coming soon". |
+| A9 Report trust | Stronger than planned: a fresh GPS fix is required; reports are filed where the person is (neighborhood and street from GPS); mock locations, fixes vaguer than 200 m, points outside Nigeria and impossible travel are refused. |
+| B1–B11 | All screens built. Map, Heatmap, Saved neighborhoods, Language, Help, About, My reports, Inbox and Signed-in devices have no Figma design and follow the existing screen family; they need a design review. |
+| C7 Outage detail | API: `GET reports/outages` accepts `from`/`to` (outages under way in that window); `activeOnly` now works (it was ignored before). App: tapping a History day shows that day's outages. |
+| C8 Public statistics | App: an "Across Nigeria" view for signed-in users from `analytics/power` and `analytics/outages`. |
+| C9 Admin | Done: admin dashboard at https://admin-powerwatch.oyinlola.site (users, reports, outages, locations, messages, summaries, system problems, health, account). |
+
+Other additions: welcome and goodbye emails, branded email templates, a system-problems log for admins, Android APK releases through GitHub Releases (`GET app/latest`) with an in-app update prompt, and Android app links for https://powerwatch.oyinlola.site.
+
 ---
 
 ## Summary
