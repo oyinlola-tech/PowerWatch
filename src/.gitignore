@@ -4,3 +4,4 @@ node_modules
 dist
 datasets
 credentials
+deploy/cpanel/*.zip

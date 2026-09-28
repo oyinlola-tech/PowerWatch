@@ -39,6 +39,12 @@ export async function buildApp() {
 
   app.addHook('onSend', requestIdHeaderHook);
 
+  // Responses are per user and change by the minute. Some hosts add a long default
+  // cache lifetime to any response without one, which makes apps show stale data.
+  app.addHook('onRequest', async (_request, reply) => {
+    reply.header('cache-control', 'no-store');
+  });
+
   // The API only serves JSON, so helmet's strict default CSP applies in production.
   // Swagger UI (non-production only) sets its own CSP for its pages via staticCSP.
   await app.register(helmet, docsEnabled ? { contentSecurityPolicy: false } : {});

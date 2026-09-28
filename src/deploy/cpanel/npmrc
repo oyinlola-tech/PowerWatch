@@ -1,0 +1,3 @@
+# Uploaded as .npmrc. The host's PATH has no "node"; npm-shell.sh adds it for package
+# install scripts. The path must be absolute: change it if the application root changes.
+script-shell=/home/telente/powerwatch-api/npm-shell.sh
