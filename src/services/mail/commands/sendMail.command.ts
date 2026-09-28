@@ -56,11 +56,15 @@ export class MailService {
     }
 
     await this.transporter.sendMail({
-      from: `${this.fromName} <${this.fromAddress}>`,
+      from: { name: this.fromName, address: this.fromAddress },
+      // The sender is a no-reply mailbox; a person reading a reply is more useful
+      ...(env.mailBranding.supportEmail ? { replyTo: env.mailBranding.supportEmail } : {}),
       to,
       subject,
       text,
       html,
+      // Marks the message as automated so out-of-office replies are not sent back
+      headers: { 'Auto-Submitted': 'auto-generated' },
     });
   }
 }

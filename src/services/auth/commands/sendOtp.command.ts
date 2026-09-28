@@ -4,6 +4,7 @@ import { OtpRepository } from '../../../repositories/otp.repository.js';
 import { AppError } from '../../../errors/index.js';
 import { env } from '../../../configs/env.config.js';
 import { MailService } from '../../mail/index.js';
+import { otpEmail } from '../../mail/templates/otp.js';
 import { hashOtpCode } from '../../../utils/otp.js';
 
 export type OtpType = 'EMAIL_VERIFICATION' | 'PASSWORD_RESET';
@@ -46,22 +47,13 @@ export class SendOtpCommand {
       expiresAt,
     });
 
-    const subject =
-      type === 'PASSWORD_RESET'
-        ? 'PowerWatch Password Reset Code'
-        : 'PowerWatch Email Verification Code';
-
-    const text = `Your PowerWatch OTP is ${code}. It expires in ${env.otp.expiryMinutes} minutes.`;
-    const html = `
-      <p>Your PowerWatch OTP is <strong>${code}</strong>.</p>
-      <p>This code expires in ${env.otp.expiryMinutes} minutes.</p>
-    `;
-
-    await new MailService().sendMail({
-      to: normalizedEmail,
-      subject,
-      text,
-      html,
+    const message = otpEmail({
+      type,
+      code,
+      firstName: user.firstName,
+      expiryMinutes: env.otp.expiryMinutes,
     });
+
+    await new MailService().sendMail({ to: normalizedEmail, ...message });
   }
 }

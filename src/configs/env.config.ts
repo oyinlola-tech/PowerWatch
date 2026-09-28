@@ -160,6 +160,12 @@ export const env = {
     fromEmail: process.env.SMTP_FROM_EMAIL ?? '',
     fromName: process.env.SMTP_FROM_NAME ?? 'PowerWatch',
   },
+
+  // Shown in emails: the logo and links point at the website, replies go to support
+  mailBranding: {
+    webUrl: (process.env.APP_WEB_URL || 'https://powerwatch.oyinlola.site').replace(/\/+$/, ''),
+    supportEmail: process.env.SUPPORT_EMAIL ?? '',
+  },
 };
 
 try {
