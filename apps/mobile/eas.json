@@ -4,13 +4,22 @@
     "appVersionSource": "remote"
   },
   "build": {
+    "base": {
+      "env": {
+        "EXPO_PUBLIC_API_URL": "https://api-powerwatch.telente.site",
+        "EXPO_PUBLIC_SUPPORT_EMAIL": "help@telente.site",
+        "EXPO_PUBLIC_DATA_PROTECTION_EMAIL": "privacy@telente.site"
+      }
+    },
     "preview": {
+      "extends": "base",
       "distribution": "internal",
       "android": {
         "buildType": "apk"
       }
     },
     "production": {
+      "extends": "base",
       "autoIncrement": true
     }
   }
