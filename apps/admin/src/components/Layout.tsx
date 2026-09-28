@@ -171,9 +171,10 @@ export default function Layout() {
             <span className="text-base font-bold text-ink">PowerWatch</span>
             <span className="ml-1.5 text-xs font-bold uppercase text-accent">Admin</span>
           </div>
-          <p className="hidden items-center gap-1.5 text-xs text-muted xl:flex">
+          <p className="hidden items-center gap-1.5 text-xs text-muted min-[420px]:flex">
             <Icon name="clock" size={14} />
-            Times in {TIME_ZONE_LABEL}
+            <span className="xl:hidden">Times in WAT</span>
+            <span className="hidden xl:inline">Times in {TIME_ZONE_LABEL}</span>
           </p>
           <div className="ml-auto flex items-center gap-2 sm:gap-3">
             {user && (
