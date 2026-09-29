@@ -10,10 +10,12 @@
     "backgroundColor": "#0663EA",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.powerwatch.app"
+      "bundleIdentifier": "com.powerwatch.app",
+      "googleServicesFile": "./GoogleService-Info.plist"
     },
     "android": {
       "package": "com.powerwatch.app",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#0663EA",
         "foregroundImage": "./assets/android-icon-foreground.png",

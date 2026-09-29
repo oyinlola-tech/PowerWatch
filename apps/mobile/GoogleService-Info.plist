@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>387458458442-8d0voqu3u6os7pf6139bf7n9u6ervqu8.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.387458458442-8d0voqu3u6os7pf6139bf7n9u6ervqu8</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>387458458442-ofglme8elijkon89dm3qqbkoo20lsok4.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyCclJD4zKE_O9qm14eFBfodawMUWUFMlb0</string>
+	<key>GCM_SENDER_ID</key>
+	<string>387458458442</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.powerwatch.app</string>
+	<key>PROJECT_ID</key>
+	<string>powerwatch141</string>
+	<key>STORAGE_BUCKET</key>
+	<string>powerwatch141.firebasestorage.app</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:387458458442:ios:bdd2df99ee8848c53e97b3</string>
+</dict>
+</plist>

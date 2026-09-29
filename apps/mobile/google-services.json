@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "387458458442",
+    "project_id": "powerwatch141",
+    "storage_bucket": "powerwatch141.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:387458458442:android:c5e9098d5491efc23e97b3",
+        "android_client_info": {
+          "package_name": "com.powerwatch.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "387458458442-70qgjv004ffo2bkhh1nu6arshdn7l2r4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD585LRe1maQrM_hUSfZdhftXuWkLqQ5CM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "387458458442-70qgjv004ffo2bkhh1nu6arshdn7l2r4.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "387458458442-8d0voqu3u6os7pf6139bf7n9u6ervqu8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.powerwatch.app"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
