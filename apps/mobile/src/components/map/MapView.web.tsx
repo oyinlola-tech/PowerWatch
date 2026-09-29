@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { buildMapHtml, parseMapMessage } from "./mapHtml";
-import type { MapMarker, MapOptions } from "./mapHtml";
+import type { HomeLocation, MapFocus, MapMarker, MapOptions, UserLocation } from "./mapHtml";
 import { useTheme } from "../../theme/ThemeContext";
 
 export type MapViewProps = MapOptions;
@@ -9,12 +9,15 @@ interface MapWindow extends Window {
   powerwatchMap?: {
     setView: (view: { latitude: number; longitude: number; zoom: number }) => void;
     setMarkers: (markers: MapMarker[], fit: boolean) => void;
+    setUserLocation: (user: UserLocation | null) => void;
+    setHomeLocation: (home: HomeLocation | null) => void;
+    flyTo: (view: MapFocus) => void;
   };
 }
 
 // Browser preview of the native MapView (used with `expo start --web`)
 const MapView = (props: MapViewProps) => {
-  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove } = props;
+  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove, userLocation, homeLocation, focus } = props;
   const frame = useRef<HTMLIFrameElement>(null);
   const { isDark } = useTheme();
   // A blob URL gives the document this page's origin, which MapLibre's worker needs.
@@ -71,6 +74,21 @@ const MapView = (props: MapViewProps) => {
     if (!isReady || !markers) return;
     (frame.current?.contentWindow as MapWindow | null)?.powerwatchMap?.setMarkers(markers, fitToMarkers);
   }, [isReady, markers, fitToMarkers]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    (frame.current?.contentWindow as MapWindow | null)?.powerwatchMap?.setUserLocation(userLocation ?? null);
+  }, [isReady, userLocation]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    (frame.current?.contentWindow as MapWindow | null)?.powerwatchMap?.setHomeLocation(homeLocation ?? null);
+  }, [isReady, homeLocation]);
+
+  useEffect(() => {
+    if (!isReady || !focus) return;
+    (frame.current?.contentWindow as MapWindow | null)?.powerwatchMap?.flyTo(focus);
+  }, [isReady, focus]);
 
   return (
     <iframe

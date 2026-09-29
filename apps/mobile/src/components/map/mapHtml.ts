@@ -28,6 +28,27 @@ export interface MapMarker {
   radius?: number;
 }
 
+/** The device's own position: private, drawn on the map only and never sent anywhere */
+export interface UserLocation {
+  latitude: number;
+  longitude: number;
+  /** Horizontal accuracy radius in metres; the accuracy circle is drawn to this scale */
+  accuracy: number;
+}
+
+/** The signed-in person's own saved home point, exactly as they set it; drawn as a "Home" pin */
+export interface HomeLocation {
+  latitude: number;
+  longitude: number;
+}
+
+/** A one-off request to fly the map somewhere (a new object each time it should fire) */
+export interface MapFocus {
+  latitude: number;
+  longitude: number;
+  zoom: number;
+}
+
 export interface MapOptions {
   latitude: number;
   longitude: number;
@@ -42,6 +63,12 @@ export interface MapOptions {
   /** Zoom to fit the markers whenever they change */
   fitToMarkers?: boolean;
   onMarkerPress?: (id: string) => void;
+  /** "You are here" dot and accuracy circle; null/undefined draws nothing */
+  userLocation?: UserLocation | null;
+  /** The signed-in person's own home point (never other people's); null/undefined draws nothing */
+  homeLocation?: HomeLocation | null;
+  /** Fly the map to a position whenever this object changes (e.g. "center on me") */
+  focus?: MapFocus | null;
   /** Called when a pan/zoom ends; `byUser` is false for programmatic moves */
   onMove?: (view: { latitude: number; longitude: number; zoom: number; byUser: boolean }) => void;
 }
@@ -68,6 +95,18 @@ export const parseMapMessage = (data: string): MapMessage | null => {
 /** JS that pushes markers into the live map document */
 export const markersScript = (markers: MapMarker[], fit: boolean) =>
   `window.powerwatchMap && window.powerwatchMap.setMarkers(${JSON.stringify(markers)}, ${fit}); true;`;
+
+/** JS that moves the "you are here" dot (null removes it); kept apart from the markers */
+export const userLocationScript = (user: UserLocation | null) =>
+  `window.powerwatchMap && window.powerwatchMap.setUserLocation(${JSON.stringify(user)}); true;`;
+
+/** JS that moves the "Home" pin (null removes it) */
+export const homeLocationScript = (home: HomeLocation | null) =>
+  `window.powerwatchMap && window.powerwatchMap.setHomeLocation(${JSON.stringify(home)}); true;`;
+
+/** JS that flies the live map to a position */
+export const flyToScript = (focus: MapFocus) =>
+  `window.powerwatchMap && window.powerwatchMap.flyTo(${JSON.stringify(focus)}); true;`;
 
 export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = false }: MapOptions) => `<!doctype html>
 <html>
@@ -154,7 +193,7 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = fa
               "circle-stroke-width": 2,
               "circle-stroke-color": "#FFFFFF",
             },
-          });
+          }, map.getLayer("user-halo") ? "user-halo" : undefined);
           map.on("click", "markers", (event) => {
             const feature = event.features && event.features[0];
             if (feature) post({ type: "marker", id: feature.properties.id });
@@ -168,10 +207,110 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = fa
           map.fitBounds(bounds, { padding: 48, maxZoom: 13, duration: 0 });
         }
       };
+      // "You are here": its own GeoJSON source and layers, separate from the markers.
+      // Drawn as accuracy circle (under the markers), then white halo + blue dot (over them).
+      // The accuracy circle is sized in metres: a Web-Mercator pixel spans
+      // 78271.516964 * cos(latitude) / 2^zoom metres (512px tiles), so its radius in pixels is
+      // r0 * 2^zoom, which an exponential-base-2 interpolation reproduces exactly at every zoom.
+      const USER_BLUE = "#0663EA";
+      const METERS_PER_PIXEL_AT_ZOOM_0 = 78271.516964;
+      let pendingUser;
+      const emptyCollection = { type: "FeatureCollection", features: [] };
+      const applyUser = (user) => {
+        let source = map.getSource("user-location");
+        if (!user) {
+          if (source) source.setData(emptyCollection);
+          return;
+        }
+        const data = {
+          type: "FeatureCollection",
+          features: [
+            {
+              type: "Feature",
+              geometry: { type: "Point", coordinates: [user.longitude, user.latitude] },
+              properties: { accuracy: user.accuracy },
+            },
+          ],
+        };
+        if (source) {
+          source.setData(data);
+        } else {
+          map.addSource("user-location", { type: "geojson", data });
+          map.addLayer(
+            {
+              id: "user-accuracy",
+              type: "circle",
+              source: "user-location",
+              paint: {
+                "circle-color": USER_BLUE,
+                "circle-opacity": 0.15,
+                "circle-radius": 0,
+                "circle-stroke-width": 1,
+                "circle-stroke-color": USER_BLUE,
+                "circle-stroke-opacity": 0.4,
+                "circle-pitch-alignment": "map",
+              },
+            },
+            map.getLayer("markers") ? "markers" : undefined,
+          );
+          map.addLayer({
+            id: "user-halo",
+            type: "circle",
+            source: "user-location",
+            paint: { "circle-color": "#FFFFFF", "circle-radius": 10, "circle-opacity": 1 },
+          });
+          map.addLayer({
+            id: "user-dot",
+            type: "circle",
+            source: "user-location",
+            paint: { "circle-color": USER_BLUE, "circle-radius": 7 },
+          });
+        }
+        const accuracy = Number.isFinite(user.accuracy) && user.accuracy > 0 ? user.accuracy : 0;
+        const r0 = accuracy / (METERS_PER_PIXEL_AT_ZOOM_0 * Math.cos((user.latitude * Math.PI) / 180));
+        map.setPaintProperty("user-accuracy", "circle-radius", [
+          "interpolate",
+          ["exponential", 2],
+          ["zoom"],
+          0,
+          r0,
+          24,
+          r0 * Math.pow(2, 24),
+        ]);
+      };
+
+      // "Home": the person's own saved point as a DOM pin at the exact coordinates.
+      // A DOM marker needs no style glyphs/images and sits above the map layers.
+      let homeMarker = null;
+      const applyHome = (home) => {
+        if (!home) {
+          if (homeMarker) homeMarker.remove();
+          homeMarker = null;
+          return;
+        }
+        if (!homeMarker) {
+          const el = document.createElement("div");
+          el.setAttribute("role", "img");
+          el.setAttribute("aria-label", "Your home");
+          el.style.cssText = "width:32px;height:40px;pointer-events:none;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.35));";
+          el.innerHTML =
+            '<svg width="32" height="40" viewBox="0 0 32 40" xmlns="http://www.w3.org/2000/svg">' +
+            '<path d="M16 39C16 39 30 25.5 30 15.5C30 7.5 23.7 1 16 1C8.3 1 2 7.5 2 15.5C2 25.5 16 39 16 39Z" fill="#1B3A4B" stroke="#FFFFFF" stroke-width="2"/>' +
+            '<path d="M16 8.5L8 15.2H10.4V22H14V17.6H18V22H21.6V15.2H24L16 8.5Z" fill="#FFFFFF"/>' +
+            "</svg>";
+          homeMarker = new maplibre.Marker({ element: el, anchor: "bottom" });
+          homeMarker.setLngLat([home.longitude, home.latitude]).addTo(map);
+        } else {
+          homeMarker.setLngLat([home.longitude, home.latitude]);
+        }
+      };
+
       map.once("load", () => {
         styleReady = true;
         if (pendingMarkers) applyMarkers(pendingMarkers.markers, pendingMarkers.fit);
         pendingMarkers = null;
+        if (pendingUser !== undefined) applyUser(pendingUser);
+        pendingUser = undefined;
       });
 
       window.powerwatchMap = {
@@ -180,6 +319,12 @@ export const buildMapHtml = ({ latitude, longitude, zoom, interactive, dark = fa
           if (styleReady) applyMarkers(markers, fit);
           else pendingMarkers = { markers, fit };
         },
+        setUserLocation: (user) => {
+          if (styleReady) applyUser(user);
+          else pendingUser = user;
+        },
+        setHomeLocation: (home) => applyHome(home),
+        flyTo: (view) => map.flyTo({ center: [view.longitude, view.latitude], zoom: view.zoom, essential: true }),
       };
       post({ type: "ready" });
 

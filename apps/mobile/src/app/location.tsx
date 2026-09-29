@@ -10,6 +10,7 @@ import MapView from "../components/map/MapView";
 import Button from "../components/ui/Button";
 import { FormError } from "../components/ui/StateViews";
 import { useAuth } from "../context/AuthContext";
+import { useUserLocation } from "../hooks/useUserLocation";
 import { ApiError, authApi, locationsApi } from "../services/api";
 import type { LocationSearchItem } from "../services/api";
 import mixpanel from "../services/mixpanel";
@@ -69,6 +70,9 @@ const SetMonitoringArea = () => {
   const [zoom, setZoom] = useState(savedPoint ? 16 : 13);
   // The design's map artwork shows first; the live map takes over once it is used
   const [isLive, setIsLive] = useState(false);
+  // Blue "you are here" dot (display-only) so the person can see where they are relative to the pin
+  const myLocation = useUserLocation(isLive);
+  const refreshMyLocation = myLocation.refresh;
   const [isMapLoaded, setIsMapLoaded] = useState(false);
 
   // Debounced search; only neighborhoods can be chosen as a monitoring area
@@ -119,6 +123,7 @@ const SetMonitoringArea = () => {
 
     try {
       const permission = await Location.requestForegroundPermissionsAsync();
+      if (permission.granted) refreshMyLocation();
       if (!permission.granted) {
         if (!silentIfDenied) {
           setLocationError(
@@ -153,7 +158,7 @@ const SetMonitoringArea = () => {
     } finally {
       setIsLocating(false);
     }
-  }, []);
+  }, [refreshMyLocation]);
 
   // Setting the primary area: ask for location straight away so the pin starts on the user
   const askedOnOpen = useRef(false);
@@ -253,6 +258,7 @@ const SetMonitoringArea = () => {
               interactive
               onLoad={() => setIsMapLoaded(true)}
               onMove={handleMapMove}
+              userLocation={myLocation.position}
             />
           </View>
         )}

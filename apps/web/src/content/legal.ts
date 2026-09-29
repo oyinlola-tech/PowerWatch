@@ -21,9 +21,9 @@ export interface LegalDocument {
   sections: LegalSection[];
 }
 
-export const LEGAL_LAST_UPDATED = "September 27, 2026";
+export const LEGAL_LAST_UPDATED = "September 29, 2026";
 /** Same date, as recorded with each account when the person agrees at sign-up */
-export const LEGAL_VERSION = "2026-09-27";
+export const LEGAL_VERSION = "2026-09-29";
 
 export const privacyPolicy: LegalDocument = {
   title: "Privacy Policy",
@@ -41,11 +41,13 @@ export const privacyPolicy: LegalDocument = {
       heading: "Information you give us",
       bullets: [
         "Account details: your full name, email address and password. Your password is stored only as a one-way hash; we can't read it.",
+        "Sign in with Google: if you choose it, Google shares your name, email address and a Google account identifier with us. We never receive your Google password. If your email already has a PowerWatch account, the two are linked.",
         "Your agreement: the date and time you agreed to the Terms & Conditions and this policy when you signed up, and which version you agreed to.",
         "Email verification and password reset codes, sent to your email. Each code expires after 10 minutes and allows a limited number of attempts. We store codes only in a protected (hashed) form.",
         "Your primary neighborhood and its area details (town, city, LGA and state), plus up to 10 saved neighborhoods and any labels you give them (for example \"Office\").",
         "Your power reports: whether the power is ON or OFF, the neighborhood, and the time (set by our server, not your phone).",
         "Your notification choices: outage alerts, restoration alerts and community updates.",
+        "Emails we send you: verification and password reset codes, a welcome email when your account is created, and a confirmation when it is deleted.",
       ],
     },
     {
@@ -54,10 +56,12 @@ export const privacyPolicy: LegalDocument = {
         "Location is central to PowerWatch, so we are specific about it. The app only uses your location while you are using it (\"while in use\" permission). It never tracks you in the background.",
       ],
       bullets: [
-        "Your home point: when you set your monitoring area, the app asks for location permission and places a pin on your exact position. You can drag the pin or search instead. We save the exact point you confirm (latitude and longitude) with your profile, and use it to match you to the right neighborhood.",
-        "Report locations: every time you report power ON or OFF, the app takes a fresh GPS reading and sends its exact coordinates and accuracy (in metres) with the report. We may use them to check that reports come from the area they describe. If you deny location permission or GPS isn't available, the report is sent without coordinates.",
-        "Finding your neighborhood: to turn a point into a neighborhood name, our server sends the coordinates (not your name or email) to OpenStreetMap's Nominatim service. If the neighborhood is new to PowerWatch, we place it on the map at an approximate position (rounded to about 1 km), never at your exact point.",
-        "You can turn location access off at any time in your phone's settings. You can still search for your neighborhood by name.",
+        "Your home point: when you sign up or set your monitoring area, the app asks for location permission and uses your exact position. You can drag the pin or search instead. We save the exact point you confirm (latitude and longitude) with your profile, and the neighborhood and street it is in, to send you the right alerts.",
+        "Report locations: a report always counts for the place you are in, so reporting needs your location. Each time you report power ON or OFF, the app takes a fresh GPS reading and sends its exact coordinates and accuracy (in metres). We use them to work out the neighborhood and street you are reporting for, and to keep reports honest: we refuse readings that your phone marks as coming from a location-faking app, readings less precise than about 200 metres, places outside Nigeria, and reports too far from your previous one for the time that has passed.",
+        "Finding your neighborhood: to turn a point into a neighborhood and street name, our server sends the coordinates (not your name or email) to OpenStreetMap's Nominatim service.",
+        "Neighborhoods on the shared map: a new neighborhood first appears at a position rounded to about 1 km. Once at least three different people have reported from it, it moves to the average of their report positions, rounded to about 110 metres. It is never placed at one person's exact point.",
+        "Your own position on the map: the map can show where you are right now as a blue dot, exactly as your phone reports it, and your home point exactly where you set it. Only you see these, on your own phone. The map does not send your live position to us.",
+        "You can turn location access off at any time in your phone's settings. You can still look up any area by name, but you can't send reports without it.",
       ],
     },
     {
@@ -94,7 +98,7 @@ export const privacyPolicy: LegalDocument = {
     {
       heading: "What other users can see",
       paragraphs: [
-        "Reports are anonymous to the community. Other users see neighborhood-level information only: a neighborhood's status, how many people confirmed it, when reports were made, and outage history. They never see your name, email, home point, or the exact coordinates your reports were sent from. Your own reports, with their details, are visible only to you and to PowerWatch administrators, who need them to investigate misuse.",
+        "Reports are anonymous to the community. Other users see neighborhood-level information only: a neighborhood's status, how many people confirmed it, when reports were made, outage history, and the names of the streets recent reports came from (with how many reports, not who sent them). They never see your name, email, home point, your position on the map, or the exact coordinates your reports were sent from. Your own reports, with their details, are visible only to you and to PowerWatch administrators, who need them to investigate misuse.",
       ],
     },
     {
@@ -104,6 +108,7 @@ export const privacyPolicy: LegalDocument = {
       ],
       bullets: [
         "Email delivery: our email provider receives your email address and the code or message we send.",
+        "Google: if you use Sign in with Google, Google confirms your identity to us as described above.",
         "Push notifications: Expo's push service, Apple Push Notification service and Google Firebase Cloud Messaging receive your device's push token and the alert text.",
         "Location lookup: OpenStreetMap Nominatim receives coordinates to convert them into an area name.",
         "Maps: map images come from OpenFreeMap (OpenStreetMap data), and the map library loads from the unpkg content network. Like any website, these services receive your device's IP address and the map area being viewed.",
@@ -126,14 +131,14 @@ export const privacyPolicy: LegalDocument = {
         "Verification and reset codes: they expire after 10 minutes and are deleted within 24 hours.",
         "Security and activity records: 12 months.",
         "Notification history: while your account is open, or until you delete a notification.",
-        "Reports: kept to preserve each neighborhood's history. When you delete your account they stay without their GPS coordinates and are no longer linked to your name or email.",
+        "Reports: kept to preserve each neighborhood's history. When you delete your account they stay without their GPS coordinates or street and are no longer linked to your name or email.",
         "Server logs: only as long as needed for security and troubleshooting.",
       ],
     },
     {
       heading: "Deleting your account",
       paragraphs: [
-        "You can delete your account at any time in Profile > Profile Settings > Delete Account. This signs you out everywhere and permanently erases your name, email, password, home point, neighborhoods, saved places, devices, notification history, sessions and codes. The GPS coordinates are removed from your past reports, which remain only as ON/OFF records that are no longer linked to your name or email. Security records about your account lose their IP address and device details. You can later sign up again with the same email.",
+        "You can delete your account at any time in Profile > Profile Settings > Delete Account. This signs you out everywhere and permanently erases your name, email, password, home point, neighborhoods, saved places, devices, notification history, sessions and codes. The GPS coordinates and street are removed from your past reports, which remain only as ON/OFF records that are no longer linked to your name or email. Security records about your account lose their IP address and device details. You can later sign up again with the same email.",
       ],
     },
     {
@@ -211,8 +216,8 @@ export const termsAndConditions: LegalDocument = {
         "PowerWatch only works if reports are honest. When you report:",
       ],
       bullets: [
-        "Only report what you can see at your location right now.",
-        "Allow the app to attach your location to reports where you can. We may check reports against the area they describe.",
+        "Only report what you can see where you are right now. Your report counts for the neighborhood and street your phone's location puts you in, so reporting needs location permission and a confirmed email address.",
+        "Don't fake your location. Reports from location-faking apps, imprecise readings, places outside Nigeria, or places too far from your previous report for the time that has passed are refused.",
         "One report per neighborhood every 5 minutes. A neighborhood's status follows the majority of people reporting, so a single report may not change it.",
         "Don't send false or misleading reports, report for places you are not in, or coordinate reports to manipulate a status.",
       ],
@@ -240,7 +245,7 @@ export const termsAndConditions: LegalDocument = {
     {
       heading: "Location and notifications",
       paragraphs: [
-        "Some features need location permission (setting your exact monitoring area, attaching a location to reports) or notification permission (alerts). You can refuse or withdraw these permissions in your phone's settings; the related features will then work in a limited way. Alerts are sent on a best-effort basis and may arrive late or not at all.",
+        "Some features need location permission (sending reports, setting your exact monitoring area, showing where you are on the map) or notification permission (alerts). You can refuse or withdraw these permissions in your phone's settings; you can still look up areas, but you can't report without location. Alerts are sent on a best-effort basis and may arrive late or not at all.",
       ],
     },
     {

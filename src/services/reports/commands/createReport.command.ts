@@ -7,6 +7,7 @@ import type { CreateReportDto, ReportResponse } from '../../../interfaces/index.
 import { consensusStatus, tallyRecentReports } from '../consensus.js';
 import { NotifyStatusChangeCommand } from '../../notifications/commands/notifyStatusChange.command.js';
 import { ReverseGeocodeQuery } from '../../locations/queries/reverseGeocode.query.js';
+import { RefineNeighborhoodPositionCommand } from '../../locations/commands/refineNeighborhoodPosition.command.js';
 import { distanceKm } from '../../../utils/geo.js';
 import { describeError, recordSystemEvent } from '../../systemEvents/recordSystemEvent.js';
 
@@ -20,6 +21,7 @@ export class CreateReportCommand {
     private readonly locationRepository: LocationRepository = new LocationRepository(),
     private readonly notifyStatusChange: NotifyStatusChangeCommand = new NotifyStatusChangeCommand(),
     private readonly reverseGeocodeQuery: ReverseGeocodeQuery = new ReverseGeocodeQuery(),
+    private readonly refineNeighborhoodPosition: RefineNeighborhoodPositionCommand = new RefineNeighborhoodPositionCommand(),
   ) {}
 
   /** Refuses positions that are faked, too vague, or impossibly far from the person's last report. */
@@ -136,6 +138,17 @@ export class CreateReportCommand {
 
       return { report: created, status: next, changedTo };
     });
+
+    // Move the neighborhood's map pin towards the average of its reporters' positions.
+    // Runs in the background: a failure here must not affect the report.
+    this.refineNeighborhoodPosition.execute(neighborhoodId).catch((error) =>
+      recordSystemEvent({
+        level: 'WARNING',
+        source: 'geocoding',
+        message: 'Could not update a neighborhood map position.',
+        details: { neighborhoodId, ...describeError(error) },
+      }),
+    );
 
     if (changedTo) {
       // Push delivery must never fail or slow down the report itself.

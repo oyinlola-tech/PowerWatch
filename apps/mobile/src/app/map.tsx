@@ -4,12 +4,14 @@ import { router, useLocalSearchParams } from "expo-router";
 import AppHeader from "../components/layout/AppHeader";
 import Screen from "../components/layout/Screen";
 import Icon from "../components/icons/Icon";
+import LocationButton from "../components/map/LocationButton";
 import MapView from "../components/map/MapView";
-import type { MapMarker } from "../components/map/mapHtml";
+import type { MapFocus, MapMarker } from "../components/map/mapHtml";
 import RecentStreets from "../components/ui/RecentStreets";
 import { EmptyView, ErrorView, LoadingView } from "../components/ui/StateViews";
 import { useUser } from "../context/AuthContext";
 import { useApi } from "../hooks/useApi";
+import { useUserLocation, userLocationMessage } from "../hooks/useUserLocation";
 import { ApiError, locationsApi, reportsApi } from "../services/api";
 import type { ApiPowerStatus, LiveStatus, LocationSearchItem, StatusMapByLga, StatusMapByState } from "../services/api";
 import { changeNeighborhood } from "../services/navigation";
@@ -309,6 +311,21 @@ const PowerMap = () => {
   const [view, setView] = useState<View_>(initialView === "heatmap" ? "heatmap" : "area");
   const [selected, setSelected] = useState<number | null>(null);
 
+  // "You are here" dot: display-only, never sent to the API. Doesn't prompt on open.
+  const myLocation = useUserLocation();
+  const locationMessage = userLocationMessage(myLocation);
+  // Their own saved home point, exactly as set (GET /auth/me); never other people's. Not passed
+  // through spreadOverlapping/rounding, unlike the shared, approximate neighborhood markers.
+  const homeLocation = useMemo(
+    () => (user.latitude != null && user.longitude != null ? { latitude: user.latitude, longitude: user.longitude } : null),
+    [user.latitude, user.longitude],
+  );
+  const [focus, setFocus] = useState<MapFocus | null>(null);
+  const centerOnMe = useCallback(
+    (p: { latitude: number; longitude: number }) => setFocus({ latitude: p.latitude, longitude: p.longitude, zoom: 16 }),
+    [],
+  );
+
   const stateId = user.state?.id;
   const area = useApi(() => locationsApi.statusMapByLga(), `area-${user.lga?.id ?? 0}`);
   const heat = useApi(
@@ -428,13 +445,18 @@ const PowerMap = () => {
               markers={markers}
               fitToMarkers
               onMarkerPress={handleMarkerPress}
+              userLocation={myLocation.position}
+              homeLocation={homeLocation}
+              focus={focus}
             />
             {current.loading && (
               <View style={styles.mapOverlay}>
                 <LoadingView />
               </View>
             )}
+            <LocationButton location={myLocation} onCenter={centerOnMe} />
           </View>
+          {locationMessage && <Text style={styles.locationNote}>{locationMessage}</Text>}
 
           {/* Legend */}
           <View style={styles.legend}>
@@ -443,6 +465,7 @@ const PowerMap = () => {
                 <Legend color={colors.powerOn} label="ON" />
                 <Legend color={colors.powerOff} label="OFF" />
                 <Legend color={colors.gray400} label="No reports" />
+                {homeLocation && <Legend color={colors.bg} label="Home" />}
               </>
             ) : (
               <>
@@ -661,6 +684,13 @@ const useStyles = makeStyles((c) => ({
     borderRadius: 12,
   },
   note: {
+    marginTop: -12,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    lineHeight: 16,
+    color: c.gray500,
+  },
+  locationNote: {
     marginTop: -12,
     fontFamily: fonts.regular,
     fontSize: 12,

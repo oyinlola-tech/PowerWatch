@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { StyleSheet } from "react-native";
 import { WebView } from "react-native-webview";
-import { buildMapHtml, MAP_BASE_URL, markersScript, parseMapMessage } from "./mapHtml";
+import { buildMapHtml, flyToScript, homeLocationScript, MAP_BASE_URL, markersScript, parseMapMessage, userLocationScript } from "./mapHtml";
 import type { MapOptions } from "./mapHtml";
 import { useTheme } from "../../theme/ThemeContext";
 
@@ -9,7 +9,7 @@ export type MapViewProps = MapOptions;
 
 // MapLibre GL rendered in a WebView: no native map SDK or API key to configure
 const MapView = (props: MapViewProps) => {
-  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove } = props;
+  const { latitude, longitude, zoom, onLoad, markers, fitToMarkers = false, onMarkerPress, onMove, userLocation, homeLocation, focus } = props;
   const webView = useRef<WebView>(null);
   const { isDark } = useTheme();
 
@@ -33,6 +33,22 @@ const MapView = (props: MapViewProps) => {
     if (!isReady || !markers) return;
     webView.current?.injectJavaScript(markersScript(markers, fitToMarkers));
   }, [isReady, markers, fitToMarkers]);
+
+  // The dot is re-sent after a theme switch too, since that builds a new map document
+  useEffect(() => {
+    if (!isReady) return;
+    webView.current?.injectJavaScript(userLocationScript(userLocation ?? null));
+  }, [isReady, userLocation]);
+
+  useEffect(() => {
+    if (!isReady) return;
+    webView.current?.injectJavaScript(homeLocationScript(homeLocation ?? null));
+  }, [isReady, homeLocation]);
+
+  useEffect(() => {
+    if (!isReady || !focus) return;
+    webView.current?.injectJavaScript(flyToScript(focus));
+  }, [isReady, focus]);
 
   return (
     <WebView
